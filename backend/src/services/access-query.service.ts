@@ -28,9 +28,36 @@ import {
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import {
+    EntityManager,
+    FindOptionsWhere,
+    ILike,
+    In,
+    Repository,
+} from 'typeorm';
 import logger from '../logger';
 import { UserService } from './user.service';
+
+/**
+ * Prefer the live name, then a name snapshot stored by older versions
+ * ('Unknown' was written when the lookup failed), then the raw UUID.
+ */
+const pickName = (
+    resolved: string | undefined,
+    snapshot: unknown,
+    fallback: string,
+): string =>
+    resolved ??
+    (typeof snapshot === 'string' && snapshot !== 'Unknown'
+        ? snapshot
+        : fallback);
+
+/**
+ * SQL condition for a membership that has not expired yet. Expired rows are
+ * only removed by a periodic queue job, so reads must filter them too.
+ */
+const ACTIVE_MEMBERSHIP = (alias: string): string =>
+    `(${alias}.expirationDate IS NULL OR ${alias}.expirationDate > NOW())`;
 
 @Injectable()
 export class AccessQueryService {
@@ -66,6 +93,7 @@ export class AccessQueryService {
                     .leftJoin('groupMembership.accessGroup', 'accessGroup')
                     .where('accessGroup.uuid = :uuid', { uuid })
                     .andWhere('user.uuid = :userUuid', { userUuid })
+                    .andWhere(ACTIVE_MEMBERSHIP('groupMembership'))
                     .getCount()) > 0;
 
             if (!isMember) {
@@ -82,6 +110,9 @@ export class AccessQueryService {
                     .leftJoin('memberships.user', 'user')
                     .where('accessGroup.uuid = :uuid', { uuid })
                     .andWhere('user.uuid = :userUuid', { userUuid })
+                    // without this, an expired membership in the target group
+                    // itself counts as sharing one of its projects
+                    .andWhere(ACTIVE_MEMBERSHIP('memberships'))
                     .getCount();
 
                 if (sharedProjectsCount === 0) {
@@ -103,6 +134,7 @@ export class AccessQueryService {
                     userUuid,
                 })
                 .andWhere('groupMembership.canEditGroup = true')
+                .andWhere(ACTIVE_MEMBERSHIP('groupMembership'))
                 .getCount()) > 0;
 
         let accessGroupQuery = this.accessGroupRepository
@@ -154,19 +186,33 @@ export class AccessQueryService {
         };
     }
 
+    /**
+     * Whether the user has at least `rights` on the project.
+     *
+     * Inside a transaction, pass its `manager`: the check then runs on the
+     * connection the transaction already holds. Taking a second connection
+     * from the pool while holding a lock can stall once the pool is full of
+     * requests waiting for that lock.
+     */
     async hasProjectRights(
         projectUUID: string,
         auth: AuthHeader,
         rights: AccessGroupRights = AccessGroupRights.WRITE,
+        manager?: EntityManager,
     ): Promise<boolean> {
-        const dbuser = await this.userRepository.findOneOrFail({
+        const userRepository =
+            manager?.getRepository(UserEntity) ?? this.userRepository;
+        const projectRepository =
+            manager?.getRepository(ProjectEntity) ?? this.projectRepository;
+
+        const dbuser = await userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
         });
         if (dbuser.role === UserRole.ADMIN) {
             return true;
         }
 
-        return this.projectRepository
+        return projectRepository
             .createQueryBuilder('project')
             .leftJoin(
                 'project_access_view_entity',
@@ -224,40 +270,97 @@ export class AccessQueryService {
         logger.debug(`Search access group with name containing '${search}'`);
         logger.debug(`Found ${count.toString()} access groups`);
 
-        const data: AccessGroupDto[] = accessGroups.map(
-            (accessGroup: AccessGroupEntity): AccessGroupDto => {
-                return {
-                    creator: accessGroup.creator
-                        ? userEntityToDto(accessGroup.creator)
-                        : null,
-                    memberships:
-                        accessGroup.memberships?.map((membership) =>
-                            groupMembershipEntityToDto(membership),
-                        ) ?? [],
-                    createdAt: accessGroup.createdAt,
-                    updatedAt: accessGroup.updatedAt,
-                    uuid: accessGroup.uuid,
-                    name: accessGroup.name,
-                    type: accessGroup.type,
-                    hidden: accessGroup.hidden,
-                    projectAccesses: projectAccessesToProjectDtos(
-                        accessGroup.project_accesses,
-                    ),
-                    emailPattern:
-                        accessGroup.type === AccessGroupType.AFFILIATION
-                            ? this.configService
-                                  .getOrThrow<AccessGroupConfig>('accessConfig')
-                                  .emails.find((emailConfig) =>
-                                      emailConfig.access_groups.includes(
-                                          accessGroup.uuid,
-                                      ),
-                                  )?.email
-                            : undefined,
-                };
-            },
+        const data = accessGroups.map((accessGroup) =>
+            this.toListDto(accessGroup),
         );
 
         return { data, count, skip, take };
+    }
+
+    /**
+     * Lists the access groups the user is an active member of, including
+     * hidden ones such as their own primary group.
+     *
+     * Unlike {@link searchAccessGroup} this needs no create permission, so it
+     * also works for external users. Member emails are never included; they
+     * are only exposed by {@link getAccessGroup} to group editors.
+     */
+    async listMyAccessGroups(
+        userUuid: string,
+        search: string,
+        type: AccessGroupType | undefined,
+        skip: number,
+        take: number,
+    ): Promise<AccessGroupsDto> {
+        let query = this.accessGroupRepository
+            .createQueryBuilder('accessGroup')
+            .innerJoin(
+                'accessGroup.memberships',
+                'ownMembership',
+                `ownMembership.user = :userUuid AND ${ACTIVE_MEMBERSHIP('ownMembership')}`,
+                { userUuid },
+            )
+            .leftJoinAndSelect('accessGroup.memberships', 'memberships')
+            .leftJoinAndSelect('memberships.user', 'user')
+            .leftJoinAndSelect(
+                'accessGroup.project_accesses',
+                'project_accesses',
+            )
+            .leftJoinAndSelect('project_accesses.project', 'project')
+            .leftJoinAndSelect('accessGroup.creator', 'creator')
+            .orderBy('accessGroup.name', 'ASC')
+            .skip(skip)
+            .take(take);
+
+        if (type !== undefined) {
+            query = query.andWhere('accessGroup.type = :type', { type });
+        }
+        if (search !== '') {
+            query = query.andWhere('accessGroup.name ILIKE :search', {
+                search: `%${search}%`,
+            });
+        }
+
+        const [accessGroups, count] = await query.getManyAndCount();
+        return {
+            data: accessGroups.map((accessGroup) =>
+                this.toListDto(accessGroup),
+            ),
+            count,
+            skip,
+            take,
+        };
+    }
+
+    private toListDto(accessGroup: AccessGroupEntity): AccessGroupDto {
+        return {
+            creator: accessGroup.creator
+                ? userEntityToDto(accessGroup.creator)
+                : null,
+            memberships:
+                accessGroup.memberships?.map((membership) =>
+                    groupMembershipEntityToDto(membership),
+                ) ?? [],
+            createdAt: accessGroup.createdAt,
+            updatedAt: accessGroup.updatedAt,
+            uuid: accessGroup.uuid,
+            name: accessGroup.name,
+            type: accessGroup.type,
+            hidden: accessGroup.hidden,
+            projectAccesses: projectAccessesToProjectDtos(
+                accessGroup.project_accesses,
+            ),
+            emailPattern:
+                accessGroup.type === AccessGroupType.AFFILIATION
+                    ? this.configService
+                          .getOrThrow<AccessGroupConfig>('accessConfig')
+                          .emails.find((emailConfig) =>
+                              emailConfig.access_groups.includes(
+                                  accessGroup.uuid,
+                              ),
+                          )?.email
+                    : undefined,
+        };
     }
 
     async getProjectAccesses(
@@ -285,44 +388,76 @@ export class AccessQueryService {
         };
     }
 
+    /**
+     * Audit log entries only persist UUIDs. Names are resolved at read time so
+     * renamed users / projects show up with their current name. Name snapshots
+     * written by older versions are only used as fallback (e.g. hard-deleted
+     * entities), and the raw UUID as last resort.
+     */
     async getAuditLogs(uuid: string): Promise<AccessGroupAuditLogsDto> {
         const [logs, count] =
             await this.accessGroupAuditService.getLogsForGroup(uuid);
 
-        // Extract all unique UUIDs that need resolving
-        const uuidsToResolve = new Set<string>();
-        for (const log of logs) {
-            const details = log.details;
-            if (details.userUuid && !details.userName) {
-                uuidsToResolve.add(details.userUuid as string);
+        const userUuids = new Set<string>();
+        const projectUuids = new Set<string>();
+        for (const { details } of logs) {
+            if (typeof details.userUuid === 'string') {
+                userUuids.add(details.userUuid);
             }
             if (Array.isArray(details.userUuids)) {
                 for (const id of details.userUuids as string[]) {
-                    uuidsToResolve.add(id);
+                    userUuids.add(id);
                 }
+            }
+            if (typeof details.projectUuid === 'string') {
+                projectUuids.add(details.projectUuid);
             }
         }
 
-        const resolvedUsers = await this.userService.resolveUsers([
-            ...uuidsToResolve,
+        const [userNames, projectNames] = await Promise.all([
+            this.userService.resolveUsers([...userUuids]),
+            this.resolveProjectNames([...projectUuids]),
         ]);
 
         return {
             data: logs.map((log) => {
                 const details = { ...log.details };
-                if (details.userUuid && !details.userName) {
-                    details.userName =
-                        resolvedUsers[details.userUuid as string] ??
-                        details.userUuid;
+                if (typeof details.userUuid === 'string') {
+                    details.userName = pickName(
+                        userNames[details.userUuid],
+                        details.userName,
+                        details.userUuid,
+                    );
                 }
                 if (Array.isArray(details.userUuids)) {
+                    const snapshots = new Map<string, unknown>(
+                        Array.isArray(details.affectedUsers)
+                            ? (
+                                  details.affectedUsers as {
+                                      uuid: string;
+                                      name: unknown;
+                                  }[]
+                              ).map((u) => [u.uuid, u.name])
+                            : [],
+                    );
                     details.affectedUsers = (details.userUuids as string[]).map(
                         (id) => ({
                             uuid: id,
-                            name: resolvedUsers[id] ?? id,
+                            name: pickName(
+                                userNames[id],
+                                snapshots.get(id),
+                                id,
+                            ),
                         }),
                     );
                     delete details.userUuids;
+                }
+                if (typeof details.projectUuid === 'string') {
+                    details.projectName = pickName(
+                        projectNames[details.projectUuid],
+                        details.projectName,
+                        details.projectUuid,
+                    );
                 }
 
                 return {
@@ -335,5 +470,18 @@ export class AccessQueryService {
             }),
             count,
         };
+    }
+
+    private async resolveProjectNames(
+        uuids: string[],
+    ): Promise<Record<string, string>> {
+        if (uuids.length === 0) return {};
+        // include soft-deleted projects, the audit log outlives them
+        const projects = await this.projectRepository.find({
+            where: { uuid: In(uuids) },
+            select: { uuid: true, name: true },
+            withDeleted: true,
+        });
+        return Object.fromEntries(projects.map((p) => [p.uuid, p.name]));
     }
 }

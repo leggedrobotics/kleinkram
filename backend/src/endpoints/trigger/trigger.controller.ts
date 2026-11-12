@@ -18,9 +18,9 @@ import { ApiTags } from '@nestjs/swagger';
 import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '../../decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
-    CanCreateInMissionByBody,
     CanModifyTrigger,
     CanReadTrigger,
+    CanWriteMissionByBody,
     fromBody,
     LoggedIn,
 } from '../auth/roles.decorator';
@@ -57,7 +57,9 @@ export class TriggerController {
     }
 
     @Post()
-    @CanCreateInMissionByBody(fromBody('missionUuid'))
+    // A trigger runs actions as its creator, and running an action needs
+    // Write on the mission, so creating one needs Write too.
+    @CanWriteMissionByBody(fromBody('missionUuid'))
     @ApiCreatedResponse({ type: ActionTriggerDto })
     async create(
         @Body() dto: CreateActionTriggerDto,

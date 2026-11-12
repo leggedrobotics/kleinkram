@@ -18,6 +18,7 @@
             >
                 <AppRefreshButton @click="loadTriggers" />
                 <AppCreateButton
+                    v-if="canCreateTrigger"
                     label="New Trigger"
                     @click="openCreateDrawer"
                 />
@@ -80,52 +81,32 @@
 
                         <q-card-actions align="right">
                             <q-btn
+                                v-if="
+                                    itemProps.row.creatorUuid ===
+                                    currentUser?.uuid
+                                "
                                 flat
                                 round
                                 icon="sym_o_edit"
                                 color="grey-7"
                                 aria-label="Edit trigger"
-                                :disable="
-                                    itemProps.row.creatorUuid !==
-                                    currentUser?.uuid
-                                "
                                 @click="() => void editTrigger(itemProps.row)"
                             >
-                                <q-tooltip
-                                    v-if="
-                                        itemProps.row.creatorUuid ===
-                                        currentUser?.uuid
-                                    "
-                                    >Edit</q-tooltip
-                                >
-                                <q-tooltip v-else
-                                    >Only the creator can edit this
-                                    trigger</q-tooltip
-                                >
+                                <q-tooltip>Edit</q-tooltip>
                             </q-btn>
                             <q-btn
+                                v-if="
+                                    itemProps.row.creatorUuid ===
+                                    currentUser?.uuid
+                                "
                                 flat
                                 round
                                 icon="sym_o_delete"
                                 color="negative"
                                 aria-label="Delete trigger"
-                                :disable="
-                                    itemProps.row.creatorUuid !==
-                                    currentUser?.uuid
-                                "
                                 @click="() => confirmDelete(itemProps.row)"
                             >
-                                <q-tooltip
-                                    v-if="
-                                        itemProps.row.creatorUuid ===
-                                        currentUser?.uuid
-                                    "
-                                    >Delete</q-tooltip
-                                >
-                                <q-tooltip v-else
-                                    >Only the creator can delete this
-                                    trigger</q-tooltip
-                                >
+                                <q-tooltip>Delete</q-tooltip>
                             </q-btn>
                         </q-card-actions>
                     </q-card>
@@ -170,50 +151,30 @@
                     <q-td key="actions" :props="props">
                         <div class="row justify-end q-gutter-x-sm">
                             <q-btn
+                                v-if="
+                                    props.row.creatorUuid === currentUser?.uuid
+                                "
                                 flat
                                 round
                                 dense
                                 icon="sym_o_edit"
                                 color="grey-7"
-                                :disable="
-                                    props.row.creatorUuid !== currentUser?.uuid
-                                "
                                 @click="() => void editTrigger(props.row)"
                             >
-                                <q-tooltip
-                                    v-if="
-                                        props.row.creatorUuid ===
-                                        currentUser?.uuid
-                                    "
-                                    >Edit</q-tooltip
-                                >
-                                <q-tooltip v-else
-                                    >Only the creator can edit this
-                                    trigger</q-tooltip
-                                >
+                                <q-tooltip>Edit</q-tooltip>
                             </q-btn>
                             <q-btn
+                                v-if="
+                                    props.row.creatorUuid === currentUser?.uuid
+                                "
                                 flat
                                 round
                                 dense
                                 icon="sym_o_delete"
                                 color="negative"
-                                :disable="
-                                    props.row.creatorUuid !== currentUser?.uuid
-                                "
                                 @click="() => confirmDelete(props.row)"
                             >
-                                <q-tooltip
-                                    v-if="
-                                        props.row.creatorUuid ===
-                                        currentUser?.uuid
-                                    "
-                                    >Delete</q-tooltip
-                                >
-                                <q-tooltip v-else
-                                    >Only the creator can delete this
-                                    trigger</q-tooltip
-                                >
+                                <q-tooltip>Delete</q-tooltip>
                             </q-btn>
                         </div>
                     </q-td>
@@ -230,7 +191,7 @@
                 />
                 <span class="text-h6 text-grey-6">No triggers found</span>
                 <q-btn
-                    v-if="!searchTerm"
+                    v-if="!searchTerm && canCreateTrigger"
                     unelevated
                     color="primary"
                     label="Create Trigger"
@@ -252,13 +213,17 @@
 <script setup lang="ts">
 import type { ActionTriggerDto } from '@kleinkram/api-dto/types/actions/action-trigger.dto';
 import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
-import { TriggerType } from '@kleinkram/shared';
+import { AccessGroupRights, TriggerType } from '@kleinkram/shared';
 import AppCreateButton from 'components/common/app-create-button.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import { QTableColumn, useQuasar } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
-import { useHandler } from 'src/hooks/query-hooks';
+import {
+    hasRightsAnywhere,
+    useHandler,
+    usePermissionsQuery,
+} from 'src/hooks/query-hooks';
 import { getUser } from 'src/services/auth';
 import { computed, onMounted, ref } from 'vue';
 import TriggerDefinitionDrawer from './trigger-definition-drawer.vue';
@@ -273,6 +238,13 @@ const searchTerm = ref('');
 const isDrawerOpen = ref(false);
 const selectedTrigger = ref<ActionTriggerDto | undefined>(undefined);
 const currentUser = ref<CurrentAPIUserDto | null>(null);
+
+// A trigger is created on a mission and needs CREATE there
+// (CanCreateInMissionByBody in the backend).
+const { data: permissions } = usePermissionsQuery();
+const canCreateTrigger = computed(() =>
+    hasRightsAnywhere(AccessGroupRights.CREATE, permissions.value),
+);
 
 // Columns
 const columns: QTableColumn[] = [

@@ -42,6 +42,7 @@
                             ref="myElement"
                             v-model="selectedTemplate"
                             :action-templates="actionTemplates"
+                            :only-existing="!canCreateTemplate"
                         />
                     </div>
 
@@ -96,11 +97,12 @@
                         <label for="dockerImage">Docker Image</label>
                         <q-input
                             v-model="editingTemplate.imageName"
+                            :readonly="!canCreateTemplate"
                             name="dockerImage"
                             outlined
                             dense
                             class="q-mb-sm"
-                            clearable
+                            :clearable="canCreateTemplate"
                             placeholder="Docker Image"
                         />
                     </div>
@@ -123,11 +125,12 @@
                         <q-input
                             v-if="editingTemplate"
                             v-model="editingTemplate.command"
+                            :readonly="!canCreateTemplate"
                             name="action_command"
                             outlined
                             dense
                             class="q-mb-sm"
-                            clearable
+                            :clearable="canCreateTemplate"
                             placeholder="Command"
                         />
                     </div>
@@ -136,11 +139,12 @@
                         <q-input
                             v-if="editingTemplate"
                             v-model="editingTemplate.entrypoint"
+                            :readonly="!canCreateTemplate"
                             name="action_entrypoint"
                             outlined
                             dense
                             class="q-mb-sm"
-                            clearable
+                            :clearable="canCreateTemplate"
                             placeholder="Entrypoint"
                         />
                     </div>
@@ -148,6 +152,7 @@
                         <label>Access Rights</label>
                         <q-select
                             v-model="selectedAccessRights"
+                            :readonly="!canCreateTemplate"
                             :options="accessOptions"
                             outlined
                             dense
@@ -164,6 +169,7 @@
                         <label for="memory">Memory Allocation (GB)</label>
                         <q-input
                             v-model="editingTemplate.cpuMemory"
+                            :readonly="!canCreateTemplate"
                             name="memory"
                             type="number"
                             class="q-mt-xs"
@@ -175,6 +181,7 @@
                         <label for="cpu">CPU Core Allocation</label>
                         <q-input
                             v-model="editingTemplate.cpuCores"
+                            :readonly="!canCreateTemplate"
                             name="cpu"
                             type="number"
                             class="q-mt-xs"
@@ -187,6 +194,7 @@
                         <q-input
                             v-if="editingTemplate"
                             v-model="editingTemplate.gpuMemory"
+                            :readonly="!canCreateTemplate"
                             name="gpu"
                             type="number"
                             emit-value
@@ -200,6 +208,7 @@
                         <q-input
                             v-if="editingTemplate"
                             v-model="editingTemplate.maxRuntime"
+                            :readonly="!canCreateTemplate"
                             name="maxRuntime"
                             type="number"
                             class="q-mt-xs"
@@ -212,8 +221,18 @@
 
                 <q-separator class="q-my-md" />
 
+                <div
+                    v-if="launchBlockedReason"
+                    class="row no-wrap items-center q-pa-sm q-mt-lg rounded-borders bg-orange-1 text-orange-10"
+                    role="status"
+                >
+                    <q-icon name="sym_o_lock" size="sm" class="q-mr-sm" />
+                    <span>{{ launchBlockedReason }}</span>
+                </div>
+
                 <div class="flex row justify-end q-mt-lg">
                     <q-btn
+                        v-if="canCreateTemplate"
                         flat
                         class="bg-button-secondary text-on-color q-mx-sm"
                         :label="saveButtonLabel"
@@ -232,7 +251,11 @@
                         flat
                         class="bg-button-secondary text-on-color"
                         label="Submit Action"
-                        :disable="!isNameSelected"
+                        :disable="
+                            !isNameSelected ||
+                            isPermissionPending ||
+                            !!launchBlockedReason
+                        "
                         :loading="isSubmitting"
                         @click="submitAnalysis"
                     >
@@ -253,13 +276,21 @@ import type { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
+import {
+    isImageInDockerNamespace,
+    normalizeDockerNamespace,
+} from '@kleinkram/validation/frontend';
 import ActionSelector from 'components/action-selector.vue';
 import { Notify } from 'quasar';
 import {
+    canCreateActionTemplate,
+    canLaunchActionOnMissions,
+    resolveLaunchTargets,
     useFilteredProjects,
     useHandler,
     useManyMissions,
     useMissionsOfProjectMinimal,
+    usePermissionsQuery,
 } from 'src/hooks/query-hooks';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { computed, Ref, ref, watch } from 'vue';
@@ -417,6 +448,71 @@ const { mutateAsync: updateTemplate, isPending: isUpdating } =
     useUpdateTemplateVersion();
 const { mutateAsync: runAction, isPending: isSubmitting } = useSubmitAction();
 
+// --- Permissions ---
+const { data: permissions } = usePermissionsQuery();
+
+const canCreateTemplate = computed(() =>
+    canCreateActionTemplate(permissions.value),
+);
+
+// undefined while the selected missions are still loading.
+const targetMissions = computed(() => {
+    if (hasMissionUUIDs.value) {
+        return resolveLaunchTargets(
+            allMissionUUIDs.value,
+            selectedMissions.value?.data,
+        );
+    }
+    if (!selectedMission.value) return [];
+    return [
+        {
+            missionUuid: selectedMission.value.uuid,
+            projectUuid: selectedProject.value?.uuid,
+        },
+    ];
+});
+
+// Submitting stays disabled until the launch rights could be checked.
+const isPermissionPending = computed(
+    () => targetMissions.value === undefined || !permissions.value,
+);
+
+/**
+ * Why the selected action can't be launched on the selected missions, or
+ * undefined. Launching needs the template's access rights on every target
+ * mission (CreateActionGuard in the backend). This depends on what the user
+ * selects, so the button stays visible and the reason is shown next to it.
+ */
+const launchBlockedReason = computed((): string | undefined => {
+    if (!targetMissions.value || targetMissions.value.length === 0) {
+        return undefined;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const requiredRights: AccessGroupRights =
+        editingTemplate.value?.accessRights ?? AccessGroupRights.READ;
+    if (
+        canLaunchActionOnMissions(
+            targetMissions.value,
+            requiredRights,
+            permissions.value,
+        )
+    ) {
+        return undefined;
+    }
+    return `This action needs ${accessGroupRightsMap[requiredRights]} access, which you don't have on all selected missions. Pick a different action or ask a project admin for access.`;
+});
+
+/**
+ * Submitting saves the template first when it is new or modified, which needs
+ * template create rights on top of the launch rights.
+ */
+function canSubmit(): boolean {
+    if (isPermissionPending.value || launchBlockedReason.value) return false;
+    const needsTemplateSave = !editingTemplate.value?.uuid || isModified.value;
+    return !needsTemplateSave || canCreateTemplate.value;
+}
+
 // --- Actions ---
 function closeDrawer(): void {
     _open.value = false;
@@ -464,6 +560,7 @@ async function saveAsTemplate(): Promise<void> {
 
 async function submitAnalysis(): Promise<void> {
     // 1. Validation
+    if (!canSubmit()) return;
     if (
         !hasMissionUUIDs.value &&
         (!selectedProject.value || !selectedMission.value)
@@ -475,11 +572,15 @@ async function submitAnalysis(): Promise<void> {
         return;
     }
 
-    const dockerhubNamespace = import.meta.env.VITE_DOCKER_HUB_NAMESPACE;
+    const dockerhubNamespace = normalizeDockerNamespace(
+        import.meta.env.VITE_DOCKER_HUB_NAMESPACE,
+    );
     if (
-        dockerhubNamespace &&
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-        !editingTemplate.value.imageName.startsWith(dockerhubNamespace)
+        !isImageInDockerNamespace(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            editingTemplate.value.imageName,
+            dockerhubNamespace,
+        )
     ) {
         Notify.create({
             message: `Image name must start with "${dockerhubNamespace}/"`,

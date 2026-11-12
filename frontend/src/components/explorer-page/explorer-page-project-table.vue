@@ -14,8 +14,7 @@
         :grid="isPhone"
         :rows-per-page-options="[10, 20, 50, 100]"
         :rows="data"
-        :columns="tableColumns as any"
-        :visible-columns="visibleColumns"
+        :columns="columnLayout.columns as any"
         row-key="uuid"
         :loading="isLoading"
         wrap-cells
@@ -204,7 +203,7 @@
                                             </q-item-section>
                                         </q-item>
                                     </EditProjectDialogOpener>
-                                    <ConfigureTagsDialogOpener
+                                    <ConfigureMetadataTypesDialogOpener
                                         :project-uuid="props.row.uuid"
                                     >
                                         <q-item v-ripple clickable>
@@ -212,7 +211,7 @@
                                                 Enforce Metadata
                                             </q-item-section>
                                         </q-item>
-                                    </ConfigureTagsDialogOpener>
+                                    </ConfigureMetadataTypesDialogOpener>
                                     <change-project-rights-dialog-opener
                                         :project-uuid="props.row.uuid"
                                         :project-access-uuid="
@@ -243,6 +242,15 @@
                     </div>
                 </q-card>
             </div>
+        </template>
+
+        <template #header-cell="props">
+            <table-header-cell :cell-props="props" :layout="columnLayout" />
+        </template>
+        <template #header-cell-project-action="props">
+            <q-th :props="props">
+                <table-column-settings :layout="columnLayout" />
+            </q-th>
         </template>
 
         <template #body-cell-name="props">
@@ -303,7 +311,7 @@
                                         </q-item-section>
                                     </q-item>
                                 </EditProjectDialogOpener>
-                                <ConfigureTagsDialogOpener
+                                <ConfigureMetadataTypesDialogOpener
                                     :project-uuid="props.row.uuid"
                                 >
                                     <q-item v-ripple clickable>
@@ -311,7 +319,7 @@
                                             Enforce Metadata
                                         </q-item-section>
                                     </q-item>
-                                </ConfigureTagsDialogOpener>
+                                </ConfigureMetadataTypesDialogOpener>
 
                                 <change-project-rights-dialog-opener
                                     :project-uuid="props.row.uuid"
@@ -346,15 +354,18 @@
 import type { ProjectWithMissionCountDto } from '@kleinkram/api-dto/types/project/project-with-mission-count.dto';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
-import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
+import ConfigureMetadataTypesDialogOpener from 'components/button-wrapper/dialog-opener-configure-metadata-types.vue';
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
 import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
 import ProjectStarButton from 'components/common/project-star-button.vue';
 import PublicProjectChip from 'components/common/public-project-chip.vue';
+import TableColumnSettings from 'components/common/table-columns/table-column-settings.vue';
+import TableHeaderCell from 'components/common/table-columns/table-header-cell.vue';
 import TableSelectionBar from 'components/common/table-selection-bar.vue';
 import { QTable, useQuasar } from 'quasar';
 import { explorerPageTableColumns } from 'src/components/explorer-page/explorer-page-table-columns';
 import { useRowActivation } from 'src/composables/use-row-activation';
+import { useTableColumns } from 'src/composables/use-table-columns';
 import {
     useFilteredProjects,
     useHandler,
@@ -381,21 +392,16 @@ const { data: user } = useUser();
 const isPhone = computed(() => $q.screen.xs);
 const isCompact = computed(() => $q.screen.lt.md);
 
-const tableColumns = computed(() =>
-    isCompact.value
-        ? // `required` columns cannot be hidden by `visible-columns`
-          explorerPageTableColumns.map((column) => ({
-              ...column,
-              required: false,
-          }))
-        : explorerPageTableColumns,
-);
-
-const visibleColumns = computed(() =>
-    isCompact.value
-        ? ['star', 'name', 'description', 'nrOfMissions', 'project-action']
-        : undefined,
-);
+const columnLayout = useTableColumns('projects', explorerPageTableColumns, {
+    compact: isCompact,
+    compactColumns: [
+        'star',
+        'name',
+        'description',
+        'nrOfMissions',
+        'project-action',
+    ],
+});
 
 const emptyStateLabel = computed(() => {
     switch (scope) {

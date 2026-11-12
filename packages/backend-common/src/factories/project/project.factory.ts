@@ -1,6 +1,6 @@
 import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.entity';
+import { MetadataTypeEntity } from '@backend-common/entities/metadata/metadata-type.entity';
 import { ProjectEntity } from '@backend-common/entities/project/project.entity';
-import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
 import { setSeederFactory } from 'typeorm-extension';
@@ -10,7 +10,7 @@ export interface ProjectContext {
     creator: UserEntity;
     allUsers: UserEntity[];
     allAccessGroups: AccessGroupEntity[];
-    tagTypes: TagTypeEntity[];
+    metadataTypes: MetadataTypeEntity[];
 }
 
 setSeederFactory(ProjectEntity, (context: Partial<ProjectContext> = {}) => {
@@ -27,14 +27,14 @@ setSeederFactory(ProjectEntity, (context: Partial<ProjectContext> = {}) => {
     project.creator = creator;
     project.description = extendedFaker.lorem.paragraph();
 
-    if (context.tagTypes === undefined)
+    if (context.metadataTypes === undefined)
         throw new Error('Metadata are undefined');
 
-    project.requiredTags = extendedFaker.helpers.arrayElements(
-        context.tagTypes,
+    project.requiredMetadataTypes = extendedFaker.helpers.arrayElements(
+        context.metadataTypes,
         {
             min: 0,
-            max: context.tagTypes.length,
+            max: context.metadataTypes.length,
         },
     );
 

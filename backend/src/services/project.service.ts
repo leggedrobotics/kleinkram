@@ -6,10 +6,12 @@ import {
     ProjectDto,
     ProjectsDto,
     ProjectStarDto,
-    ProjectWithRequiredTagsDto,
+    ProjectWithRequiredMetadataTypesDto,
     ResentProjectDto,
     SortOrder,
+    UpdateProject,
 } from '@kleinkram/api-dto';
+import { getNameValidationError } from '@kleinkram/validation';
 import {
     BadRequestException,
     ConflictException,
@@ -25,7 +27,10 @@ import {
     Repository,
     SelectQueryBuilder,
 } from 'typeorm';
-import { assertValidPublicAccessRights } from './public-access';
+import {
+    assertGrantableAccessRights,
+    assertValidPublicAccessRights,
+} from './public-access';
 import { UserService } from './user.service';
 
 import {
@@ -37,18 +42,18 @@ import {
 import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
     projectEntityToDto,
-    projectEntityToDtoWithMissionCountAndTags,
-    projectEntityToDtoWithRequiredTags,
+    projectEntityToDtoWithMissionCountAndMetadataTypes,
+    projectEntityToDtoWithRequiredMetadataTypes,
 } from '@/serialization';
 import {
     AccessGroupEntity,
     CategoryEntity,
+    MetadataTypeEntity,
     MissionEntity,
     ProjectAccessEntity,
     ProjectAccessViewEntity,
     ProjectEntity,
     ProjectStarEntity,
-    TagTypeEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
 import {
@@ -96,8 +101,8 @@ export class ProjectService {
         private userService: UserService,
         @InjectRepository(ProjectAccessEntity)
         private projectAccessRepository: Repository<ProjectAccessEntity>,
-        @InjectRepository(TagTypeEntity)
-        private tagTypeRepository: Repository<TagTypeEntity>,
+        @InjectRepository(MetadataTypeEntity)
+        private metadataTypeRepository: Repository<MetadataTypeEntity>,
         @InjectRepository(AccessGroupEntity)
         private accessGroupRepository: Repository<AccessGroupEntity>,
         @InjectRepository(ProjectStarEntity)
@@ -345,7 +350,10 @@ export class ProjectService {
         let query = this.projectRepository
             .createQueryBuilder('project')
             .leftJoinAndSelect('project.creator', 'creator')
-            .leftJoinAndSelect('project.requiredTags', 'requiredTags');
+            .leftJoinAndSelect(
+                'project.requiredMetadataTypes',
+                'requiredMetadataTypes',
+            );
 
         query = addAccessConstraintsToProjectQuery(query, userUuid);
 
@@ -409,7 +417,8 @@ export class ProjectService {
 
         return {
             data: projects.map((element) => {
-                const dto = projectEntityToDtoWithMissionCountAndTags(element);
+                const dto =
+                    projectEntityToDtoWithMissionCountAndMetadataTypes(element);
                 dto.size = sizes.get(element.uuid) ?? 0;
                 dto.missionCount = missionCounts.get(element.uuid) ?? 0;
                 dto.isStarred = starredUuids.has(element.uuid);
@@ -425,12 +434,15 @@ export class ProjectService {
     async findOne(
         uuid: string,
         userUuid?: string,
-    ): Promise<ProjectWithRequiredTagsDto> {
+    ): Promise<ProjectWithRequiredMetadataTypesDto> {
         const missionPromise = this.projectRepository
             .createQueryBuilder('project')
             .where('project.uuid = :uuid', { uuid })
             .leftJoinAndSelect('project.creator', 'creator')
-            .leftJoinAndSelect('project.requiredTags', 'requiredTags')
+            .leftJoinAndSelect(
+                'project.requiredMetadataTypes',
+                'requiredMetadataTypes',
+            )
             .leftJoinAndSelect('project.project_accesses', 'project_accesses')
             .leftJoinAndSelect('project_accesses.accessGroup', 'accessGroup')
             .leftJoinAndSelect('accessGroup.memberships', 'memberships')
@@ -455,7 +467,10 @@ export class ProjectService {
                 ? new Set<string>()
                 : await this._getStarredProjectUuids([uuid], userUuid);
 
-        const dto = projectEntityToDtoWithRequiredTags(mission, missionCount);
+        const dto = projectEntityToDtoWithRequiredMetadataTypes(
+            mission,
+            missionCount,
+        );
         dto.size = sizes.get(uuid) ?? 0;
         dto.isStarred = starredUuids.has(uuid);
         dto.isPublic = publicUuids.has(uuid);
@@ -568,7 +583,7 @@ export class ProjectService {
                     '        "project"."deletedAt" IS NULL\n' +
                     '        )\n' +
                     'ORDER BY\n' +
-                    '    "latestUpdate" DESC\n' +
+                    '    "latestUpdate" DESC NULLS LAST\n' +
                     'LIMIT $1',
                 [take],
             );
@@ -622,9 +637,10 @@ export class ProjectService {
                     '   (\n' +
                     '      "projectAccessView"."rights" >= $1 \n' +
                     '      AND "projectAccessView"."useruuid" = $2 \n' +
+                    '      AND "project"."deletedAt" IS NULL \n' +
                     '   )\n' +
                     'ORDER BY\n' +
-                    '   "latestUpdate" DESC \n' +
+                    '   "latestUpdate" DESC NULLS LAST \n' +
                     'LIMIT $3',
                 [AccessGroupRights.READ, user.uuid, take],
             );
@@ -650,11 +666,6 @@ export class ProjectService {
                         createdAt: project.project_createdAt as Date,
                     };
                 })
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, unicorn/no-array-sort
-                .sort(
-                    (a: ResentProjectDto, b: ResentProjectDto) =>
-                        b.updatedAt.getTime() - a.updatedAt.getTime(),
-                )
         );
     }
 
@@ -674,6 +685,7 @@ export class ProjectService {
         // checked up front: errors of the access group creation below are
         // reported as invalid uuids
         for (const accessGroup of project.accessGroups ?? []) {
+            assertGrantableAccessRights(accessGroup.rights);
             if ('accessGroupUUID' in accessGroup) {
                 assertValidPublicAccessRights(
                     accessGroup.accessGroupUUID,
@@ -700,11 +712,14 @@ export class ProjectService {
             .map((ag) => ag.accessGroup)
             .filter((ag) => ag !== undefined);
 
-        project.requiredTags ??= [];
-        const tagTypes = await Promise.all(
-            project.requiredTags.map((tag) => {
-                return this.tagTypeRepository.findOneOrFail({
-                    where: { uuid: tag },
+        // `requiredTags` is a deprecated alias kept for old clients; the
+        // canonical field wins when both are given.
+        const requiredMetadataTypeUUIDs =
+            project.requiredMetadataTypes ?? project.requiredTags ?? [];
+        const requiredMetadataTypes = await Promise.all(
+            requiredMetadataTypeUUIDs.map((metadataTypeUUID) => {
+                return this.metadataTypeRepository.findOneOrFail({
+                    where: { uuid: metadataTypeUUID },
                 });
             }),
         );
@@ -712,7 +727,7 @@ export class ProjectService {
             name: project.name,
             description: project.description,
             creator: creator,
-            requiredTags: tagTypes,
+            requiredMetadataTypes,
         });
 
         const accessGroupsDefaultIds = new Set(
@@ -770,7 +785,19 @@ export class ProjectService {
         return projectEntityToDto(createdProject);
     }
 
-    async update(uuid: string, project: CreateProject): Promise<ProjectDto> {
+    async update(uuid: string, project: UpdateProject): Promise<ProjectDto> {
+        // names from before the naming rules are kept until they are changed
+        const current = await this.projectRepository.findOneOrFail({
+            where: { uuid },
+        });
+        if (project.name !== current.name) {
+            const nameError = getNameValidationError(
+                project.name,
+                'Project name',
+            );
+            if (nameError) throw new BadRequestException(nameError);
+        }
+
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name), uuid: Not(uuid) },
         });
@@ -793,40 +820,49 @@ export class ProjectService {
         return projectEntityToDto(updatedProject);
     }
 
-    async addTagType(uuid: string, tagTypeUUID: string): Promise<void> {
+    async addMetadataType(
+        uuid: string,
+        metadataTypeUUID: string,
+    ): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
         });
-        const tagType = await this.tagTypeRepository.findOneOrFail({
-            where: { uuid: tagTypeUUID },
+        const metadataType = await this.metadataTypeRepository.findOneOrFail({
+            where: { uuid: metadataTypeUUID },
         });
-        project.requiredTags.push(tagType);
+        project.requiredMetadataTypes.push(metadataType);
         await this.projectRepository.save(project);
     }
 
-    async updateTagTypes(uuid: string, tagTypeUUIDs: string[]): Promise<void> {
+    async updateMetadataTypes(
+        uuid: string,
+        metadataTypeUUIDs: string[],
+    ): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
             relations: {
-                requiredTags: true,
+                requiredMetadataTypes: true,
             },
         });
-        project.requiredTags = await Promise.all(
-            tagTypeUUIDs.map((tag) => {
-                return this.tagTypeRepository.findOneOrFail({
-                    where: { uuid: tag },
+        project.requiredMetadataTypes = await Promise.all(
+            metadataTypeUUIDs.map((metadataTypeUUID) => {
+                return this.metadataTypeRepository.findOneOrFail({
+                    where: { uuid: metadataTypeUUID },
                 });
             }),
         );
         await this.projectRepository.save(project);
     }
 
-    async removeTagType(uuid: string, tagTypeUUID: string): Promise<void> {
+    async removeMetadataType(
+        uuid: string,
+        metadataTypeUUID: string,
+    ): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
         });
-        project.requiredTags = project.requiredTags.filter(
-            (tagType) => tagType.uuid !== tagTypeUUID,
+        project.requiredMetadataTypes = project.requiredMetadataTypes.filter(
+            (metadataType) => metadataType.uuid !== metadataTypeUUID,
         );
         await this.projectRepository.save(project);
     }

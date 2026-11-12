@@ -1,23 +1,28 @@
-import { FileSource } from '@kleinkram/shared';
+import { FileSource, MAX_FILES_PER_UPLOAD_REQUEST } from '@kleinkram/shared';
 import { IsNoValidUUID, IsValidFileName } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
 import {
+    ArrayMaxSize,
     IsArray,
     IsEnum,
+    IsInt,
     IsNotEmpty,
-    IsNumber,
     IsOptional,
     IsString,
     IsUUID,
+    Min,
 } from 'class-validator';
 
 export class TemporaryAccessRequestDto {
+    @IsArray()
+    @ArrayMaxSize(MAX_FILES_PER_UPLOAD_REQUEST)
     @IsString({ each: true })
     @IsNotEmpty({ each: true })
     @IsNoValidUUID({ each: true })
     @IsValidFileName({ each: true })
     @ApiProperty({
         description: 'Filenames for which to generate temporary access',
+        maxItems: MAX_FILES_PER_UPLOAD_REQUEST,
     })
     filenames!: string[];
 
@@ -37,14 +42,17 @@ export class TemporaryAccessRequestDto {
     })
     source?: FileSource;
 
-    @IsNumber({}, { each: true })
+    @IsInt({ each: true })
+    @Min(0, { each: true })
     @IsArray()
+    @ArrayMaxSize(MAX_FILES_PER_UPLOAD_REQUEST)
     @IsOptional()
     @ApiProperty({
         description:
             'Sizes of the files in bytes matching the order of filenames',
         required: false,
         type: [Number],
+        maxItems: MAX_FILES_PER_UPLOAD_REQUEST,
     })
     fileSizes?: number[];
 }

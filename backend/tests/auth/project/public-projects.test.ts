@@ -137,7 +137,7 @@ const getAccessGroupUuids = async (
 
 const createProject = (owner: UserEntity, name: string): Promise<string> =>
     createProjectUsingPost(
-        { name, description: 'Public project test', requiredTags: [] },
+        { name, description: 'Public project test', requiredMetadataTypes: [] },
         owner,
     );
 
@@ -164,8 +164,8 @@ describe('Public projects', () => {
             {
                 name: 'public_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             owner,
         );
@@ -226,7 +226,7 @@ describe('Public projects', () => {
             body: JSON.stringify({
                 name: 'intruder_mission',
                 projectUUID: projectUuid,
-                tags: {},
+                metadata: {},
             }),
         });
         expect(createMission.status).toBe(403);
@@ -342,7 +342,7 @@ describe('Public projects', () => {
             body: JSON.stringify({
                 name: 'public_write_on_create',
                 description: 'must be rejected',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         accessGroupUUID: PUBLIC_ACCESS_GROUP.uuid,

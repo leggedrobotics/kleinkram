@@ -25,7 +25,7 @@ describe('Trigger Validation Tests', () => {
             {
                 name: 'test_project',
                 description: 'desc',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [],
             },
             user,
@@ -35,15 +35,15 @@ describe('Trigger Validation Tests', () => {
             {
                 name: 'test_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         );
 
         templateUuid = await createActionUsingPost(
             {
-                name: 'Test Action',
+                name: 'Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -69,7 +69,7 @@ describe('Trigger Validation Tests', () => {
 
     test('should allow creating TIME trigger with valid cron', async () => {
         const response = await createTrigger({
-            name: 'Valid Time Trigger',
+            name: 'Valid-Time-Trigger',
             description: 'Valid time trigger description',
             type: TriggerType.TIME,
             missionUuid,
@@ -81,7 +81,7 @@ describe('Trigger Validation Tests', () => {
 
     test('should fail creating TIME trigger with invalid cron', async () => {
         const response = await createTrigger({
-            name: 'Invalid Time Trigger',
+            name: 'Invalid-Time-Trigger',
             description: 'Invalid time trigger description',
             type: TriggerType.TIME,
             missionUuid,
@@ -95,7 +95,7 @@ describe('Trigger Validation Tests', () => {
 
     test('should allow creating FILE trigger with valid patterns', async () => {
         const response = await createTrigger({
-            name: 'Valid File Trigger',
+            name: 'Valid-File-Trigger',
             description: 'Valid file trigger description',
             type: TriggerType.FILE,
             missionUuid,
@@ -107,7 +107,7 @@ describe('Trigger Validation Tests', () => {
 
     test('should fail creating FILE trigger with empty patterns', async () => {
         const response = await createTrigger({
-            name: 'Empty Patterns File Trigger',
+            name: 'Empty-Patterns-File-Trigger',
             description: 'Empty patterns description',
             type: TriggerType.FILE,
             missionUuid,
@@ -124,7 +124,7 @@ describe('Trigger Validation Tests', () => {
 
     test('should fail creating FILE trigger with invalid pattern types', async () => {
         const response = await createTrigger({
-            name: 'Invalid Pattern Type File Trigger',
+            name: 'Invalid-Pattern-Type-File-Trigger',
             description: 'Invalid pattern type description',
             type: TriggerType.FILE,
             missionUuid,
@@ -143,7 +143,7 @@ describe('Trigger Validation Tests', () => {
 
     test('should fail creating FILE trigger with empty pattern strings', async () => {
         const response = await createTrigger({
-            name: 'Empty Pattern String File Trigger',
+            name: 'Empty-Pattern-String-File-Trigger',
             description: 'Empty pattern string description',
             type: TriggerType.FILE,
             missionUuid,

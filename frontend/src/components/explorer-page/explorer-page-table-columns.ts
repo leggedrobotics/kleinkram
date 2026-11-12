@@ -1,18 +1,20 @@
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type {
+    MetadataDto,
+    MetadataTypeDto,
+} from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import { DataType, safeLinkUrl } from '@kleinkram/shared';
 import { formatDate } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 
 import type { ProjectWithAccessRightsDto } from '@kleinkram/api-dto/types/project/project-access.dto';
 import type { ProjectWithMissionCountDto } from '@kleinkram/api-dto/types/project/project-with-mission-count.dto';
+import type { ConfigurableColumn } from 'src/composables/use-table-columns';
 
-export interface ProjectColumnType {
-    name: string;
+export interface ProjectColumnType extends ConfigurableColumn {
     required?: boolean;
-    label: string;
     align: string;
-    classes?: string;
-    headerClasses?: string;
     field?:
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: ProjectWithMissionCountDto) => any)
@@ -23,8 +25,9 @@ export interface ProjectColumnType {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: FileWithTopicDto) => any);
     format?: ((value: string) => string) | ((value: number) => string);
+    /** Set on the per-metadata-type columns of the missions table. */
+    metadataType?: MetadataTypeDto;
     sortable?: boolean;
-    style?: string;
     sort?: (
         _a: string,
         _b: string,
@@ -36,6 +39,7 @@ export interface ProjectColumnType {
 export const explorerPageTableColumns: ProjectColumnType[] = [
     {
         name: 'star',
+        configurable: false,
         required: true,
         label: '',
         align: 'center',
@@ -43,6 +47,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
     },
     {
         name: 'name',
+        alwaysVisible: true,
         required: true,
         label: 'Project Name',
         align: 'left',
@@ -73,6 +78,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
     },
     {
         name: 'createdAt',
+        classes: 'kk-nowrap',
         required: true,
         label: 'Created',
         align: 'left',
@@ -105,6 +111,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
     },
     {
         name: 'project-action',
+        configurable: false,
         label: '',
         style: 'width: 10px',
         align: 'center',
@@ -133,6 +140,7 @@ export const projectAccessColumns: ProjectColumnType[] = [
     },
     {
         name: 'createdAt',
+        classes: 'kk-nowrap',
         required: true,
         label: 'Created',
         align: 'left',
@@ -142,6 +150,7 @@ export const projectAccessColumns: ProjectColumnType[] = [
     },
     {
         name: 'project-action',
+        configurable: false,
         label: '',
         style: 'width: 10px',
         align: 'center',
@@ -151,14 +160,16 @@ export const projectAccessColumns: ProjectColumnType[] = [
 export const missionColumns: ProjectColumnType[] = [
     {
         name: 'name',
+        alwaysVisible: true,
         required: true,
         label: 'Mission',
         align: 'left',
         field: (row: FlatMissionDto) => row.name,
         format: (value: string) => value,
+        sortable: true,
     },
     {
-        name: 'NrOfFiles',
+        name: 'filesCount',
         required: true,
         label: '# Files',
         align: 'right',
@@ -166,6 +177,7 @@ export const missionColumns: ProjectColumnType[] = [
         headerClasses: 'kk-num',
         field: (row: FlatMissionDto) => row.filesCount,
         format: (value: number) => value.toString(),
+        sortable: true,
     },
     {
         name: 'creator',
@@ -175,26 +187,29 @@ export const missionColumns: ProjectColumnType[] = [
         field: (row: FlatMissionDto) => row.creator.name,
         format: (value: number) => value.toString(),
         style: 'min-width: 100px',
-        sortable: false,
+        sortable: true,
     },
     {
-        name: 'Created',
+        name: 'createdAt',
+        classes: 'kk-nowrap',
         required: true,
         label: 'Creation Date',
         align: 'left',
         field: (row: FlatMissionDto) => row.createdAt,
         format: (value: string) => formatDate(new Date(value)),
+        sortable: true,
     },
     {
-        name: 'tagverification',
+        name: 'missingMetadata',
         required: true,
         label: 'Metadata Verification',
         align: 'left',
         style: 'min-width: 180px',
+        sortable: true,
     },
 
     {
-        name: 'Size',
+        name: 'size',
         required: true,
         label: 'Size',
         align: 'right',
@@ -202,15 +217,88 @@ export const missionColumns: ProjectColumnType[] = [
         headerClasses: 'kk-num',
         field: (row: FlatMissionDto) => row.size,
         format: formatSize,
+        sortable: true,
     },
 
     {
         name: 'missionaction',
+        configurable: false,
         label: '',
         style: 'width: 10px',
         align: 'center',
     },
 ];
+
+function formatMetadataValue(
+    value: MetadataDto['value'],
+    datatype: DataType,
+): string {
+    // Values are typed as always set, but come straight from user input
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (value === null || value === undefined || value === '') return '';
+    switch (datatype) {
+        case DataType.DATE: {
+            const date = new Date(value as string);
+            return Number.isNaN(date.getTime()) ? '' : formatDate(date);
+        }
+        case DataType.BOOLEAN: {
+            return value ? 'Yes' : 'No';
+        }
+        default: {
+            return String(value);
+        }
+    }
+}
+
+const findMetadata = (
+    row: FlatMissionDto,
+    name: string,
+): MetadataDto | undefined =>
+    row.metadata.find((candidate) => candidate.type.name === name);
+
+/**
+ * The URL to link a mission's metadata value to, if it is a LINK and safe to
+ * open. Decided per value: types sharing a name can differ in datatype, and
+ * metadata values are user input, so `javascript:` and friends must never
+ * reach an `href`.
+ */
+export function metadataHref(
+    row: FlatMissionDto,
+    name: string,
+): string | undefined {
+    const metadata = findMetadata(row, name);
+    if (metadata?.type.datatype !== DataType.LINK) return undefined;
+    return safeLinkUrl(metadata.value);
+}
+
+/**
+ * An optional missions-table column showing the value of one metadata type.
+ *
+ * Keyed by the type's name rather than its uuid: several types can share a
+ * name, and a column like "location" should mean the same thing in every
+ * project. Not sortable, as missions are paged on the server, which cannot
+ * order by metadata values yet.
+ */
+export function missionMetadataColumn(
+    metadataType: MetadataTypeDto,
+): ProjectColumnType {
+    const isNumber = metadataType.datatype === DataType.NUMBER;
+    return {
+        name: `metadata:${metadataType.name}`,
+        label: metadataType.name,
+        align: isNumber ? 'right' : 'left',
+        ...(isNumber ? { classes: 'kk-num', headerClasses: 'kk-num' } : {}),
+        group: 'Metadata',
+        defaultHidden: true,
+        metadataType,
+        field: (row: FlatMissionDto) => {
+            const metadata = findMetadata(row, metadataType.name);
+            return metadata
+                ? formatMetadataValue(metadata.value, metadata.type.datatype)
+                : '';
+        },
+    };
+}
 
 export const fileColumns: ProjectColumnType[] = [
     {
@@ -223,6 +311,7 @@ export const fileColumns: ProjectColumnType[] = [
     },
     {
         name: 'filename',
+        alwaysVisible: true,
         required: true,
         label: 'File',
         align: 'left',
@@ -238,6 +327,7 @@ export const fileColumns: ProjectColumnType[] = [
     },
     {
         name: 'createdAt',
+        classes: 'kk-nowrap',
         required: true,
         label: 'Created',
         align: 'left',
@@ -265,6 +355,7 @@ export const fileColumns: ProjectColumnType[] = [
     },
     {
         name: 'fileaction',
+        configurable: false,
         required: true,
         label: '',
         style: 'width: 10px',

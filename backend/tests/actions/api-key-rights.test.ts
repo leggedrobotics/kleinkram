@@ -75,7 +75,7 @@ describe('Verify Action Access Rights', () => {
             {
                 name: 'rights_test_project',
                 description: 'Project for rights testing',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.DELETE, // User has full rights
@@ -114,8 +114,8 @@ describe('Verify Action Access Rights', () => {
             {
                 name: 'rights_test_mission',
                 projectUUID: globalThis.projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             globalThis.creator,

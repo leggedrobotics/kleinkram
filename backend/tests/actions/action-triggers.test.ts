@@ -32,7 +32,7 @@ describe('Action Triggers CRUD Tests', () => {
         // Create Action Template
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Trigger Test Action',
+                name: 'Trigger-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -46,7 +46,7 @@ describe('Action Triggers CRUD Tests', () => {
 
         // 1. Create a trigger
         const createDto: CreateActionTriggerDto = {
-            name: 'Test File Trigger',
+            name: 'Test-File-Trigger',
             description: 'Triggers on file upload',
             missionUuid,
             templateUuid,
@@ -73,6 +73,8 @@ describe('Action Triggers CRUD Tests', () => {
         expect(createdTrigger.name).toBe(createDto.name);
         expect(createdTrigger.type).toBe(createDto.type);
         expect(createdTrigger.uuid).toBeDefined();
+        expect(new Date(createdTrigger.createdAt).getTime()).not.toBeNaN();
+        expect(new Date(createdTrigger.updatedAt).getTime()).not.toBeNaN();
 
         const triggerUuid = createdTrigger.uuid;
 
@@ -94,7 +96,7 @@ describe('Action Triggers CRUD Tests', () => {
 
         // 3. Update trigger
         const updateDto: UpdateActionTriggerDto = {
-            name: 'Updated File Trigger',
+            name: 'Updated-File-Trigger',
             config: {
                 patterns: ['*.png', '*.jpg'],
                 event: [TriggerEvent.UPLOAD, TriggerEvent.RENAME],
@@ -118,6 +120,9 @@ describe('Action Triggers CRUD Tests', () => {
         const updatedTrigger: ActionTriggerDto =
             (await updateResponse.json()) as ActionTriggerDto;
         expect(updatedTrigger.name).toBe(updateDto.name);
+        expect(new Date(updatedTrigger.updatedAt).getTime()).toBeGreaterThan(
+            new Date(createdTrigger.updatedAt).getTime(),
+        );
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
         expect((updatedTrigger.config as any).patterns).toContain('*.png');
 
@@ -166,7 +171,7 @@ describe('Action Triggers CRUD Tests', () => {
         // Create an action template
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Another Trigger Action',
+                name: 'Another-Trigger-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -179,7 +184,7 @@ describe('Action Triggers CRUD Tests', () => {
         );
 
         const createDto: CreateActionTriggerDto = {
-            name: 'Another Test Trigger',
+            name: 'Another-Test-Trigger',
             description: 'desc',
             missionUuid: creatorEnvironment.missionUuid,
             templateUuid,

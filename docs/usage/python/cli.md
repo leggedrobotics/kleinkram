@@ -25,6 +25,10 @@ All commands follow the same conventions:
 
 - **The thing a command acts on is a positional argument**, for example the mission in `klein mission info <mission>`
   or the files in `klein upload <files>...`.
+- **Options can go before or after the files.** `klein upload -p p -m m data.mcap` and
+  `klein upload data.mcap -p p -m m` do the same. To pass a file whose name starts with `-`, put `--` before it:
+  everything after `--` is a file, e.g. `klein upload -p p -m m --fix-filenames -- -weird-name.mcap` (a name in a
+  mission must not start with `-`, so `--fix-filenames` uploads it as `_weird-name.mcap`).
 - **The scope is given with flags.** A mission always belongs to a project, so `--project` (`-p`) narrows down
   which mission you mean, and `--mission` (`-m`) narrows down which file you mean.
 - **Projects, missions and templates can be given by name or by ID.** Wherever a command expects one, both work.
@@ -36,6 +40,56 @@ All commands follow the same conventions:
 ```bash
 klein mission info testMission -p testProject
 klein file delete data.bag -p testProject -m testMission --yes
+```
+
+## Global Options
+
+These options go before the command, e.g. `klein --no-verbose file list -m testMission`.
+
+| Option                | Effect                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--no-verbose`        | Output for scripts: `list` commands print one ID per line instead of a table, `info` commands print JSON, `upload` and `download` show no progress bars, and errors are shorter. When listing files, files that are not in the `OK` state are printed to stderr instead of stdout. `upload`, `download` and `verify` still print every problem on stderr, and their exit code does not change (see [Exit Codes](#exit-codes)). |
+| `--max-lines <n>`     | Maximum number of rows in a table. `-1` prints all rows.                                                                                                                                                                                                                                                                                                                                                                       |
+| `--debug`             | Show the Python traceback when a command fails, and write the log file at `DEBUG` level.                                                                                                                                                                                                                                                                                                                                       |
+| `--log-level <level>` | Log level for the log file (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`). Each run writes a log file to `~/.local/state/kleinkram/` (on Windows `%LOCALAPPDATA%\kleinkram`).                                                                                                                                                                                                                                               |
+| `--version`, `-v`     | Print the CLI version.                                                                                                                                                                                                                                                                                                                                                                                                         |
+
+```bash
+# the IDs of all bag files in a mission, for use in a script
+klein --no-verbose file list -p testProject -m testMission "*.bag"
+```
+
+## Exit Codes
+
+`upload`, `download` and `verify` process every file, report each problem on stderr, and then exit with a code that
+says whether everything you asked for happened, like `cp`, `rsync` or `sha256sum -c`. The exit code is the same with
+and without `--no-verbose`; that option only changes how much is printed.
+
+| Code  | Meaning                                                                                                  |
+| ----- | -------------------------------------------------------------------------------------------------------- |
+| `0`   | Every requested file was handled.                                                                        |
+| `1`   | At least one requested file was not uploaded, downloaded or verified; each one is named on stderr.       |
+| `2`   | The command line is wrong (unknown option, missing argument).                                            |
+| `130` | Interrupted with Ctrl+C. Uploads and downloads that were running are cancelled; finished files are kept. |
+
+What counts as handled:
+
+- **`upload`**: the file is in the mission, either uploaded now or already there with the same content. A file whose
+  upload failed, or whose name is taken by a file with different content (or content that cannot be compared yet), is
+  not.
+- **`download`**: the file is in the destination, either downloaded now or already there with the right hash. Files
+  that are skipped because a local file with the same name differs (use `--overwrite`), because the remote file is
+  corrupted (use `--include-corrupt-files`) or not in a downloadable state, or that fail the hash check, are not. Non-`.mcap`
+  files skipped by `--topics` / `--start-time` / `--end-time` only get a warning.
+- **`verify`**: the file is in the mission with the same size and hash. A file that is still being uploaded or
+  processed is not verified yet: run `klein verify` again later.
+
+Files left out on purpose with `--skip` do not change the exit code.
+
+```bash
+# stop a script if anything did not make it
+klein --no-verbose upload -p testProject -m testMission -r ./recordings || exit 1
+klein --no-verbose verify -p testProject -m testMission -r ./recordings || exit 1
 ```
 
 ## Core Workflows
@@ -87,6 +141,48 @@ You can also use glob patterns and wildcards to upload multiple files efficientl
 klein upload --project testProject --mission testMission *.bag
 ```
 
+To upload files from subdirectories, pass a directory with `--recursive` (`-r`). The CLI collects every file with a
+supported type below it and ignores everything else (including hidden files and directories):
+
+```bash
+klein upload --project testProject --mission testMission --recursive ./recordings
+```
+
+Or pass a **quoted** `**` pattern, which the CLI expands itself:
+
+```bash
+klein upload --project testProject --mission testMission '**/*.mcap'
+```
+
+::: warning Quote `**` patterns
+Shells handle `**` differently. zsh and fish match files at every depth. bash (without `shopt -s globstar`), sh and
+PowerShell on Linux / macOS treat `**` like `*`, so they match only one directory level and silently miss deeper
+files. PowerShell and cmd on Windows don't expand wildcards at all. Quoting the pattern, or using `--recursive`, gives
+the same result in every shell.
+:::
+
+Kleinkram stores files flat in a mission, under their file name only. If two of the selected files have the same
+name (e.g. `run1/data.mcap` and `run2/data.mcap`), the upload is refused before anything is sent.
+
+`klein verify` accepts the same directories, `--recursive` and patterns.
+
+To see what an upload would do before running it, add `--dry-run`. It runs the same checks as a real upload and lists
+every file with the name it gets in the mission, but uploads nothing and creates no mission:
+
+```bash
+klein upload --project testProject --mission testMission --dry-run --recursive ./recordings
+```
+
+With `--no-verbose`, the dry run prints one tab-separated line per file instead of the table (`<action>`,
+`<local path>`, `<name in mission>`), with the action being one of `upload`, `skip-same`, `skip-different` or
+`skip-unchecked`. Backslashes, tabs and line breaks in paths are escaped as `\\`, `\t`, `\n` and `\r`, so every file
+stays on one line.
+
+A file whose name is already used in the mission is always skipped, even if its content changed. The dry run compares
+the content and marks those files as `skip, name taken by a different file`. A real upload makes the same comparison
+afterwards: it lists such files as **NOT uploaded** and exits with code 1 (see [Exit Codes](#exit-codes)), so rename
+the local file or delete the file in the mission first.
+
 ::: tip Creating Missions on Upload
 To create a mission automatically during upload if it doesn't already exist, use the `--create` flag. Note that the target project must already exist.
 
@@ -95,6 +191,33 @@ klein upload --create --project testProject --mission testMission *.bag
 ```
 
 :::
+
+The other options of `upload`:
+
+| Option                      | Effect                                                                                                                                                                                                                                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--metadata <file>`         | A JSON or YAML file with the metadata of the mission, as `name: value` pairs. It is only used together with `--create`, when the mission is created; the metadata of an existing mission is not changed. To change it, use `klein mission update --metadata`.                                          |
+| `--ignore-missing-metadata` | Meant to create the mission (with `--create`) even if the project requires metadata that is not in `--metadata`. It currently has no effect: the CLI checks the required metadata itself before it creates the mission, so the upload still fails. Put all required metadata in the `--metadata` file. |
+| `--fix-filenames`           | Upload files whose names Kleinkram does not accept under a fixed name, instead of failing. The local files are not renamed. See below.                                                                                                                                                                 |
+| `--skip`, `-s`              | Skip files that cannot be uploaded (unsupported type, bad name, directories) instead of failing, and upload the rest.                                                                                                                                                                                  |
+
+File names follow the [naming rules](../getting-started.md#naming-rules): the part before the extension is 3 to 50
+characters of letters, digits, `.`, `_` and `-`, not starting with `.` or `-`, and the extension is lowercase. The CLI
+checks them before it uploads anything and says what is wrong. With `--fix-filenames`, files are uploaded under a
+valid name instead:
+
+- every other character, and a leading `.` or `-`, is replaced by `_`
+- the extension is lowercased: `REC.MCAP` becomes `REC.mcap`
+- a name longer than 50 characters is cut to 40 characters followed by 10 characters of a hash of the original name
+- a name shorter than 3 characters gets `_` and 4 characters of that hash appended: `a.bag` becomes `a_1fef.bag`
+
+The hash keeps names that start the same apart, and the same file always gets the same name. Use `--dry-run` to see
+the names before uploading.
+
+```bash
+# "run 1 (left).bag" is uploaded as "run_1__left_.bag"
+klein upload --create --metadata mission.yaml --fix-filenames -p testProject -m testMission "run 1 (left).bag"
+```
 
 ### Downloading Resources
 
@@ -113,6 +236,9 @@ klein download -p testProject -m testMission --dest ./downloaded_data --nested
 
 :::
 
+A file that already exists in the destination is kept if its hash matches. If it differs, it is skipped and the
+command exits with code 1; pass `--overwrite` to replace it. See [Exit Codes](#exit-codes).
+
 ### Verifying Resources
 
 Use the `verify` command to double-check if your local files were successfully uploaded and processed by the Kleinkram backend.
@@ -120,6 +246,10 @@ Use the `verify` command to double-check if your local files were successfully u
 ```bash
 klein verify --project testProject --mission testMission data.bag
 ```
+
+It exits with code 0 only if every file is in the mission with the same size and hash, and with 1 otherwise (see
+[Exit Codes](#exit-codes)). With `--no-verbose`, it prints the verified paths on stdout and every other file as
+`<status>: <path>` on stderr, e.g. `hash mismatch: data.bag` or `missing: data.bag`.
 
 ### Managing Projects, Missions and Files
 
@@ -179,10 +309,11 @@ See [Use Kleinkram Actions](../actions/use-actions.md) for the concepts behind t
 
 ```bash
 # templates, given by name (latest version) or ID
-klein template list
+klein template list                        # --all lists every version, not only the latest
 klein template create my-action --description "Extracts metadata" --docker-image rslethz/action:extract-metadata-latest
 klein template revisions my-action
 klein template create-version my-action --cpu-memory 4
+klein template delete my-action            # archived instead if it already has executions
 
 # executions
 klein execution launch my-action --project testProject --mission testMission
@@ -191,13 +322,28 @@ klein execution info <EXECUTION_ID>         # state, cause and number of finding
 klein execution diagnostics <EXECUTION_ID>  # every warning and error the action reported
 klein execution logs <EXECUTION_ID> --follow
 klein execution download <EXECUTION_ID> --output-dir ./artifacts --extract
+klein execution cancel <EXECUTION_ID>      # stop a pending or running execution
+klein execution delete <EXECUTION_ID>
 
 # triggers
 klein trigger create on-upload --template my-action --project testProject --mission testMission \
     --type FILE --file-patterns "*.bag" --file-events UPLOAD
+klein trigger create nightly --template my-action -p testProject -m testMission --type TIME --cron "0 0 * * *"
+klein trigger create from-ci --template my-action -p testProject -m testMission --type WEBHOOK
 klein trigger list --project testProject --mission testMission
+klein trigger info <TRIGGER_UUID>
+klein trigger update <TRIGGER_UUID> --type FILE --file-patterns "*.mcap" --file-events UPLOAD --file-events MOVE
 klein trigger delete <TRIGGER_UUID>
 ```
+
+`template create` and `create-version` take the resources of the action: `--cpu-cores`, `--cpu-memory` and
+`--gpu-memory` (in GB, `-1` for no GPU), `--max-runtime` (in minutes), `--access-rights` (`0` read, `10` create,
+`20` modify, `30` delete), and optionally `--command` and `--entrypoint`. `create-version` only changes the values you
+pass.
+
+A file trigger takes one or more `--file-patterns` (globs on the file name) and `--file-events` (`UPLOAD`, `RENAME`,
+`MOVE`, `DELETE`). A time trigger takes a `--cron` expression. `trigger update` needs `--type` whenever it changes
+these values. See [Action Triggers](../actions/triggers.md).
 
 ## Supported File Types
 

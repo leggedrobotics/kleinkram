@@ -133,8 +133,8 @@ describe('File Management Tests', () => {
             {
                 name: 'mission_2',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         );

@@ -4,8 +4,8 @@
         <div class="row q-gutter-x-sm items-center">
             <div class="col-grow">
                 <q-select
-                    v-model="selectedTagToAdd"
-                    :options="filteredTags"
+                    v-model="selectedMetadataTypeToAdd"
+                    :options="filteredMetadataTypes"
                     :placeholder="metadataPlaceholder"
                     option-label="name"
                     dense
@@ -16,13 +16,13 @@
                     input-debounce="0"
                     clearable
                     bg-color="white"
-                    @filter="filterTags"
-                    @update:model-value="addTagFilter"
+                    @filter="filterMetadataTypes"
+                    @update:model-value="addMetadataTypeFilter"
                 >
                     <template #no-option>
                         <q-item>
                             <q-item-section class="text-grey">
-                                No metadata tags found.
+                                No metadata types found.
                             </q-item-section>
                         </q-item>
                     </template>
@@ -32,7 +32,7 @@
 
         <!-- Active Metadata Filters -->
         <div
-            v-if="Object.keys(localTagValues).length === 0"
+            v-if="Object.keys(localMetadataValues).length === 0"
             class="text-grey-6 text-center q-pa-sm"
         >
             No metadata filters active.
@@ -40,16 +40,16 @@
 
         <div v-else class="column q-gutter-y-sm">
             <div
-                v-for="tagTypeUUID in Object.keys(localTagValues)"
-                :key="tagTypeUUID"
+                v-for="metadataTypeUUID in Object.keys(localMetadataValues)"
+                :key="metadataTypeUUID"
                 class="row items-start q-gutter-x-sm bg-grey-1 q-pa-sm rounded-borders"
             >
                 <div class="col-grow">
                     <MetadataFilterInput
-                        :tag-type-uuid="tagTypeUUID"
-                        :tag-lookup="tagLookup"
-                        :tag-values="localTagValues"
-                        @update:tag-values="updateLocalTagValues"
+                        :metadata-type-uuid="metadataTypeUUID"
+                        :metadata-type-lookup="metadataTypeLookup"
+                        :metadata-values="localMetadataValues"
+                        @update:metadata-values="updateLocalMetadataValues"
                     />
                 </div>
                 <div class="col-auto">
@@ -60,7 +60,7 @@
                         color="negative"
                         aria-label="Remove metadata filter"
                         class="remove-metadata-filter"
-                        @click="() => removeTag(tagTypeUUID)"
+                        @click="() => removeMetadataType(metadataTypeUUID)"
                     />
                 </div>
             </div>
@@ -69,9 +69,9 @@
 </template>
 
 <script setup lang="ts">
-import type { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import type { MetadataTypeDto } from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import MetadataFilterInput from 'components/metadata-filter-input.vue';
-import { useAllTags } from 'src/hooks/query-hooks';
+import { useAllMetadataTypes } from 'src/hooks/query-hooks';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
@@ -87,98 +87,106 @@ const emit = defineEmits<
     ) => void
 >();
 
-const { data: allTags } = useAllTags();
+const { data: allMetadataTypes } = useAllMetadataTypes();
 
 // Local state to manage the UI before emitting
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const localTagValues = ref<Record<string, { value: any; name: string }>>({});
+const localMetadataValues = ref<Record<string, { value: any; name: string }>>(
+    {},
+);
 
 watch(
     () => props.modelValue,
     (value) => {
         // Deep sync needed to keep local state consistent with props
-        localTagValues.value = { ...value };
+        localMetadataValues.value = { ...value };
     },
     { immediate: true, deep: true },
 );
 
-function updateLocalTagValues(
+function updateLocalMetadataValues(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     newVals: Record<string, { value: any; name: string }>,
 ) {
-    localTagValues.value = newVals;
-    emit('update:modelValue', localTagValues.value);
+    localMetadataValues.value = newVals;
+    emit('update:modelValue', localMetadataValues.value);
 }
 
-function removeTag(uuid: string) {
-    const { [uuid]: _removed, ...rest } = localTagValues.value;
-    updateLocalTagValues(rest);
+function removeMetadataType(uuid: string) {
+    const { [uuid]: _removed, ...rest } = localMetadataValues.value;
+    updateLocalMetadataValues(rest);
 }
 
-// --- Tag Search ---
-const selectedTagToAdd = ref<TagTypeDto | null>(null);
-const filteredTags = ref<TagTypeDto[]>([]);
+// --- Metadata Type Search ---
+const selectedMetadataTypeToAdd = ref<MetadataTypeDto | null>(null);
+const filteredMetadataTypes = ref<MetadataTypeDto[]>([]);
 
-function filterTags(value: string, update: (function_: () => void) => void) {
-    if (!allTags.value) {
+function filterMetadataTypes(
+    value: string,
+    update: (function_: () => void) => void,
+) {
+    if (!allMetadataTypes.value) {
         update(() => {
-            filteredTags.value = [];
+            filteredMetadataTypes.value = [];
         });
         return;
     }
     update(() => {
         const needle = value.toLowerCase();
-        // available = all tags NOT yet in localTagValues
-        const available = allTags.value.filter(
-            (t) => !localTagValues.value[t.uuid],
+        // available = all metadata types NOT yet in localMetadataValues
+        const available = allMetadataTypes.value.filter(
+            (t) => !localMetadataValues.value[t.uuid],
         );
 
         // Deduplicate suggestions by name
         const seenNames = new Set<string>();
-        const uniqueTags: TagTypeDto[] = [];
+        const uniqueMetadataTypes: MetadataTypeDto[] = [];
 
-        for (const tag of available) {
+        for (const metadataType of available) {
             if (
-                tag.name.toLowerCase().includes(needle) &&
-                !seenNames.has(tag.name)
+                metadataType.name.toLowerCase().includes(needle) &&
+                !seenNames.has(metadataType.name)
             ) {
-                uniqueTags.push(tag);
-                seenNames.add(tag.name);
+                uniqueMetadataTypes.push(metadataType);
+                seenNames.add(metadataType.name);
             }
         }
 
-        filteredTags.value = uniqueTags;
+        filteredMetadataTypes.value = uniqueMetadataTypes;
     });
 }
 
-function addTagFilter(selectedTag: TagTypeDto | null) {
-    if (!selectedTag || !allTags.value) return;
+function addMetadataTypeFilter(selectedMetadataType: MetadataTypeDto | null) {
+    if (!selectedMetadataType || !allMetadataTypes.value) return;
 
     // We must use a new object reference to trigger reactivity
-    const newVals = { ...localTagValues.value };
+    const newVals = { ...localMetadataValues.value };
 
-    // Find ALL tags with the same name as the selected one (ignoring case)
-    const matchingTags = allTags.value.filter(
-        (t) => t.name.toLowerCase() === selectedTag.name.toLowerCase(),
+    // Find ALL metadata types with the same name as the selected one (ignoring case)
+    const matchingMetadataTypes = allMetadataTypes.value.filter(
+        (t) => t.name.toLowerCase() === selectedMetadataType.name.toLowerCase(),
     );
 
     // Add all of them
-    for (const tag of matchingTags) {
+    for (const metadataType of matchingMetadataTypes) {
         // Initialize with empty value if not already present
-        newVals[tag.uuid] ??= { name: tag.name, value: undefined };
+        newVals[metadataType.uuid] ??= {
+            name: metadataType.name,
+            value: undefined,
+        };
     }
 
-    updateLocalTagValues(newVals);
+    updateLocalMetadataValues(newVals);
 
     // Reset input
-    selectedTagToAdd.value = null;
+    selectedMetadataTypeToAdd.value = null;
 }
 
-// Tag Lookup for the Input Component
-const tagLookup = computed(() => {
-    const lookup: Record<string, TagTypeDto> = {};
-    for (const tag of allTags.value ?? []) {
-        lookup[tag.uuid] = tag;
+// Metadata Type Lookup for the Input Component
+const metadataTypeLookup = computed(() => {
+    const lookup: Record<string, MetadataTypeDto> = {};
+    for (const metadataType of allMetadataTypes.value ?? []) {
+        lookup[metadataType.uuid] = metadataType;
     }
     return lookup;
 });

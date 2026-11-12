@@ -31,7 +31,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
             {
                 name: 'another_project_for_sorting',
                 description: 'another desc',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             user,
         );
@@ -138,7 +138,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
             {
                 name: 'bigger_project',
                 description: 'holds the bigger file',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             user,
         );
@@ -146,8 +146,8 @@ describe('Comprehensive API Query Parameters Tests', () => {
             {
                 name: 'bigger_mission',
                 projectUUID: biggerProjectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         );
@@ -211,7 +211,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
         // a size of zero: paging has to stay stable despite the tie.
         for (const name of ['empty_project_a', 'empty_project_b']) {
             await createProjectUsingPost(
-                { name, description: 'no files', requiredTags: [] },
+                { name, description: 'no files', requiredMetadataTypes: [] },
                 user,
             );
         }
@@ -237,7 +237,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
             {
                 name: 'busy_project',
                 description: 'holds two missions',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             user,
         );
@@ -246,8 +246,8 @@ describe('Comprehensive API Query Parameters Tests', () => {
                 {
                     name,
                     projectUUID: busyProjectUuid,
-                    tags: {},
-                    ignoreTags: true,
+                    metadata: {},
+                    ignoreMissingMetadata: true,
                 },
                 user,
             );
@@ -294,7 +294,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
         // at a count of zero: paging has to stay stable despite the tie.
         for (const name of ['empty_project_a', 'empty_project_b']) {
             await createProjectUsingPost(
-                { name, description: 'no missions', requiredTags: [] },
+                { name, description: 'no missions', requiredMetadataTypes: [] },
                 user,
             );
         }
@@ -319,8 +319,8 @@ describe('Comprehensive API Query Parameters Tests', () => {
             {
                 name: 'another_mission_for_sorting',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         );

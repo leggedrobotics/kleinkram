@@ -1,8 +1,8 @@
 import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.entity';
 import { ProjectAccessEntity } from '@backend-common/entities/auth/project-access.entity';
+import { MetadataTypeEntity } from '@backend-common/entities/metadata/metadata-type.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@backend-common/entities/project/project.entity';
-import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { AccessGroupType } from '@kleinkram/shared';
 import { DataSource } from 'typeorm';
@@ -11,7 +11,7 @@ import { SeederFactoryManager } from 'typeorm-extension';
 export interface SeededProjects {
     createdProjects: ProjectEntity[];
     createdMissions: MissionEntity[];
-    tagTypes: TagTypeEntity[];
+    metadataTypes: MetadataTypeEntity[];
 }
 
 export const seedProjects = async (
@@ -24,28 +24,32 @@ export const seedProjects = async (
     // eslint-disable-next-line no-console
     console.log('2. Creating Projects and Missions...');
 
-    // 1.5 Create Tag Types
-    let tagTypes: TagTypeEntity[];
-    let existingTagTypes: TagTypeEntity[] = [];
-    const TAG_TYPE_COUNT = 10;
+    // 1.5 Create Metadata Types
+    let metadataTypes: MetadataTypeEntity[];
+    let existingMetadataTypes: MetadataTypeEntity[] = [];
+    const METADATA_TYPE_COUNT = 10;
 
     try {
-        existingTagTypes = await dataSource.getRepository(TagTypeEntity).find();
+        existingMetadataTypes = await dataSource
+            .getRepository(MetadataTypeEntity)
+            .find();
     } catch {
         // eslint-disable-next-line no-console
-        console.log('TagType table not found, will create tag types');
+        console.log('MetadataType table not found, will create metadata types');
     }
 
-    if (existingTagTypes.length >= TAG_TYPE_COUNT) {
+    if (existingMetadataTypes.length >= METADATA_TYPE_COUNT) {
         // eslint-disable-next-line no-console
-        console.log('Tag types already exist, skipping tag type creation');
-        tagTypes = existingTagTypes.slice(0, TAG_TYPE_COUNT);
+        console.log(
+            'Metadata types already exist, skipping metadata type creation',
+        );
+        metadataTypes = existingMetadataTypes.slice(0, METADATA_TYPE_COUNT);
     } else {
         // eslint-disable-next-line no-console
-        console.log('Creating tag types...');
-        tagTypes = await factoryManager
-            .get(TagTypeEntity)
-            .saveMany(TAG_TYPE_COUNT);
+        console.log('Creating metadata types...');
+        metadataTypes = await factoryManager
+            .get(MetadataTypeEntity)
+            .saveMany(METADATA_TYPE_COUNT);
     }
 
     // 2. Create Projects and Missions
@@ -117,7 +121,7 @@ export const seedProjects = async (
                 name: projectDefinition.name,
                 description: projectDefinition.description,
                 creator: adminUser,
-                tagTypes: tagTypes,
+                metadataTypes: metadataTypes,
             })
             .save();
         createdProjects.push(project);
@@ -155,5 +159,5 @@ export const seedProjects = async (
         }
     }
 
-    return { createdProjects, createdMissions, tagTypes };
+    return { createdProjects, createdMissions, metadataTypes };
 };

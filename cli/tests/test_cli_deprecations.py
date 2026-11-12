@@ -18,6 +18,7 @@ import pytest
 from typer.testing import CliRunner
 
 import kleinkram.cli.app
+from kleinkram.api.file_transfer import UploadResult
 from kleinkram.cli._deprecation import REMOVED_IN
 from kleinkram.cli._deprecation import prefer_new
 from kleinkram.cli.app import app
@@ -151,12 +152,12 @@ def test_file_delete_accepts_several_files(runner, monkeypatch):
     monkeypatch.setattr("kleinkram.cli._file.get_file", get_file)
     monkeypatch.setattr("kleinkram.core.delete_files", delete_files)
 
-    new = invoke(runner, ["file", "delete", "a.bag", "b.bag", "-m", "m1", "-p", "p1", "-y"])
+    new = invoke(runner, ["file", "delete", "aaa.bag", "bbb.bag", "-m", "m1", "-p", "p1", "-y"])
     assert new.exit_code == 0, new.output
-    assert [q.patterns for q in queried] == [["a.bag"], ["b.bag"]]
+    assert [q.patterns for q in queried] == [["aaa.bag"], ["bbb.bag"]]
     assert len(delete_files.call_args.kwargs["file_ids"]) == 2
 
-    old = invoke(runner, ["file", "delete", "-f", "a.bag", "-m", "m1", "-p", "p1", "-y"])
+    old = invoke(runner, ["file", "delete", "-f", "aaa.bag", "-m", "m1", "-p", "p1", "-y"])
     assert old.exit_code == 0, old.output
     assert DEPRECATED in old.stderr
     assert queried[2] == queried[0]
@@ -313,3 +314,51 @@ def test_only_deletion_resolves_its_target_strictly(runner, monkeypatch):
         assert invoke(runner, [kind, "delete", "x", *extra, "-y"]).exit_code == 0
 
     assert strict_flags == {"project": [False, True], "mission": [False, True], "file": [False, True]}
+
+
+def test_mission_create_ignore_missing_metadata_and_legacy_flag(runner, monkeypatch):
+    project = SimpleNamespace(id=uuid4(), required_metadata_types=["robot"])
+    create_mission = MagicMock(return_value=uuid4())
+    monkeypatch.setattr("kleinkram.cli._mission.AuthenticatedClient", MagicMock)
+    monkeypatch.setattr("kleinkram.cli._mission.get_project", lambda *_, **__: project)
+    monkeypatch.setattr("kleinkram.cli._mission.get_mission", MagicMock())
+    monkeypatch.setattr("kleinkram.cli._mission.print_mission_info", MagicMock())
+    monkeypatch.setattr("kleinkram.core.create_mission", create_mission)
+
+    new = invoke(runner, ["mission", "create", "m1", "-p", "p1", "--ignore-missing-metadata"])
+    old = invoke(runner, ["mission", "create", "m1", "-p", "p1", "--ignore-missing-tags"])
+    default = invoke(runner, ["mission", "create", "m1", "-p", "p1"])
+    new_negated = invoke(runner, ["mission", "create", "m1", "-p", "p1", "--no-ignore-missing-metadata"])
+    old_negated = invoke(runner, ["mission", "create", "m1", "-p", "p1", "--no-ignore-missing-tags"])
+
+    for result in (new, old, default, new_negated, old_negated):
+        assert result.exit_code == 0, result.output
+    assert DEPRECATED not in new.stderr
+    assert DEPRECATED not in new_negated.stderr
+    assert "--ignore-missing-tags/--no-ignore-missing-tags is deprecated" in old.stderr
+    assert "--ignore-missing-tags/--no-ignore-missing-tags is deprecated" in old_negated.stderr
+    first, second, third, fourth, fifth = kwargs_without_client(create_mission)
+    assert first == second
+    assert first["ignore_missing_metadata"] is True
+    assert first["required_metadata_types"] == ["robot"]
+    assert third["ignore_missing_metadata"] is False
+    assert fourth == fifth == third
+
+
+def test_upload_ignore_missing_metadata_and_legacy_flag(runner, monkeypatch, tmp_path):
+    bag = tmp_path / "aaa.bag"
+    bag.write_bytes(b"")
+    upload = MagicMock(return_value=UploadResult(uploaded=1))
+    monkeypatch.setattr("kleinkram.cli._upload.AuthenticatedClient", MagicMock)
+    monkeypatch.setattr("kleinkram.core.upload", upload)
+
+    new = invoke(runner, ["upload", "-p", "p1", "-m", "m1", "--create", "--ignore-missing-metadata", str(bag)])
+    old = invoke(runner, ["upload", "-p", "p1", "-m", "m1", "--create", "--ignore-missing-tags", str(bag)])
+
+    assert new.exit_code == 0, new.output
+    assert old.exit_code == 0, old.output
+    assert DEPRECATED not in new.stderr
+    assert "--ignore-missing-tags/--no-ignore-missing-tags is deprecated" in old.stderr
+    first, second = kwargs_without_client(upload)
+    assert first == second
+    assert first["ignore_missing_metadata"] is True

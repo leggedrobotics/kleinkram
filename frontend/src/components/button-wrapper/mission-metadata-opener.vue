@@ -1,24 +1,18 @@
 <template>
     <div
-        :class="{
-            disabled: !canModify,
-            'cursor-not-allowed': !canModify,
-        }"
+        v-if="canModify"
+        class="cursor-pointer"
         style="height: 100%"
-        @click="openTagsDialog"
+        @click="openMetadataDialog"
     >
         <slot />
-
-        <q-tooltip v-if="!canModify">
-            You need modify rights on the mission to edit its tags
-        </q-tooltip>
     </div>
 </template>
 
 <script setup lang="ts">
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQuasar } from 'quasar';
-import ModifyMissionTagsDialog from 'src/dialogs/modify-mission-tags-dialog.vue';
+import ModifyMissionMetadataDialog from 'src/dialogs/modify-mission-metadata-dialog.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
@@ -35,19 +29,13 @@ const canModify = computed(() =>
     ),
 );
 
-const openTagsDialog = (): void => {
+const openMetadataDialog = (): void => {
     if (!canModify.value) return;
     $q.dialog({
-        component: ModifyMissionTagsDialog,
+        component: ModifyMissionMetadataDialog,
         componentProps: {
             mission: properties.mission,
         },
     });
 };
 </script>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>

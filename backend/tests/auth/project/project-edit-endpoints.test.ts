@@ -1,21 +1,21 @@
 import {
     AccessGroupEntity,
+    MetadataTypeEntity,
     MissionEntity,
     ProjectAccessEntity,
     ProjectEntity,
-    TagTypeEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
 import { AccessGroupRights, DataType } from '@kleinkram/shared';
 import {
-    createMetadataUsingPost,
+    createMetadataTypeUsingPost,
     createProjectUsingPost,
     HeaderCreator,
 } from '../../utils/api-calls';
 import { clearAllData, database } from '../../utils/database-utilities';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
 
-globalThis.tagName = 'test_tag_STRING';
+globalThis.metadataTypeName = 'test_metadata_type_STRING';
 
 /**
  * This test suite tests the edit endpoint of project control of the application.
@@ -67,32 +67,32 @@ describe('Verify project manipulation endpoints', () => {
             where: { name: globalThis.user.name },
         });
 
-        // create tag
-        globalThis.metadataUuid = await createMetadataUsingPost(
+        // create metadata type
+        globalThis.metadataTypeUuid = await createMetadataTypeUsingPost(
             {
                 type: DataType.STRING,
-                name: globalThis.tagName,
+                name: globalThis.metadataTypeName,
             },
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             globalThis.creator,
         );
 
         // check if it is generated
-        const tagTypeRepository =
-            database.getRepository<TagTypeEntity>(TagTypeEntity);
-        const tagTypes = await tagTypeRepository.findOneOrFail({
-            where: { uuid: globalThis.metadataUuid },
+        const metadataTypeRepository =
+            database.getRepository<MetadataTypeEntity>(MetadataTypeEntity);
+        const metadataType = await metadataTypeRepository.findOneOrFail({
+            where: { uuid: globalThis.metadataTypeUuid },
         });
-        expect(await tagTypeRepository.count()).toBe(1);
-        expect(tagTypes.uuid).toBe(globalThis.metadataUuid);
-        expect(tagTypes.name).toBe(globalThis.tagName);
+        expect(await metadataTypeRepository.count()).toBe(1);
+        expect(metadataType.uuid).toBe(globalThis.metadataTypeUuid);
+        expect(metadataType.name).toBe(globalThis.metadataTypeName);
 
         // generate project with creator
         globalThis.projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'This is a test project',
-                requiredTags: [globalThis.metadataUuid],
+                requiredMetadataTypes: [globalThis.metadataTypeUuid],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.DELETE,
@@ -157,14 +157,15 @@ describe('Verify project manipulation endpoints', () => {
         // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions
         console.log(`[DEBUG]: All Projects removed: ${response}`);
 
-        // delete tags
-        const tagsRepository =
-            database.getRepository<TagTypeEntity>(TagTypeEntity);
-        const allTagss = await tagsRepository.find();
-        const metadataResponse = await tagsRepository.remove(allTagss);
-        const remainingTags = await tagsRepository.find();
+        // delete metadata types
+        const metadataTypeRepository =
+            database.getRepository<MetadataTypeEntity>(MetadataTypeEntity);
+        const allMetadataTypes = await metadataTypeRepository.find();
+        const metadataResponse =
+            await metadataTypeRepository.remove(allMetadataTypes);
+        const remainingMetadataTypes = await metadataTypeRepository.find();
 
-        expect(remainingTags.length).toBe(0);
+        expect(remainingMetadataTypes.length).toBe(0);
         // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions
         console.log(`[DEBUG]: All Metadata removed: ${metadataResponse}`);
     });
@@ -177,24 +178,24 @@ describe('Verify project manipulation endpoints', () => {
     // metadata/access manipulation
 
     test('if metadata can be added to project by creator of project', async () => {
-        // check if link between project and TagType is correct
-        const TagTypeRepository =
-            database.getRepository<TagTypeEntity>(TagTypeEntity);
-        const tagType = await TagTypeRepository.findOneOrFail({
-            where: { uuid: globalThis.metadataUuid },
+        // check if link between project and metadata type is correct
+        const metadataTypeRepository =
+            database.getRepository<MetadataTypeEntity>(MetadataTypeEntity);
+        const metadataType = await metadataTypeRepository.findOneOrFail({
+            where: { uuid: globalThis.metadataTypeUuid },
             relations: {
-                project: true,
+                projects: true,
             },
         });
-        expect(tagType.name).toBe(globalThis.tagName);
-        expect(tagType.uuid).toBe(globalThis.metadataUuid);
-        expect(tagType.project?.[0]?.uuid).toBe(globalThis.projectUuid);
+        expect(metadataType.name).toBe(globalThis.metadataTypeName);
+        expect(metadataType.uuid).toBe(globalThis.metadataTypeUuid);
+        expect(metadataType.projects?.[0]?.uuid).toBe(globalThis.projectUuid);
     });
 
     test('if project metadata can be added by creator of project', async () => {
-        // create tag
-        const name = 'second_test_tag_STRING';
-        const metadataUuid = await createMetadataUsingPost(
+        // create metadata type
+        const name = 'second_test_metadata_type_STRING';
+        const metadataTypeUuid = await createMetadataTypeUsingPost(
             {
                 type: DataType.STRING,
                 name: name,
@@ -213,7 +214,10 @@ describe('Verify project manipulation endpoints', () => {
                 method: 'PUT',
                 headers: headersBuilder.getHeaders(),
                 body: JSON.stringify({
-                    tagTypeUUIDs: [metadataUuid, globalThis.metadataUuid],
+                    metadataTypeUUIDs: [
+                        metadataTypeUuid,
+                        globalThis.metadataTypeUuid,
+                    ],
                 }),
             },
         );
@@ -223,17 +227,17 @@ describe('Verify project manipulation endpoints', () => {
         }
         expect(response.status).toBeLessThan(300);
 
-        const TagTypeRepository =
-            database.getRepository<TagTypeEntity>(TagTypeEntity);
-        const tagType = await TagTypeRepository.findOneOrFail({
-            where: { uuid: metadataUuid },
+        const metadataTypeRepository =
+            database.getRepository<MetadataTypeEntity>(MetadataTypeEntity);
+        const metadataType = await metadataTypeRepository.findOneOrFail({
+            where: { uuid: metadataTypeUuid },
             relations: {
-                project: true,
+                projects: true,
             },
         });
-        expect(tagType.name).toBe(name);
-        expect(tagType.uuid).toBe(metadataUuid);
-        expect(tagType.project?.[0]?.uuid).toBe(globalThis.projectUuid);
+        expect(metadataType.name).toBe(name);
+        expect(metadataType.uuid).toBe(metadataTypeUuid);
+        expect(metadataType.projects?.[0]?.uuid).toBe(globalThis.projectUuid);
     });
 
     test('if access management of project can be edited by creator', async () => {

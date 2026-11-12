@@ -24,12 +24,16 @@ import {
 } from '@kleinkram/shared';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, MoreThanOrEqual, Not, Repository } from 'typeorm';
+import { EntityManager, In, Not, Repository } from 'typeorm';
 import logger from '../logger';
 import { AccessQueryService } from './access-query.service';
+import { notExpired } from './membership-filters';
 import {
+    assertGrantableAccessRights,
     assertNotPublicAccessGroup,
     assertValidPublicAccessRights,
+    isPublicAccessGroup,
+    PUBLIC_ACCESS_MANAGE_RIGHTS,
 } from './public-access';
 
 @Injectable()
@@ -92,14 +96,8 @@ export class AccessModificationService {
         rights: AccessGroupRights,
         auth: AuthHeader,
     ): Promise<ProjectEntity> {
-        const project = await this.projectRepository.findOneOrFail({
-            where: { uuid: projectUUID },
-            relations: {
-                project_accesses: {
-                    accessGroup: true,
-                },
-            },
-        });
+        assertGrantableAccessRights(rights);
+
         const dbuser = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
             relations: {
@@ -112,65 +110,61 @@ export class AccessModificationService {
         if (dbuser.memberships === undefined)
             throw new Error('User has no memberships');
 
+        // take the group out of the membership: project access points to
+        // the access group, not to the user's membership in it
         const personalAccessGroup = dbuser.memberships.find(
-            (accessGroup) =>
-                accessGroup.accessGroup?.type === AccessGroupType.PRIMARY,
-        );
+            (membership) =>
+                membership.accessGroup?.type === AccessGroupType.PRIMARY,
+        )?.accessGroup;
 
         if (personalAccessGroup === undefined)
             throw new Error('User has no personal access group');
 
-        const canUpdate = await this.accessQueryService.hasProjectRights(
-            projectUUID,
-            auth,
-            rights,
-        );
-        if (rights === AccessGroupRights.DELETE && !canUpdate) {
-            throw new ConflictException(
-                'User cannot grant delete rights without having delete rights himself/herself',
-            );
-        }
-
-        const existingAccess = await this.projectAccessRepository
-            .createQueryBuilder('projectAccess')
-            .leftJoin('projectAccess.accessGroup', 'accessGroup')
-            .leftJoin('projectAccess.project', 'project')
-            .where('project.uuid = :projectUUID', {
+        await this.entityManager.transaction(async (transaction) => {
+            const project = await this.lockProjectForAccessChange(
+                transaction,
                 projectUUID,
-            })
-            .andWhere('accessGroup.uuid = :accessGroupUUID', {
-                accessGroupUUID: personalAccessGroup.uuid,
-            })
-            .getOne();
-        if (existingAccess) {
-            if (existingAccess.rights >= rights && !canUpdate) {
-                throw new ConflictException(
-                    'User cannot decrease rights without having the same rights himself/herself',
-                );
-            }
-            existingAccess.rights = rights;
-            await this.projectAccessRepository.save(existingAccess);
-            return this.projectRepository.findOneOrFail({
-                where: { uuid: projectUUID },
-                relations: {
-                    project_accesses: {
-                        accessGroup: true,
+            );
+
+            const existingAccess = await transaction.findOne(
+                ProjectAccessEntity,
+                {
+                    where: {
+                        project: { uuid: projectUUID },
+                        accessGroup: { uuid: personalAccessGroup.uuid },
                     },
                 },
-            });
-        }
+            );
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!personalAccessGroup) {
-            throw new ConflictException('User has no personal access group');
-        }
+            await this.assertCanChangeProjectRights(
+                transaction,
+                projectUUID,
+                auth,
+                personalAccessGroup.uuid,
+                rights,
+                existingAccess?.rights,
+            );
 
-        const projectAccess = this.projectAccessRepository.create({
-            rights: rights,
-            accessGroup: personalAccessGroup,
-            project: project,
+            if (existingAccess) {
+                existingAccess.rights = rights;
+                await transaction.save(existingAccess);
+            } else {
+                await transaction.save(
+                    transaction.create(ProjectAccessEntity, {
+                        rights,
+                        accessGroup: personalAccessGroup,
+                        project,
+                    }),
+                );
+            }
+
+            // lowering your own entry could leave no one with DELETE
+            await this.checkProjectAccessModificationPostConditions(
+                transaction,
+                projectUUID,
+            );
         });
-        await this.projectAccessRepository.save(projectAccess);
+
         return this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: {
@@ -264,15 +258,7 @@ export class AccessModificationService {
             .log(
                 accessGroupUUID,
                 AccessGroupEventType.ADD_USER,
-                {
-                    userUuid: userUUID,
-                    userName:
-                        result.memberships?.find(
-                            (m) => m.user?.uuid === userUUID,
-                        )?.user?.name ?? 'Unknown',
-                    canEditGroup,
-                    expireDate,
-                },
+                { userUuid: userUUID, canEditGroup, expireDate },
                 auth?.user as unknown as UserEntity,
             )
             .catch((error: unknown) =>
@@ -309,6 +295,7 @@ export class AccessModificationService {
                                 accessGroup: { uuid: accessGroupUUID },
                                 user: { uuid: Not(In(userUuids)) },
                                 canEditGroup: true,
+                                expirationDate: notExpired(),
                             },
                         },
                     );
@@ -338,25 +325,11 @@ export class AccessModificationService {
             },
         );
 
-        const removedUsers = await this.userRepository.find({
-            where: { uuid: In(userUuids) },
-            select: {
-                uuid: true,
-                name: true,
-            },
-        });
-
         this.accessGroupAuditService
             .log(
                 accessGroupUUID,
                 AccessGroupEventType.REMOVE_USER,
-                {
-                    userUuids,
-                    affectedUsers: removedUsers.map((u) => ({
-                        uuid: u.uuid,
-                        name: u.name,
-                    })),
-                },
+                { userUuids },
                 auth?.user as unknown as UserEntity,
             )
             .catch((error: unknown) =>
@@ -372,81 +345,72 @@ export class AccessModificationService {
         rights: AccessGroupRights,
         auth: AuthHeader,
     ): Promise<ProjectDto> {
+        assertGrantableAccessRights(rights);
         assertValidPublicAccessRights(accessGroupUUID, rights);
 
-        const project = await this.projectRepository.findOneOrFail({
-            where: { uuid: projectUUID },
-            relations: {
-                project_accesses: {
-                    accessGroup: true,
-                },
-            },
-        });
         const accessGroup = await this.accessGroupRepository.findOneOrFail({
             where: { uuid: accessGroupUUID },
-            relations: {
-                memberships: {
-                    user: true,
-                },
-            },
         });
 
-        if (rights === AccessGroupRights.DELETE) {
-            const canDelete = await this.accessQueryService.hasProjectRights(
-                projectUUID,
-                auth,
-                AccessGroupRights.DELETE,
-            );
-            if (!canDelete) {
-                throw new ConflictException(
-                    'User cannot grant delete rights without having delete rights himself/herself',
+        const event = await this.entityManager.transaction(
+            async (transaction): Promise<AccessGroupEventType | undefined> => {
+                const project = await this.lockProjectForAccessChange(
+                    transaction,
+                    projectUUID,
                 );
-            }
-        }
 
-        const existingAccess = await this.projectAccessRepository
-            .createQueryBuilder('projectAccess')
-            .leftJoin('projectAccess.accessGroup', 'accessGroup')
-            .leftJoin('projectAccess.project', 'project')
-            .where('project.uuid = :projectUUID', {
-                projectUUID,
-            })
-            .andWhere('accessGroup.uuid = :accessGroupUUID', {
-                accessGroupUUID,
-            })
-            .getOne();
-        if (existingAccess) {
-            if (existingAccess.rights >= rights) {
-                return projectEntityToDto(project);
-            }
-            existingAccess.rights = rights;
-            await this.projectAccessRepository.save(existingAccess);
-            const updatedProject = await this.projectRepository.findOneOrFail({
-                where: { uuid: projectUUID },
-            });
+                const existingAccess = await transaction.findOne(
+                    ProjectAccessEntity,
+                    {
+                        where: {
+                            project: { uuid: projectUUID },
+                            accessGroup: { uuid: accessGroupUUID },
+                        },
+                    },
+                );
+
+                // this endpoint never lowers rights: an existing entry with
+                // higher rights stays as it is, so only the new rights need
+                // to be covered
+                await this.assertCanChangeProjectRights(
+                    transaction,
+                    projectUUID,
+                    auth,
+                    accessGroupUUID,
+                    rights,
+                );
+
+                if (existingAccess) {
+                    if (existingAccess.rights >= rights) return undefined;
+                    existingAccess.rights = rights;
+                    await transaction.save(existingAccess);
+                    return AccessGroupEventType.UPDATE_PROJECT_ACCESS;
+                }
+
+                await transaction.save(
+                    transaction.create(ProjectAccessEntity, {
+                        rights,
+                        accessGroup,
+                        project,
+                    }),
+                );
+                return AccessGroupEventType.ADD_PROJECT;
+            },
+        );
+
+        if (event !== undefined) {
             this.accessGroupAuditService
                 .log(
-                    accessGroupUUID,
-                    AccessGroupEventType.UPDATE_PROJECT_ACCESS,
-                    {
-                        projectUuid: projectUUID,
-                        projectName: project.name,
-                        rights,
-                    },
+                    accessGroup.uuid,
+                    event,
+                    { projectUuid: projectUUID, rights },
                     auth.user,
                 )
                 .catch((error: unknown) =>
                     logger.error(`Audit log failed: ${String(error)}`),
                 );
-            return projectEntityToDto(updatedProject);
         }
 
-        const projectAccess = this.projectAccessRepository.create({
-            rights: rights,
-            accessGroup: accessGroup,
-            project: project,
-        });
-        await this.projectAccessRepository.save(projectAccess);
         const fullProject = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: {
@@ -455,17 +419,6 @@ export class AccessModificationService {
                 },
             },
         });
-        this.accessGroupAuditService
-            .log(
-                accessGroupUUID,
-                AccessGroupEventType.ADD_PROJECT,
-                { projectUuid: projectUUID, projectName: project.name, rights },
-
-                auth.user,
-            )
-            .catch((error: unknown) =>
-                logger.error(`Audit log failed: ${String(error)}`),
-            );
         return projectEntityToDto(fullProject);
     }
 
@@ -496,11 +449,7 @@ export class AccessModificationService {
             .log(
                 accessGroupUUID,
                 AccessGroupEventType.REMOVE_PROJECT,
-                {
-                    projectUuid: projectUUID,
-                    projectName: projectAccess[0]?.project?.name ?? 'Unknown',
-                },
-
+                { projectUuid: projectUUID },
                 auth.user,
             )
             .catch((error: unknown) =>
@@ -546,29 +495,98 @@ export class AccessModificationService {
         await Promise.all(accessUpdates);
     }
 
+    /**
+     * Locks the project row until the transaction ends. Every change to a
+     * project's access takes this lock first, then reads the current entries
+     * and checks rights, so two changes cannot interleave between the check
+     * and the write (e.g. an owner raising an entry while a writer's request
+     * that saw the old value lowers it again).
+     */
+    private async lockProjectForAccessChange(
+        transaction: EntityManager,
+        projectUuid: string,
+    ): Promise<ProjectEntity> {
+        return transaction.findOneOrFail(ProjectEntity, {
+            where: { uuid: projectUuid },
+            lock: { mode: 'pessimistic_write' },
+        });
+    }
+
+    /**
+     * The rights a caller needs to change the entry of `accessGroupUuid`
+     * between the given rights (before and after the change; `undefined`
+     * when the entry does not exist on that side). You can never touch an
+     * entry above your own level, and making a project public or restricted
+     * again takes `PUBLIC_ACCESS_MANAGE_RIGHTS`.
+     */
+    private requiredRightsToChange(
+        accessGroupUuid: string,
+        ...rights: (AccessGroupRights | undefined)[]
+    ): AccessGroupRights {
+        let required = isPublicAccessGroup(accessGroupUuid)
+            ? PUBLIC_ACCESS_MANAGE_RIGHTS
+            : AccessGroupRights.READ;
+        for (const value of rights) {
+            if (value !== undefined && value > required) required = value;
+        }
+        return required;
+    }
+
+    /**
+     * Rejects a change to a project access entry unless the caller holds
+     * `requiredRightsToChange` for it. This covers granting, raising,
+     * lowering and removing rights.
+     *
+     * The caller's rights come from `hasProjectRights`, which ignores expired
+     * memberships and lets global admins through.
+     */
+    private async assertCanChangeProjectRights(
+        transaction: EntityManager,
+        projectUuid: string,
+        auth: AuthHeader,
+        accessGroupUuid: string,
+        newRights: AccessGroupRights,
+        existingRights?: AccessGroupRights,
+    ): Promise<void> {
+        assertGrantableAccessRights(newRights);
+        await this.assertHasProjectRights(
+            transaction,
+            projectUuid,
+            auth,
+            this.requiredRightsToChange(
+                accessGroupUuid,
+                newRights,
+                existingRights,
+            ),
+        );
+    }
+
+    private async assertHasProjectRights(
+        transaction: EntityManager,
+        projectUuid: string,
+        auth: AuthHeader,
+        requiredRights: AccessGroupRights,
+    ): Promise<void> {
+        // on the transaction's connection, see `hasProjectRights`
+        const hasRights = await this.accessQueryService.hasProjectRights(
+            projectUuid,
+            auth,
+            requiredRights,
+            transaction,
+        );
+        if (!hasRights) {
+            throw new ConflictException(
+                'You cannot grant, change or remove project access rights above your own',
+            );
+        }
+    }
+
     private async checkProjectAccessModificationPreConditions(
         transaction: EntityManager,
         projectUuid: string,
         newProjectAccess: ProjectAccessDto[],
-        userId: string,
+        auth: AuthHeader,
     ): Promise<void> {
-        // check if the current user has at least write rights
-        const userAccess = await transaction.find(ProjectAccessEntity, {
-            where: {
-                rights: MoreThanOrEqual(AccessGroupRights.WRITE),
-                project: { uuid: projectUuid },
-                accessGroup: { memberships: { user: { uuid: userId } } },
-            },
-        });
-
-        if (userAccess.length === 0) {
-            throw new ConflictException(
-                'User does not have write rights for the project',
-            );
-        }
-
-        // the current user must have at least the same rights
-        // as the highest rights he has modified
         const currentAccess = await transaction.find(ProjectAccessEntity, {
             where: {
                 project: { uuid: projectUuid },
@@ -578,28 +596,53 @@ export class AccessModificationService {
             },
         });
 
-        // filter out the access rights that have not been modified
-        const accessRightsChanges = newProjectAccess.filter((access) => {
-            return !currentAccess.some(
-                (projectAccess) =>
-                    projectAccess.accessGroup?.uuid === access.uuid &&
-                    projectAccess.rights === access.rights,
-            );
-        });
-
-        const maxRightsInChanges = Math.max(
-            ...accessRightsChanges.map((access) => access.rights),
-        );
-
-        const maxRightsOfUser = Math.max(
-            ...userAccess.map((access) => access.rights),
-        );
-
-        if (maxRightsOfUser < maxRightsInChanges) {
-            throw new ConflictException(
-                'User cannot grant higher rights than he has himself',
-            );
+        const currentRights = new Map<string, AccessGroupRights>();
+        for (const access of currentAccess) {
+            if (access.accessGroup)
+                currentRights.set(
+                    access.accessGroup.uuid.toLowerCase(),
+                    access.rights,
+                );
         }
+        // `newProjectAccess` is normalized by `updateProjectAccess`
+        const newRights = new Map<string, AccessGroupRights>();
+        for (const access of newProjectAccess) {
+            // the rows are upserted in parallel, so with a duplicate either
+            // value could end up stored, whatever was checked here
+            if (newRights.has(access.uuid)) {
+                throw new ConflictException(
+                    'Each access group may only appear once',
+                );
+            }
+            newRights.set(access.uuid, access.rights);
+        }
+
+        // every entry that is added, changed or removed (a removed entry is
+        // one that is missing from the new list, the update replaces all)
+        let requiredRights: AccessGroupRights | undefined;
+        const requireAtLeast = (rights: AccessGroupRights): void => {
+            if (requiredRights === undefined || rights > requiredRights)
+                requiredRights = rights;
+        };
+        for (const [uuid, rights] of newRights) {
+            const before = currentRights.get(uuid);
+            if (before === rights) continue;
+            requireAtLeast(this.requiredRightsToChange(uuid, rights, before));
+        }
+        for (const [uuid, rights] of currentRights) {
+            if (!newRights.has(uuid))
+                requireAtLeast(this.requiredRightsToChange(uuid, rights));
+        }
+
+        // nothing changes: the route guard already requires write rights
+        if (requiredRights === undefined) return;
+
+        await this.assertHasProjectRights(
+            transaction,
+            projectUuid,
+            auth,
+            requiredRights,
+        );
     }
 
     private async checkProjectAccessModificationPostConditions(
@@ -626,17 +669,29 @@ export class AccessModificationService {
         newProjectAccess: ProjectAccessDto[],
         authHeader: AuthHeader,
     ): Promise<ProjectAccessListDto> {
+        // PostgreSQL compares uuids case-insensitively, the checks below
+        // compare strings: `abc…` and `ABC…` must count as the same group
         for (const access of newProjectAccess) {
+            access.uuid = access.uuid.toLowerCase();
+        }
+
+        for (const access of newProjectAccess) {
+            assertGrantableAccessRights(access.rights);
             assertValidPublicAccessRights(access.uuid, access.rights);
         }
 
         await this.entityManager.transaction(
             async (transactionalEntityManager): Promise<void> => {
+                await this.lockProjectForAccessChange(
+                    transactionalEntityManager,
+                    projectUuid,
+                );
+
                 await this.checkProjectAccessModificationPreConditions(
                     transactionalEntityManager,
                     projectUuid,
                     newProjectAccess,
-                    authHeader.user.uuid,
+                    authHeader,
                 );
 
                 await this.uncheckedProjectAccessTransactionalUpdate(
@@ -658,7 +713,6 @@ export class AccessModificationService {
                     access.uuid,
                     AccessGroupEventType.UPDATE_PROJECT_ACCESS,
                     { projectUuid: projectUuid, rights: access.rights },
-
                     authHeader.user,
                 )
                 .catch((error: unknown) =>
@@ -699,11 +753,7 @@ export class AccessModificationService {
             .log(
                 uuid,
                 AccessGroupEventType.UPDATE_EXPIRE_DATE,
-                {
-                    userUuid,
-                    userName: savedMembership.user?.name ?? 'Unknown',
-                    expireDate,
-                },
+                { userUuid, expireDate },
                 auth?.user as unknown as UserEntity,
             )
             .catch((error: unknown) =>
@@ -727,13 +777,17 @@ export class AccessModificationService {
         });
 
         if (!canEditGroup) {
-            const editorsCount = await this.groupMembershipRepository.count({
+            // count the editors that stay, ignoring expired ones: they can
+            // no longer act on the group
+            const otherEditors = await this.groupMembershipRepository.count({
                 where: {
                     accessGroup: { uuid },
+                    user: { uuid: Not(userUuid) },
                     canEditGroup: true,
+                    expirationDate: notExpired(),
                 },
             });
-            if (editorsCount <= 1) {
+            if (otherEditors === 0) {
                 throw new ConflictException(
                     'Cannot demote the last user with edit rights',
                 );
@@ -758,11 +812,7 @@ export class AccessModificationService {
                 canEditGroup
                     ? AccessGroupEventType.PROMOTE_USER
                     : AccessGroupEventType.DEMOTE_USER,
-                {
-                    userUuid,
-                    userName: savedMembership.user?.name ?? 'Unknown',
-                    canEditGroup,
-                },
+                { userUuid, canEditGroup },
                 auth?.user as unknown as UserEntity,
             )
             .catch((error: unknown) =>

@@ -83,18 +83,18 @@ access rules, in particular the caveat on webhook trigger uuids.
 
 ### Creating Resources
 
-Programmatically set up your workspace by creating new projects and missions.
+Programmatically set up your workspace by creating new projects and missions. Names must follow the [naming rules](../getting-started.md#naming-rules).
 
 ```python
 # Create a new project
 kleinkram.create_project(
-    project_name="New Project",
+    project_name="new-project",
     description="My new project description"
 )
 
 # Create a mission within a specific project
 kleinkram.create_mission(
-    mission_name="New Mission",
+    mission_name="new-mission",
     project_id="...",
     metadata={"sensor": "lidar"}
 )
@@ -144,11 +144,75 @@ Modify the metadata and descriptions of existing resources.
 # Update a project's description
 kleinkram.update_project(project_id="...", description="Updated Description")
 
-# Update a mission's metadata tags
+# Update a mission's metadata
 kleinkram.update_mission(mission_id="...", metadata={"status": "completed"})
 
 # Trigger a file update (re-process the file)
 kleinkram.update_file(file_id="...")
+```
+
+### Kleinkram Actions
+
+The SDK covers the same action workflows as the `template`, `execution` and `trigger` commands of the CLI. Templates
+can be given by ID or, where noted, by name.
+
+```python
+import kleinkram
+
+# templates
+templates = kleinkram.list_templates()                   # latest version of each; latest_only=False for all
+template = kleinkram.get_template(template_id="...")
+revisions = kleinkram.get_template_revisions(template_id="...")
+
+template_id = kleinkram.create_template(
+    name="my-action",
+    description="Extracts metadata",
+    docker_image="rslethz/action:extract-metadata-latest",
+    cpu_cores=1,
+    cpu_memory_gb=2,
+    gpu_memory_gb=-1,          # -1: no GPU
+    max_runtime_minutes=60,
+    access_rights=0,           # 0 read, 10 create, 20 modify, 30 delete
+)
+new_version_id = kleinkram.create_template_version(template_id, cpu_memory_gb=4)  # only the values you pass change
+archived = kleinkram.delete_template(template_id)  # True if it was archived because it has executions
+
+# executions; the template can be a name or an ID
+execution_id = kleinkram.launch_execution("my-action", project_name="testProject", mission_name="testMission")
+execution = kleinkram.get_execution(execution_id)
+executions = kleinkram.list_executions(mission_uuid="...")      # also project_uuid=, template_name=
+path = kleinkram.download_artifact(execution_id, output_dir="./artifacts", extract=True)
+kleinkram.delete_execution(execution_id)
+
+# run a single Python file, see "Run a Single Python File"
+execution_id = kleinkram.run_script("./analyse.py", project_name="testProject", mission_name="testMission")
+```
+
+`launch_execution` and `run_script` take the mission as `mission_id=`, or as `mission_name=` together with
+`project_name=` or `project_id=`.
+
+Triggers take a configuration object that matches their type:
+
+```python
+import kleinkram
+from kleinkram.models import FileConfig, FileTriggerEvent, TimeConfig, TriggerType, WebhookConfig
+
+trigger_id = kleinkram.create_trigger(
+    "on-upload",
+    template_uuid="...",
+    mission_uuid="...",
+    type_=TriggerType.FILE,
+    config=FileConfig(patterns=("*.bag",), event=(FileTriggerEvent.UPLOAD,)),
+)
+# other types: TriggerType.TIME with TimeConfig(cron="0 0 * * *"), TriggerType.WEBHOOK with WebhookConfig()
+
+# to change the configuration, pass both type_ and config
+kleinkram.update_trigger(
+    trigger_id,
+    type_=TriggerType.FILE,
+    config=FileConfig(patterns=("*.mcap",), event=(FileTriggerEvent.UPLOAD,)),
+)
+kleinkram.delete_trigger(trigger_id)
 ```
 
 ### Reporting from Inside an Action

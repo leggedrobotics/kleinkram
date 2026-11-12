@@ -9,7 +9,7 @@ import {
 } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
-import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/metadata-type.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AccessModule } from '../access/access.module';
@@ -23,7 +23,7 @@ import { ProjectController } from './project.controller';
             AccountEntity,
             AccessGroupEntity,
             AccessGroupEventEntity,
-            TagTypeEntity,
+            MetadataTypeEntity,
             ProjectAccessEntity,
             UserEntity,
             GroupMembershipEntity,

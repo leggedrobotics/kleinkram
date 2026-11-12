@@ -14,7 +14,7 @@ from kleinkram.core import METADATA_TYPE_LOOKUP_TAKE
 from kleinkram.core import _get_metadata_type_id_by_name
 from kleinkram.core import _merge_mission_metadata
 from kleinkram.core import _metadata_value_to_payload
-from kleinkram.core import _validate_tag_value
+from kleinkram.core import _validate_metadata_value
 from kleinkram.errors import InvalidMissionMetadata
 from kleinkram.models import MetadataValue
 from kleinkram.models import MetadataValueType
@@ -25,6 +25,7 @@ PROJECT_ID = UUID("22222222-2222-4222-8222-222222222222")
 
 CPU_ID = UUID("33333333-3333-4333-8333-333333333333")
 CPU_CORES_ID = UUID("44444444-4444-4444-8444-444444444444")
+LEGACY_ID = UUID("55555555-5555-4555-8555-555555555555")
 
 
 def _mission(metadata):
@@ -108,13 +109,16 @@ def test_parse_metadata_keeps_the_metadata_type_id():
     parsed = _parse_metadata(
         [
             {"name": "cpu", "datatype": "STRING", "value": "amd", "type": {"uuid": str(CPU_ID)}},
-            # the raw entity spells it `tagType`
-            {"name": "cpu_cores", "datatype": "NUMBER", "value": 8, "tagType": {"uuid": str(CPU_CORES_ID)}},
+            # the raw entity spells it `metadataType`
+            {"name": "cpu_cores", "datatype": "NUMBER", "value": 8, "metadataType": {"uuid": str(CPU_CORES_ID)}},
+            # and `tagType` on servers before the rename
+            {"name": "legacy", "datatype": "STRING", "value": "x", "tagType": {"uuid": str(LEGACY_ID)}},
         ]
     )
 
     assert parsed["cpu"].type_id == CPU_ID
     assert parsed["cpu_cores"].type_id == CPU_CORES_ID
+    assert parsed["legacy"].type_id == LEGACY_ID
 
 
 def test_parse_metadata_without_a_type_id():
@@ -291,7 +295,7 @@ def test_update_mission_sends_the_merged_set(monkeypatch):
     monkeypatch.setattr(
         kleinkram.api.routes,
         "_update_mission",
-        lambda client, mission_id, *, tags: sent.update(tags),
+        lambda client, mission_id, *, metadata: sent.update(metadata),
     )
 
     client = _FakeMetadataTypeClient(CPU_TYPES)
@@ -302,18 +306,18 @@ def test_update_mission_sends_the_merged_set(monkeypatch):
     assert sent == {CPU_ID: "intel", CPU_CORES_ID: 8.5}
 
 
-def test_validate_tag_value_accepts_native_types():
-    _validate_tag_value(42.5, "NUMBER")
-    _validate_tag_value(42, "NUMBER")
-    _validate_tag_value("42.5", "NUMBER")
-    _validate_tag_value(True, "BOOLEAN")
-    _validate_tag_value(False, "BOOLEAN")
-    _validate_tag_value("true", "BOOLEAN")
+def test_validate_metadata_value_accepts_native_types():
+    _validate_metadata_value(42.5, "NUMBER")
+    _validate_metadata_value(42, "NUMBER")
+    _validate_metadata_value("42.5", "NUMBER")
+    _validate_metadata_value(True, "BOOLEAN")
+    _validate_metadata_value(False, "BOOLEAN")
+    _validate_metadata_value("true", "BOOLEAN")
 
     with pytest.raises(InvalidMissionMetadata):
-        _validate_tag_value("nope", "NUMBER")
+        _validate_metadata_value("nope", "NUMBER")
     with pytest.raises(InvalidMissionMetadata):
-        _validate_tag_value("nope", "BOOLEAN")
+        _validate_metadata_value("nope", "BOOLEAN")
 
 
 def test_get_metadata_type_id_by_name_rejects_case_insensitive_fallback_when_truncated():

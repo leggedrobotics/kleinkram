@@ -101,6 +101,7 @@
                     />
                     <app-refresh-button @click="refetchOnClick" />
                     <app-create-button
+                        v-if="canAddProject"
                         label="Add Project"
                         @click="openAddProject"
                     />
@@ -257,6 +258,7 @@
                                 yet.
                             </div>
                             <app-create-button
+                                v-if="canAddProject"
                                 class="q-mt-md"
                                 label="Assign Project"
                                 @click="openAddProject"
@@ -355,18 +357,15 @@
                 @clear="deselectUsers"
             >
                 <q-btn
+                    v-if="currentUserCanEdit"
                     flat
                     dense
                     padding="6px"
                     icon="sym_o_delete"
                     color="white"
-                    :disable="!currentUserCanEdit"
                     @click="deleteSelectedUsers"
                 >
                     Delete
-                    <q-tooltip v-if="!currentUserCanEdit">
-                        You cannot edit this group
-                    </q-tooltip>
                 </q-btn>
             </table-selection-bar>
             <q-table
@@ -412,10 +411,14 @@
                                         <div
                                             class="text-caption text-grey-7 ellipsis"
                                         >
-                                            {{ props.row.user.email ?? 'N/A' }}
+                                            {{
+                                                props.row.user.email ??
+                                                'Email hidden'
+                                            }}
                                         </div>
                                     </div>
                                     <q-btn
+                                        v-if="currentUserCanEdit"
                                         flat
                                         round
                                         dense
@@ -431,9 +434,6 @@
                                                 <q-item
                                                     v-ripple
                                                     clickable
-                                                    :disable="
-                                                        !currentUserCanEdit
-                                                    "
                                                     @click="
                                                         () =>
                                                             toggleUserRole(
@@ -453,9 +453,6 @@
                                                 <q-item
                                                     v-ripple
                                                     clickable
-                                                    :disable="
-                                                        !currentUserCanEdit
-                                                    "
                                                     @click="
                                                         () =>
                                                             removeSingleUser(
@@ -554,6 +551,27 @@
                         class="checkbox-with-hitbox"
                     />
                 </template>
+                <template #body-cell-email="props">
+                    <q-td :props="props">
+                        <span v-if="props.row.user.email">
+                            {{ props.row.user.email }}
+                        </span>
+                        <span
+                            v-else
+                            class="row inline items-center no-wrap text-grey-7"
+                        >
+                            <q-icon
+                                name="sym_o_visibility_off"
+                                size="16px"
+                                class="q-mr-xs"
+                            />
+                            Hidden
+                            <q-tooltip>
+                                Only group editors can see email addresses
+                            </q-tooltip>
+                        </span>
+                    </q-td>
+                </template>
                 <template #body-cell-status="props">
                     <q-td :props="props">
                         <app-status-chip
@@ -643,9 +661,9 @@
                                         </q-tooltip>
                                     </q-item>
                                     <q-item
+                                        v-if="currentUserCanEdit"
                                         v-ripple
                                         clickable
-                                        :disable="!currentUserCanEdit"
                                         @click="() => toggleUserRole(props.row)"
                                     >
                                         <q-item-section>
@@ -655,14 +673,11 @@
                                                     : 'Promote to Owner'
                                             }}
                                         </q-item-section>
-                                        <q-tooltip v-if="!currentUserCanEdit">
-                                            You can't edit a user!
-                                        </q-tooltip>
                                     </q-item>
                                     <q-item
+                                        v-if="currentUserCanEdit"
                                         v-ripple
                                         clickable
-                                        :disable="!currentUserCanEdit"
                                         @click="
                                             () =>
                                                 removeSingleUser(
@@ -898,7 +913,11 @@
 </template>
 <script setup lang="ts">
 import type { GroupMembershipDto } from '@kleinkram/api-dto/types/access-control/group-membership.dto';
-import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    AccessGroupType,
+    UserRole,
+} from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import DialogOpenerAddUser from 'components/button-wrapper/dialog-opener-add-user.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
@@ -915,8 +934,10 @@ import { projectAccessColumns } from 'src/components/explorer-page/explorer-page
 import AddProjectToAccessGroupDialog from 'src/dialogs/add-project-access-group-dialog.vue';
 import SetAccessGroupExpirationDialog from 'src/dialogs/modify-membership-expiration-date-dialog.vue';
 import {
+    hasProjectRightsAnywhere,
     useAccessGroup,
     useAccessGroupAuditLogs,
+    usePermissionsQuery,
     useUser,
 } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
@@ -1155,13 +1176,22 @@ const projectCols = computed(() => {
     }
 });
 
+// Admins may edit any group (canEditAccessGroupByGroupUuid in the backend).
 const currentUserCanEdit = computed(() => {
+    if (user.data.value?.role === UserRole.ADMIN) return true;
     return (
         accessGroup.value?.memberships.some(
             (m) => m.user.uuid === user.data.value?.uuid && m.canEditGroup,
         ) ?? false
     );
 });
+
+// Adding a project to a group needs WRITE on that project
+// (CanWriteProject in the backend).
+const { data: permissions } = usePermissionsQuery();
+const canAddProject = computed(() =>
+    hasProjectRightsAnywhere(AccessGroupRights.WRITE, permissions.value),
+);
 
 const auditLogsQueryEnabled = computed(
     () => !personal.value && currentUserCanEdit.value,

@@ -78,7 +78,10 @@
         @remove="onRemoveGroup"
     />
 
-    <GeneralAccessSelector v-model="isPublic" />
+    <GeneralAccessSelector
+        v-model="isPublic"
+        :disable="generalAccessDisabled"
+    />
 </template>
 
 <script setup lang="ts">
@@ -99,6 +102,14 @@ import { getAccessRightDescription } from 'src/services/generic';
 import { computed, ref } from 'vue';
 
 const accessRights = defineModel<DefaultRightDto[]>({ default: () => [] });
+
+/**
+ * Disables making the project public or restricted again, which needs delete
+ * rights on the project.
+ */
+const { generalAccessDisabled } = defineProps<{
+    generalAccessDisabled?: boolean;
+}>();
 
 /**
  * The public access group is part of the same list of access rights, but it

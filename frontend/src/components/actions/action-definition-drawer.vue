@@ -54,7 +54,7 @@
                             v-model="localTemplate.name"
                             outlined
                             dense
-                            placeholder="e.g. Lidar Validation"
+                            placeholder="e.g. lidar-validation"
                             :readonly="isEditing"
                             :hint="
                                 isEditing
@@ -64,6 +64,13 @@
                             lazy-rules
                             :rules="[
                                 (val) => !!val || 'Name is required',
+                                (val) =>
+                                    isEditing ||
+                                    (getNameValidationError(
+                                        val,
+                                        'Action name',
+                                    ) ??
+                                        true),
                                 () =>
                                     isNameAvailable ||
                                     'This name is already taken',
@@ -220,7 +227,12 @@ import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-
 import type { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
 import type { UpdateTemplateDto } from '@kleinkram/api-dto/types/actions/update-template.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
-import { isValidDockerImageName } from '@kleinkram/validation/frontend';
+import {
+    getNameValidationError,
+    isImageInDockerNamespace,
+    isValidDockerImageName,
+    normalizeDockerNamespace,
+} from '@kleinkram/validation/frontend';
 import ComputeResourcesSelector from 'components/actions/compute-resources-selector.vue';
 import { debounce, Notify, QForm } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
@@ -393,10 +405,14 @@ async function saveTemplate(): Promise<void> {
         };
 
         // 2. Validate Namespace
-        const dockerhubNamespace = import.meta.env.VITE_DOCKER_HUB_NAMESPACE;
+        const dockerhubNamespace = normalizeDockerNamespace(
+            import.meta.env.VITE_DOCKER_HUB_NAMESPACE,
+        );
         if (
-            dockerhubNamespace &&
-            !basePayload.dockerImage.startsWith(dockerhubNamespace)
+            !isImageInDockerNamespace(
+                basePayload.dockerImage,
+                dockerhubNamespace,
+            )
         ) {
             throw new Error(
                 `Image name must start with "${dockerhubNamespace}/"`,

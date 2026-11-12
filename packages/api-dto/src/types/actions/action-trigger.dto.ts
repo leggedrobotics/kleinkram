@@ -1,6 +1,7 @@
 import { TriggerEvent, TriggerType } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
 import {
+    IsDate,
     IsEnum,
     IsObject,
     IsOptional,
@@ -63,4 +64,12 @@ export class ActionTriggerDto {
     @IsString()
     @IsOptional()
     creatorName?: string | null;
+
+    @ApiProperty()
+    @IsDate()
+    createdAt!: Date;
+
+    @ApiProperty()
+    @IsDate()
+    updatedAt!: Date;
 }

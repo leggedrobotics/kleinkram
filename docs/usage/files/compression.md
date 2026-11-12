@@ -61,7 +61,7 @@ mcap compress input.mcap --compression lz4 --chunk-size 4MB
 
 ```bash
 # Upload compressed MCAP (file extension is still .mcap)
-klein upload output.mcap --mission "my-mission" --project "my-project"
+klein upload --project "my-project" --mission "my-mission" output.mcap
 ```
 
 ## Compression Formats

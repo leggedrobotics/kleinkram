@@ -1,4 +1,5 @@
 import {
+    _Object,
     DeleteObjectCommand,
     DeleteObjectTaggingCommand,
     GetObjectCommand,
@@ -8,15 +9,18 @@ import {
     NotFound,
     PutObjectCommand,
     PutObjectTaggingCommand,
-    _Object,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Logger } from '@nestjs/common';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import { toObjectTagValue } from './object-tags';
 import { StorageAuthService } from './storage-auth.service';
-import { S3ClientContainer } from './storage-config.factory';
+import {
+    metadataRequestOptions,
+    S3ClientContainer,
+} from './storage-config.factory';
 import { MetricPoint, StorageMetricsService } from './storage-metrics.service';
 import {
     IStorageBucket,
@@ -113,7 +117,10 @@ export class S3StorageBucket implements IStorageBucket {
         const command = new ListObjectsV2Command({
             Bucket: this.bucketName,
         });
-        const response = await this.clients.internal.send(command);
+        const response = await this.clients.internal.send(
+            command,
+            metadataRequestOptions(),
+        );
         return (
             response.Contents?.map((item: _Object) => ({
                 name: item.Key ?? '',
@@ -132,7 +139,10 @@ export class S3StorageBucket implements IStorageBucket {
             Key: objectName,
         });
         try {
-            const response = await this.clients.internal.send(command);
+            const response = await this.clients.internal.send(
+                command,
+                metadataRequestOptions(),
+            );
             return {
                 size: response.ContentLength ?? 0,
                 etag: response.ETag ?? '',
@@ -196,7 +206,7 @@ export class S3StorageBucket implements IStorageBucket {
             Bucket: this.bucketName,
             Key: objectName,
         });
-        await this.clients.internal.send(command);
+        await this.clients.internal.send(command, metadataRequestOptions());
     }
 
     async getSystemMetrics(): Promise<StorageSystemMetrics> {
@@ -247,7 +257,10 @@ export class S3StorageBucket implements IStorageBucket {
             Bucket: this.bucketName,
             Key: objectName,
         });
-        const response = await this.clients.internal.send(command);
+        const response = await this.clients.internal.send(
+            command,
+            metadataRequestOptions(),
+        );
         const tags: Record<string, string> = {};
         if (response.TagSet) {
             for (const tag of response.TagSet) {
@@ -269,11 +282,11 @@ export class S3StorageBucket implements IStorageBucket {
             Tagging: {
                 TagSet: Object.entries(tags).map(([key, value]) => ({
                     Key: key,
-                    Value: value,
+                    Value: toObjectTagValue(value),
                 })),
             },
         });
-        await this.clients.internal.send(command);
+        await this.clients.internal.send(command, metadataRequestOptions());
     }
 
     async removeTags(objectName: string): Promise<void> {
@@ -281,7 +294,7 @@ export class S3StorageBucket implements IStorageBucket {
             Bucket: this.bucketName,
             Key: objectName,
         });
-        await this.clients.internal.send(command);
+        await this.clients.internal.send(command, metadataRequestOptions());
     }
 
     async generateTemporaryCredential(

@@ -93,7 +93,8 @@ export const getMissions = async (uuids: string[]): Promise<MissionsDto> => {
     const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
         '/missions',
         {
-            params: { missionUuids: uuids },
+            // Return every requested mission, not just the default page of 100.
+            params: { missionUuids: uuids, take: uuids.length },
             paramsSerializer: (parameters) => {
                 return qs.stringify(parameters, {
                     arrayFormat: 'repeat',

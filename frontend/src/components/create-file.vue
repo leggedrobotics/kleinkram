@@ -91,7 +91,7 @@
                                 :suffix="entry.extension"
                                 :error="entry.errors.length > 0"
                                 :error-message="entry.errors[0]"
-                                :hint="`${entry.fullName.length} / ${FILENAME_MAX_LENGTH} characters`"
+                                :hint="`${entry.namePart.length} / ${FILENAME_MAX_LENGTH} characters`"
                                 hide-bottom-space
                                 @update:model-value="
                                     (value) => setNamePart(entry.id, value)
@@ -204,13 +204,11 @@
 import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
 import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
-import { FileType } from '@kleinkram/shared';
 import {
+    FILE_EXTENSIONS,
     FILENAME_MAX_LENGTH,
-    isValidFileName,
-    isValidFileNamePart,
+    getFileNameValidationError,
     isValidGoogleDriveUrl,
-    NON_UUID_REGEX,
     splitFileName,
 } from '@kleinkram/validation/frontend';
 import { useQueryClient } from '@tanstack/vue-query';
@@ -240,12 +238,7 @@ const props = withDefaults(
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024 * 1024;
 const MAX_FILE_SIZE_LABEL = '50 GB';
 
-const acceptedExtensions = [
-    ...Object.values(FileType)
-        .filter((type) => type !== FileType.ALL)
-        .map((type) => `.${type.toLowerCase()}`),
-    '.yml', // yaml files can have both .yml and .yaml as extension
-];
+const acceptedExtensions = FILE_EXTENSIONS;
 const acceptedExtensionSet = new Set(acceptedExtensions);
 const acceptedFileTypes = acceptedExtensions.join(',');
 const acceptedExtensionsLabel = acceptedExtensions.join(', ');
@@ -272,7 +265,10 @@ const toEntry = (file: File): FileEntry => {
         id: nextEntryId++,
         file,
         namePart: name,
-        extension,
+        // `REC.MCAP` is uploaded as `REC.mcap`: the server only accepts lowercase extensions
+        extension: acceptedExtensionSet.has(extension.toLowerCase())
+            ? extension.toLowerCase()
+            : extension,
         editing: false,
     };
 };
@@ -291,26 +287,10 @@ const driveUrlRules = computed(() => [
 const hasValidExtension = (extension: string): boolean =>
     acceptedExtensionSet.has(extension.toLowerCase());
 
-const nameErrors = (entry: FileEntry, fullName: string): string[] => {
-    const errors: string[] = [];
-    if (entry.namePart.trim().length === 0) {
-        errors.push('File name must not be empty');
-    } else if (fullName.length > FILENAME_MAX_LENGTH) {
-        errors.push(
-            `File name is too long (${String(fullName.length)} of ${String(FILENAME_MAX_LENGTH)} characters)`,
-        );
-    } else if (!isValidFileNamePart(entry.namePart)) {
-        errors.push(
-            'Only letters, digits, underscores, hyphens, dots and brackets are allowed',
-        );
-    } else if (entry.namePart.length < 3) {
-        errors.push('File name must have at least 3 characters');
-    } else if (!isValidFileName(fullName)) {
-        errors.push('File name contains characters that are not accepted');
-    } else if (!NON_UUID_REGEX.test(fullName)) {
-        errors.push('File name must not be a UUID');
-    }
-    return errors;
+// the rules of `packages/validation/src/filename.validation.ts`, as on the server
+const nameErrors = (fullName: string): string[] => {
+    const error = getFileNameValidationError(fullName);
+    return error === undefined ? [] : [error];
 };
 
 const entries = computed<FileEntryView[]>(() => {
@@ -336,7 +316,7 @@ const entries = computed<FileEntryView[]>(() => {
                 `File is larger than ${MAX_FILE_SIZE_LABEL}. Please use the CLI to upload it.`,
             );
         } else {
-            errors.push(...nameErrors(entry, fullName));
+            errors.push(...nameErrors(fullName));
             if ((nameCounts.get(fullName) ?? 0) > 1) {
                 errors.push('Another selected file has the same name');
             }

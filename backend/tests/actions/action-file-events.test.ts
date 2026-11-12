@@ -49,13 +49,13 @@ describe('Action File Events', () => {
                     {
                         name: 'test_project',
                         description: 'desc',
-                        requiredTags: [],
+                        requiredMetadataTypes: [],
                         accessGroups: [],
                     },
                     user,
                 ),
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         );
@@ -84,7 +84,7 @@ describe('Action File Events', () => {
         // 3. Create Action Template
         const createdTemplate = await createActionUsingPost(
             {
-                name: 'Test Action',
+                name: 'Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.WRITE, // Needs write access to update file
                 dockerImage: 'hello-world',
@@ -209,6 +209,6 @@ describe('Action File Events', () => {
         );
         expect(downloadEvent).toBeDefined();
         expect(downloadEvent?.action?.uuid).toBe(actionUUID);
-        expect(downloadEvent?.action?.name).toBe('Test Action');
+        expect(downloadEvent?.action?.name).toBe('Test-Action');
     }, 60_000);
 });

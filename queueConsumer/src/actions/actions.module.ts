@@ -1,4 +1,5 @@
 import { AccessControlModule, StorageModule } from '@kleinkram/backend-common';
+import { ActionDiagnosticEntity } from '@kleinkram/backend-common/entities/action/action-diagnostic.entity';
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
@@ -29,6 +30,7 @@ import { ResourceMonitorService } from './services/resource-monitor.service';
         }),
         TypeOrmModule.forFeature([
             ActionEntity,
+            ActionDiagnosticEntity,
             ApiKeyEntity,
             ActionRunnerEntity,
             WorkerEntity,

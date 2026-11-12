@@ -12,7 +12,7 @@ import {
     UserEntity,
     WorkerEntity,
 } from '@kleinkram/backend-common';
-import { AccessGroupRights, KeyTypes } from '@kleinkram/shared';
+import { AccessGroupRights } from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -20,6 +20,7 @@ import {
     HeaderCreator,
 } from '../utils/api-calls';
 import { clearAllData, database } from '../utils/database-utilities';
+import { createActionApiKey } from '../utils/test-helpers';
 
 describe('Verify Action API Key Scope', () => {
     const createTemplateViaApi = async (
@@ -74,7 +75,7 @@ describe('Verify Action API Key Scope', () => {
             {
                 name: 'scope_test_project',
                 description: 'Project for scope testing',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.DELETE,
@@ -91,8 +92,8 @@ describe('Verify Action API Key Scope', () => {
             {
                 name: 'scope_test_mission',
                 projectUUID: globalThis.projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             globalThis.creator,
@@ -168,45 +169,18 @@ describe('Verify Action API Key Scope', () => {
     });
 
     test('if an action API key can access its own project', async () => {
-        // 1. Submit Action
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        const headers = new HeaderCreator(globalThis.creator);
-        headers.addHeader('Content-Type', 'application/json');
-        const submitResponse = await fetch(`${DEFAULT_URL}/actions`, {
-            method: 'POST',
-            headers: headers.getHeaders(),
-            body: JSON.stringify({
-                missionUUID: globalThis.missionUuid,
-                templateUUID: globalThis.templateUuid,
-            }),
-        });
-        expect(submitResponse.status).toBe(201);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const { actionUUID: uuid } = await submitResponse.json();
-
-        // 2. Get the API Key for the action (simulating worker retrieval or internal logic)
-        // Since we removed the automatic creation in the dispatcher, we need to manually create it here
-        // to simulate the worker creating it upon execution start.
-        const actionRepo = database.getRepository(ActionEntity);
-        const action = await actionRepo.findOneOrFail({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            where: { uuid },
-        });
-
-        const apiKeyRepo = database.getRepository(ApiKeyEntity);
-        const apiKeyEntity = apiKeyRepo.create({
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            key_type: KeyTypes.ACTION,
-            mission: { uuid: globalThis.missionUuid },
-            action: action,
+        // 1. Create an API key the way the worker does, bound to a running
+        // action in the original project. Submitting the action through the
+        // API would race with the test worker, which replaces the key.
+        const apiKeyEntity = await createActionApiKey({
+            missionUuid: globalThis.missionUuid,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            userUuid: globalThis.creator.uuid,
             rights: AccessGroupRights.READ,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            user: globalThis.creator,
         });
-        await apiKeyRepo.save(apiKeyEntity);
         const apiKey = apiKeyEntity.apikey;
 
-        // 3. Use API Key to fetch project details
+        // 2. Use API Key to fetch project details
         const projectResponse = await fetch(
             `${DEFAULT_URL}/projects/${globalThis.projectUuid}`,
             {
@@ -234,7 +208,7 @@ describe('Verify Action API Key Scope', () => {
             {
                 name: 'alien_project',
                 description: 'Alien project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [], // No access for creator needed for this test specifically, but api requires it usually.
                 // Actually, let's just create it with creator so it exists.
             },
@@ -242,43 +216,18 @@ describe('Verify Action API Key Scope', () => {
             globalThis.creator,
         );
 
-        // 2. Submit Action in the original project
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        const headers = new HeaderCreator(globalThis.creator);
-        headers.addHeader('Content-Type', 'application/json');
-        const submitResponse = await fetch(`${DEFAULT_URL}/actions`, {
-            method: 'POST',
-            headers: headers.getHeaders(),
-            body: JSON.stringify({
-                missionUUID: globalThis.missionUuid,
-                templateUUID: globalThis.templateUuid,
-            }),
-        });
-        expect(submitResponse.status).toBe(201);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const { actionUUID: uuid } = await submitResponse.json();
-
-        // 3. Get API Key
-        const actionRepo = database.getRepository(ActionEntity);
-        const action = await actionRepo.findOneOrFail({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            where: { uuid },
-        });
-
-        const apiKeyRepo = database.getRepository(ApiKeyEntity);
-        const apiKeyEntity = apiKeyRepo.create({
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            key_type: KeyTypes.ACTION,
-            mission: { uuid: globalThis.missionUuid },
-            action: action,
+        // 2. Create an API key the way the worker does, bound to a running
+        // action in the original project. Submitting the action through the
+        // API would race with the test worker, which replaces the key.
+        const apiKeyEntity = await createActionApiKey({
+            missionUuid: globalThis.missionUuid,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            userUuid: globalThis.creator.uuid,
             rights: AccessGroupRights.READ,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            user: globalThis.creator,
         });
-        await apiKeyRepo.save(apiKeyEntity);
         const apiKey = apiKeyEntity.apikey;
 
-        // 4. Try to access Alien Project
+        // 3. Try to access Alien Project
         const projectResponse = await fetch(
             `${DEFAULT_URL}/projects/${alienProjectUuid}`,
 

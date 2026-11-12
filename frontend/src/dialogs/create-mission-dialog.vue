@@ -11,21 +11,23 @@
                 active-color="primary"
             >
                 <q-tab
-                    name="meta_data"
+                    name="details"
                     label="Mission Details*"
                     style="color: #222"
                     :disable="missionCreated"
                 />
                 <q-tab
-                    name="tags"
+                    name="metadata"
                     :label="
                         'Metadata' +
-                        (!!project && project.requiredTags.length > 0
+                        (!!project && project.requiredMetadataTypes.length > 0
                             ? '*'
                             : '')
                     "
                     style="color: #222"
-                    :disable="!project || missionCreated"
+                    :disable="
+                        !project || !isValidName(missionName) || missionCreated
+                    "
                 />
                 <q-tab
                     name="upload"
@@ -37,7 +39,7 @@
         </template>
         <template #content>
             <q-tab-panels v-model="tab_selection">
-                <q-tab-panel name="meta_data" style="min-height: 280px">
+                <q-tab-panel name="details" style="min-height: 280px">
                     <div
                         v-if="
                             !projectsWithCreateWrite ||
@@ -70,14 +72,10 @@
                                 dense
                                 placeholder="Name...."
                                 style="padding-bottom: 30px"
-                                :error="!isValidMissionName"
-                                :rules="MISSION_NAME_INPUT_VALIDATION"
-                                :error-message="errorMessage"
-                                @change="onMissionNameChange"
+                                :error="!!missionNameError"
+                                :error-message="missionNameError"
+                                @update:model-value="onMissionNameChange"
                             >
-                                <template #error>
-                                    {{ errorMessage }}
-                                </template>
                                 <template v-if="missionName" #append>
                                     <q-icon
                                         name="sym_o_cancel"
@@ -92,12 +90,12 @@
                         </div>
                     </div>
                 </q-tab-panel>
-                <q-tab-panel name="tags" style="min-height: 280px">
-                    <SelectMissionTags
+                <q-tab-panel name="metadata" style="min-height: 280px">
+                    <SelectMissionMetadata
                         v-if="project"
-                        :tag-values="tagValues"
+                        :metadata-values="metadataValues"
                         :project-uuid="project.uuid"
-                        @update:tag-values="updateTagValue"
+                        @update:metadata-values="updateMetadataValues"
                     />
                 </q-tab-panel>
                 <q-tab-panel name="upload">
@@ -115,23 +113,19 @@
 
         <template #actions>
             <q-btn
-                v-if="tab_selection === 'meta_data'"
+                v-if="tab_selection === 'details'"
                 flat
                 label="Next"
-                :disable="
-                    !project ||
-                    missionName.length < MIN_MISSION_NAME_LENGTH ||
-                    missionName.length > MAX_MISSION_NAME_LENGTH
-                "
+                :disable="!project || !isValidName(missionName)"
                 class="bg-button-primary"
                 @click="navigateToMetadataTab"
             />
             <q-btn
-                v-if="tab_selection === 'tags'"
+                v-if="tab_selection === 'metadata'"
                 flat
                 label="Create Mission"
                 class="bg-button-primary"
-                :disable="!allRequiredTagsSet"
+                :disable="!allRequiredMetadataSet || !isValidName(missionName)"
                 @click="submitNewMission"
             />
             <q-btn
@@ -150,10 +144,14 @@
 import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
 import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
+import {
+    getNameValidationError,
+    isValidName,
+} from '@kleinkram/validation/frontend';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import ScopeSelector from 'components/common/scope-selector.vue';
 import CreateFile from 'components/create-file.vue';
-import SelectMissionTags from 'components/select-mission-tags.vue';
+import SelectMissionMetadata from 'components/select-mission-metadata.vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { useScopeSelection } from 'src/composables/use-scope-selection';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
@@ -162,25 +160,10 @@ import { createMission } from 'src/services/mutations/mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { computed, ref, Ref } from 'vue';
 
-const MIN_MISSION_NAME_LENGTH = 3;
-const MAX_MISSION_NAME_LENGTH = 50;
-const MISSION_NAME_INPUT_VALIDATION: ((value: string) => boolean | string)[] = [
-    (value): boolean | string => !!value || 'Field is required',
-    (value): boolean | string =>
-        value.length >= MIN_MISSION_NAME_LENGTH ||
-        `Name must be at least ${MIN_MISSION_NAME_LENGTH.toString()} characters`,
-    (value): boolean | string =>
-        value.length <= MAX_MISSION_NAME_LENGTH ||
-        `Name must be at most ${MAX_MISSION_NAME_LENGTH.toString()} characters`,
-    (value): boolean | string =>
-        /^[\w\-_]+$/g.test(value) ||
-        'Name must be alphanumeric and contain only - and _',
-];
-
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-const tab_selection = ref('meta_data');
+const tab_selection = ref('details');
 const createFileReference = ref<InstanceType<typeof CreateFile> | undefined>(
     undefined,
 );
@@ -199,8 +182,13 @@ const queryClient = useQueryClient();
 const { selectedProject: project } = useScopeSelection(projectUuid);
 
 const missionName = ref('');
-const isValidMissionName = ref(true);
-const errorMessage = ref('');
+// error returned by the server, e.g. if the name is already taken
+const serverErrorMessage = ref('');
+const missionNameError = computed(() => {
+    if (serverErrorMessage.value) return serverErrorMessage.value;
+    if (!missionName.value) return '';
+    return getNameValidationError(missionName.value, 'Mission name') ?? '';
+});
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const { data: all_projects } = useQuery<ProjectsDto>({
@@ -215,13 +203,13 @@ const projectsWithCreateWrite = computed(() => {
     );
 });
 
-const tagValues: Ref<Record<string, string>> = ref({});
+const metadataValues: Ref<Record<string, string>> = ref({});
 
-const allRequiredTagsSet = computed(() => {
-    return project.value?.requiredTags.every(
-        (tag) =>
-            tagValues.value[tag.uuid] !== undefined &&
-            tagValues.value[tag.uuid] !== '',
+const allRequiredMetadataSet = computed(() => {
+    return project.value?.requiredMetadataTypes.every(
+        (metadataType) =>
+            metadataValues.value[metadataType.uuid] !== undefined &&
+            metadataValues.value[metadataType.uuid] !== '',
     );
 });
 
@@ -233,17 +221,21 @@ const submitNewMission = async (): Promise<void> => {
     if (!project.value) {
         return;
     }
+    if (!isValidName(missionName.value)) {
+        // the details tab shows why the name is invalid
+        tab_selection.value = 'details';
+        return;
+    }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const resp = await createMission(
         missionName.value,
         project.value.uuid,
-        tagValues.value,
+        metadataValues.value,
     ).catch((error: unknown) => {
-        tab_selection.value = 'meta_data';
-        isValidMissionName.value = false;
+        tab_selection.value = 'details';
         // @ts-ignore
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        errorMessage.value = error.response.data.message[0];
+        serverErrorMessage.value = error.response.data.message[0];
     });
 
     // exit if the request failed
@@ -278,12 +270,12 @@ const submitNewMission = async (): Promise<void> => {
         position: 'bottom',
     });
     missionName.value = '';
-    tagValues.value = {};
+    metadataValues.value = {};
     tab_selection.value = 'upload';
 };
 
-const updateTagValue = (update: Record<string, string>): void => {
-    tagValues.value = update;
+const updateMetadataValues = (update: Record<string, string>): void => {
+    metadataValues.value = update;
 };
 
 const uploadEventHandler = (): void => {
@@ -295,12 +287,11 @@ const uploadEventHandler = (): void => {
 };
 
 function onMissionNameChange(): void {
-    errorMessage.value = '';
-    isValidMissionName.value = true;
+    serverErrorMessage.value = '';
 }
 
 function navigateToMetadataTab(): void {
-    tab_selection.value = 'tags';
+    tab_selection.value = 'metadata';
 }
 
 function clearMissionName(): void {

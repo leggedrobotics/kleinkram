@@ -10,22 +10,10 @@
             style="padding-bottom: 30px"
             placeholder="Name..."
             :rules="[
-                (val) => !!val || 'A project name cannot be empty!',
-                (val) =>
-                    val.length <= 20 ||
-                    'Project name must be less than 20 characters long!',
-                (val) =>
-                    val.length >= 3 ||
-                    'Project name must be at least 3 characters long!',
-                (val) =>
-                    /^[a-zA-Z0-9-_]*$/.test(val) ||
-                    `Project names can only contain letters, numbers, hyphens, and underscores! It contains: ${
-                        val
-                            .match(/[^a-zA-Z0-9-_]/g)
-                            .map((c: string) => `'${c}'`)
-                            .join(', ') || ''
-                    }`,
-                (val) =>
+                (val: string) =>
+                    val.trim() === project?.name ||
+                    (getNameValidationError(val, 'Project name') ?? true),
+                (val: string) =>
                     !invalidProjectNames.includes(val) ||
                     'A project with that name already exists!',
             ]"
@@ -68,7 +56,8 @@
     </div>
 </template>
 <script setup lang="ts">
-import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/types/project/project-with-required-metadata-types.dto';
+import { getNameValidationError } from '@kleinkram/validation/frontend';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify, QInput } from 'quasar';
 import { useProjectQuery } from 'src/hooks/query-hooks';
@@ -92,7 +81,7 @@ const { data: project } = useProjectQuery(computed(() => projectUuid));
 
 watch(
     () => project.value,
-    (newVale: ProjectWithRequiredTagsDto | undefined) => {
+    (newVale: ProjectWithRequiredMetadataTypesDto | undefined) => {
         if (newVale) {
             projectName.value = newVale.name;
             projectDescription.value = newVale.description;
@@ -112,7 +101,15 @@ async function save_changes(): Promise<void> {
     )
         return;
 
-    // validate input
+    // validate input, the input field already shows the reason; a name from
+    // before the naming rules is kept until it changes
+    const nameError =
+        projectName.value.trim() === project.value?.name
+            ? undefined
+            : getNameValidationError(projectName.value.trim(), 'Project name');
+    if (nameError) {
+        throw new Error(nameError);
+    }
     if (!project.value?.uuid) {
         throw new Error('Project UUID is not valid');
     }

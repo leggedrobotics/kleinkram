@@ -1,6 +1,8 @@
 # Action Triggers
 
-Action triggers allow you to automate the execution of your actions based on specific events or schedules.
+Action triggers allow you to automate the execution of your actions based on specific events or schedules. Besides the
+web interface, you can manage triggers with `klein trigger` (see the [CLI Reference](../python/cli.md#kleinkram-actions))
+and with the [Python SDK](../python/sdk.md#kleinkram-actions).
 
 ![Action Triggers Overview](../../assets/action_triggers_overview.png)
 
@@ -43,11 +45,21 @@ Kleinkram will generate a unique **Webhook URL** for this trigger. You can now s
 
 ### Triggering the Webhook
 
-Send a POST request to the webhook URL to trigger the action.
+Send a POST request to the webhook URL to trigger the action. The URL points at the Kleinkram API (not the web app) and has the form `<API_URL>/hooks/actions/<TRIGGER_UUID>`.
 
 ```bash
-curl -X POST https://your-kleinkram-instance.com/api/v1/hooks/trigger/YOUR_WEBHOOK_ID
+curl -X POST https://<your-kleinkram-api>/hooks/actions/<TRIGGER_UUID>
 ```
+
+The request needs no authentication: anyone who knows the URL can start the action, so treat the URL like a password.
+The action runs with the access rights of the user who created the trigger.
+
+- A `GET` request to the same URL also starts the action.
+- A `POST` body is optional. If you send one, it must be a JSON object of at most 100 KB. Kleinkram does not pass it on
+  to the action container.
+- `POST` requests are limited to 10 per minute per client IP address. Further requests are answered with `429 Too Many Requests`.
+- The response contains the ID of the new execution (`actionUUID`), the template ID (`templateUUID`), its state and
+  creation time.
 
 ## File Pattern Triggers
 

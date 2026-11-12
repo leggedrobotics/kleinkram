@@ -12,8 +12,11 @@ import {
     MissionDto,
 } from '@kleinkram/api-dto/types/mission/mission.dto';
 import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
-import { FileType } from '@kleinkram/shared';
-import { isValidFileName } from '@kleinkram/validation/frontend';
+import { FileType, MAX_FILES_PER_UPLOAD_REQUEST } from '@kleinkram/shared';
+import {
+    getFileNameValidationError,
+    isValidFileName,
+} from '@kleinkram/validation/frontend';
 import { QueryClient } from '@tanstack/vue-query';
 import { AxiosError } from 'axios';
 import pLimit from 'p-limit';
@@ -160,26 +163,21 @@ async function _createFileAction(
         (file) =>
             !isValidFileTypeFilter(file.name) ||
             !isValidNameFilter(file.name) ||
-            !hasValidFileSize(file) ||
-            file.name.length > 50,
+            !hasValidFileSize(file),
     );
 
     if (invalidFiles.length > 0) {
-        const invalidFileNameMessage = `Invalid filename. Only alphanumeric characters, underscores, hyphens, dots, spaces, brackets, and umlauts are allowed.`;
-        const invalidFileNameLengthMessage = `File name is too long. Maximum length is 50 characters.`;
-
         const errorMessages: string[] = invalidFiles.map((file) => {
             const errors: string[] = [];
 
-            // Check errors in order of precedence
-            if (file.name.length > 50) {
-                errors.push(invalidFileNameLengthMessage);
-            }
-            if (!isValidFileTypeFilter(file.name)) {
+            // Check errors in order of precedence; the name rules of
+            // `packages/validation/src/filename.validation.ts` count the
+            // length without the extension
+            if (isValidFileTypeFilter(file.name)) {
+                const nameError = getFileNameValidationError(file.name);
+                if (nameError !== undefined) errors.push(nameError);
+            } else {
                 errors.push(invalidFileTypeMessage);
-            }
-            if (!isValidNameFilter(file.name)) {
-                errors.push(invalidFileNameMessage);
             }
 
             if (!hasValidFileSize(file)) {
@@ -211,6 +209,17 @@ async function _createFileAction(
             timeout: 30_000,
             closeBtn: true,
         });
+    }
+
+    if (validFiles.length > MAX_FILES_PER_UPLOAD_REQUEST) {
+        Notify.create({
+            message: `Too many files to upload (${validFiles.length.toString()}). Upload at most ${MAX_FILES_PER_UPLOAD_REQUEST.toString()} files at once, or use the CLI.`,
+            color: 'negative',
+            spinner: false,
+            timeout: 10_000,
+            closeBtn: true,
+        });
+        return;
     }
 
     const fileItems = validFiles.map((file) => ({

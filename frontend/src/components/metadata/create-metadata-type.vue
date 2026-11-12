@@ -1,16 +1,16 @@
 <template>
     <label>Metadata Name</label>
     <q-input
-        v-model="tagName"
+        v-model="metadataTypeName"
         placeholder="e.g., Location of Mission"
         outlined
         dense
         clearable
         required
         autofocus
-        :error="tagNameError !== ''"
-        :error-message="tagNameError"
-        @update:model-value="handleTagNameUpdate"
+        :error="nameError !== ''"
+        :error-message="nameError"
+        @update:model-value="handleNameUpdate"
     />
 
     <br />
@@ -27,13 +27,13 @@ import { DataType } from '@kleinkram/shared';
 import { useQueryClient } from '@tanstack/vue-query';
 import DataTypeDropdown from 'components/metadata/data-type-dropdown.vue';
 import { Notify } from 'quasar';
-import { createTagType } from 'src/services/mutations/tag';
+import { createMetadataType } from 'src/services/mutations/metadata';
 import { ref } from 'vue';
 
-const tagName = ref('');
+const metadataTypeName = ref('');
 const selectedDataType = ref<DataType | undefined>(undefined);
 const queryClient = useQueryClient();
-const tagNameError = ref('');
+const nameError = ref('');
 const dataTypeError = ref('');
 
 const notifyError = (message: string): false => {
@@ -48,29 +48,31 @@ const notifyError = (message: string): false => {
 };
 
 /**
- * This explicitly sets the tag name to an empty string if the new value is null.
+ * This explicitly sets the metadata type name to an empty string if the new value is null.
  * e.g. when the clear button is clicked
  *
  * @param newValue
  */
-const handleTagNameUpdate = (newValue: string | null | number): void => {
+const handleNameUpdate = (newValue: string | null | number): void => {
     if (newValue === null) {
-        tagName.value = '';
+        metadataTypeName.value = '';
     }
 };
 
-const createTagTypeAction = async (): Promise<boolean> => {
-    // Validate tag name
-    if (tagName.value.length < 3 || tagName.value.length > 50) {
-        tagNameError.value =
-            'Metadata name must be between 3 and 50 characters';
+const createMetadataTypeAction = async (): Promise<boolean> => {
+    // Validate metadata type name
+    if (
+        metadataTypeName.value.length < 3 ||
+        metadataTypeName.value.length > 50
+    ) {
+        nameError.value = 'Metadata name must be between 3 and 50 characters';
         dataTypeError.value = '';
         return false;
     } else {
-        tagNameError.value = '';
+        nameError.value = '';
     }
 
-    // Validate tag type
+    // Validate data type
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!selectedDataType.value && selectedDataType.value !== DataType.ANY) {
         dataTypeError.value = 'Please select a Metadata Type';
@@ -80,25 +82,25 @@ const createTagTypeAction = async (): Promise<boolean> => {
     }
 
     try {
-        await createTagType(
-            tagName.value,
+        await createMetadataType(
+            metadataTypeName.value,
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             selectedDataType.value ?? DataType.STRING,
         );
 
         await queryClient.invalidateQueries({
-            predicate: (query) => query.queryKey[0] === 'tagTypes',
+            predicate: (query) => query.queryKey[0] === 'metadataTypes',
         });
 
         Notify.create({
-            message: `Metadata ${tagName.value} created`,
+            message: `Metadata ${metadataTypeName.value} created`,
             color: 'positive',
             spinner: false,
             timeout: 4000,
             position: 'bottom',
         });
 
-        tagName.value = '';
+        metadataTypeName.value = '';
         selectedDataType.value = DataType.STRING;
         return true;
     } catch (error: unknown) {
@@ -129,5 +131,5 @@ const createTagTypeAction = async (): Promise<boolean> => {
     }
 };
 
-defineExpose({ createTagTypeAction });
+defineExpose({ createMetadataTypeAction });
 </script>

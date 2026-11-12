@@ -44,8 +44,8 @@ describe('Mission list pagination', () => {
                 {
                     name: `pagination_mission_${String(index).padStart(2, '0')}`,
                     projectUUID: projectUuid,
-                    tags: {},
-                    ignoreTags: true,
+                    metadata: {},
+                    ignoreMissingMetadata: true,
                 },
                 user,
             );
@@ -109,8 +109,8 @@ describe('Mission list pagination', () => {
                 {
                     name: `minimal_mission_${String(index).padStart(2, '0')}`,
                     projectUUID: projectUuid,
-                    tags: {},
-                    ignoreTags: true,
+                    metadata: {},
+                    ignoreMissingMetadata: true,
                 },
                 user,
             );
@@ -149,8 +149,8 @@ describe('Mission list pagination', () => {
                 {
                     name: `tied_mission_${String(index).padStart(2, '0')}`,
                     projectUUID: projectUuid,
-                    tags: {},
-                    ignoreTags: true,
+                    metadata: {},
+                    ignoreMissingMetadata: true,
                 },
                 user,
             );

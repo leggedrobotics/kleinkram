@@ -4,12 +4,12 @@ import axios from 'src/api/axios';
 export const createMission = async (
     name: string,
     projectUUID: string,
-    tags: Record<string, string>,
+    metadata: Record<string, string>,
 ) => {
     const response = await axios.post('/missions', {
         name,
         projectUUID,
-        tags,
+        metadata,
     });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
@@ -31,12 +31,12 @@ export const deleteMission = async (mission: MissionWithFilesDto) => {
     return response.data;
 };
 
-export const updateMissionTags = async (
+export const updateMissionMetadata = async (
     missionUUID: string,
-    tags: Record<string, string>,
+    metadata: Record<string, string>,
 ) => {
     const response = await axios.post(`/missions/${missionUUID}/metadata`, {
-        metadata: tags,
+        metadata,
     });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;

@@ -4,57 +4,22 @@ updates:
       directory: '/cli'
       schedule:
           interval: 'weekly'
-      target-branch: 'staging'
+      target-branch: 'dev'
       groups:
           python-dependencies:
               patterns:
                   - '*'
 
-    - package-ecosystem: 'npm'
-      directory: '/frontend'
-      schedule:
-          interval: 'weekly'
-      target-branch: 'staging'
-      groups:
-          frontend-dependencies:
-              patterns:
-                  - '*'
-
-    - package-ecosystem: 'npm'
-      directory: '/backend'
-      schedule:
-          interval: 'weekly'
-      target-branch: 'staging'
-      groups:
-          backend-dependencies:
-              patterns:
-                  - '*'
-
-    - package-ecosystem: 'npm'
-      directory: '/queueConsumer'
-      schedule:
-          interval: 'weekly'
-      target-branch: 'staging'
-      groups:
-          queue-consumer-dependencies:
-              patterns:
-                  - '*'
-
-    - package-ecosystem: 'npm'
-      directory: '/docs'
-      schedule:
-          interval: 'weekly'
-      target-branch: 'staging'
-      groups:
-          docs-dependencies:
-              patterns:
-                  - '*'
+    # No npm entries: Dependabot changes the workspace package.json files but
+    # never the shared root pnpm-lock.yaml, so every npm PR failed
+    # `pnpm install --frozen-lockfile`. npm dependencies are updated by the
+    # weekly .github/workflows/automated-dependency-update.yml instead.
 
     - package-ecosystem: 'github-actions'
       directory: '/'
       schedule:
           interval: 'weekly'
-      target-branch: 'staging'
+      target-branch: 'dev'
       groups:
           github-actions-dependencies:
               patterns:

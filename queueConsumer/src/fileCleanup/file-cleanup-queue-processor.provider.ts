@@ -1,4 +1,5 @@
 import { redis } from '@kleinkram/backend-common/consts';
+import { KEEP_UPDATED_AT } from '@kleinkram/backend-common/entities/base-entity.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 
@@ -82,9 +83,16 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                             hash.update(chunk);
                         });
                         datastream.on('end', () => {
-                            file.hash = hash.digest('base64');
+                            // A repaired hash is not a change to the file, so
+                            // it must not bump `updatedAt`.
                             this.fileRepository
-                                .save(file)
+                                .update(
+                                    { uuid: file.uuid },
+                                    {
+                                        hash: hash.digest('base64'),
+                                        ...KEEP_UPDATED_AT,
+                                    },
+                                )
                                 .then(resolve)
                                 .catch((error: unknown) => {
                                     reject(

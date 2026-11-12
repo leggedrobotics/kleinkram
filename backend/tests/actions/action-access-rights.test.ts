@@ -1,4 +1,8 @@
-import { AccessGroupEntity, ActionEntity } from '@kleinkram/backend-common';
+import {
+    AccessGroupEntity,
+    ActionEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
 import { AccessGroupRights, ActionState } from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
@@ -43,8 +47,8 @@ describe('Action Access Rights', () => {
             {
                 name: 'access_rights_mission',
                 projectUUID: projectUUID,
-                tags: {},
-                ignoreTags: false,
+                metadata: {},
+                ignoreMissingMetadata: false,
             },
             creator,
         );
@@ -131,6 +135,103 @@ describe('Action Access Rights', () => {
         expect(failReadResponse.status).toBe(403);
     });
 
+    test('if launching an action needs WRITE even when the template only asks for READ', async () => {
+        await createMockWorker('launch-write-test-worker');
+
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const accessGroupRepository = database.getRepository(AccessGroupEntity);
+        const usersByRight = new Map<AccessGroupRights, string>();
+        const accessGroups: {
+            rights: AccessGroupRights;
+            accessGroupUUID: string;
+        }[] = [];
+        for (const rights of [
+            AccessGroupRights.READ,
+            AccessGroupRights.CREATE,
+            AccessGroupRights.WRITE,
+        ]) {
+            const { user } = await generateAndFetchDatabaseUser(
+                'internal',
+                'user',
+            );
+            const group = await accessGroupRepository.findOneOrFail({
+                where: { name: user.name },
+            });
+            usersByRight.set(rights, user.uuid);
+            accessGroups.push({ rights, accessGroupUUID: group.uuid });
+        }
+
+        const projectUUID = await createProjectUsingPost(
+            {
+                name: 'launch_write_project',
+                description: 'Test project for launch rights',
+                accessGroups,
+            },
+            creator,
+        );
+        const missionUUID = await createMissionUsingPost(
+            {
+                name: 'launch_write_mission',
+                projectUUID,
+                metadata: {},
+                ignoreMissingMetadata: false,
+            },
+            creator,
+        );
+
+        const creatorHeaders = new HeaderCreator(creator);
+        creatorHeaders.addHeader('Content-Type', 'application/json');
+        const templateResponse = await fetch(`${DEFAULT_URL}/templates`, {
+            method: 'POST',
+            headers: creatorHeaders.getHeaders(),
+            body: JSON.stringify({
+                name: 'launch_write_template',
+                description: 'Test template',
+                dockerImage: 'hello-world',
+                cpuCores: 1,
+                cpuMemory: 2,
+                gpuMemory: 0,
+                maxRuntime: 60,
+                accessRights: AccessGroupRights.READ,
+            }),
+        });
+        expect(templateResponse.status).toBe(201);
+        const { uuid: templateUUID } = (await templateResponse.json()) as {
+            uuid: string;
+        };
+
+        const submitAs = async (rights: AccessGroupRights): Promise<number> => {
+            const userUuid = usersByRight.get(rights);
+            const user = await database
+                .getRepository(UserEntity)
+                .findOneOrFail({ where: { uuid: userUuid } });
+            const headers = new HeaderCreator(user);
+            headers.addHeader('Content-Type', 'application/json');
+            const single = await fetch(`${DEFAULT_URL}/actions`, {
+                method: 'POST',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({ missionUUID, templateUUID }),
+            });
+            const batch = await fetch(`${DEFAULT_URL}/actions/batch`, {
+                method: 'POST',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    missionUUIDs: [missionUUID],
+                    templateUUID,
+                }),
+            });
+            expect(batch.status).toBe(single.status);
+            return single.status;
+        };
+
+        expect(await submitAs(AccessGroupRights.READ)).toBe(403);
+        expect(await submitAs(AccessGroupRights.CREATE)).toBe(403);
+        expect(await submitAs(AccessGroupRights.WRITE)).toBe(201);
+    });
+
     test('if a user can cancel an action based on their rights', async () => {
         // Create worker first so actions can be submitted successfully
         await createMockWorker('cancel-test-worker');
@@ -145,21 +246,34 @@ describe('Action Access Rights', () => {
             'user',
         );
 
-        // Get member's access group
+        const { user: reader } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        // Get the member's and the reader's access groups
         const accessGroupRepository = database.getRepository(AccessGroupEntity);
         const accessGroupMember = await accessGroupRepository.findOneOrFail({
             where: { name: member.name },
         });
+        const accessGroupReader = await accessGroupRepository.findOneOrFail({
+            where: { name: reader.name },
+        });
 
-        // 2. Create a project and mission. Grant READ rights to member group
+        // 2. Create a project and mission. Grant WRITE rights to the member
+        //    group and READ rights to the reader group
         const projectUUID = await createProjectUsingPost(
             {
                 name: 'cancel_access_project',
                 description: 'Test project for cancel access rights',
                 accessGroups: [
                     {
-                        rights: AccessGroupRights.READ,
+                        rights: AccessGroupRights.WRITE,
                         accessGroupUUID: accessGroupMember.uuid,
+                    },
+                    {
+                        rights: AccessGroupRights.READ,
+                        accessGroupUUID: accessGroupReader.uuid,
                     },
                 ],
             },
@@ -171,8 +285,8 @@ describe('Action Access Rights', () => {
             {
                 name: 'cancel_access_mission',
                 projectUUID: projectUUID,
-                tags: {},
-                ignoreTags: false,
+                metadata: {},
+                ignoreMissingMetadata: false,
             },
             creator,
         );
@@ -236,7 +350,19 @@ describe('Action Access Rights', () => {
         );
         expect(failCancelResponse.status).toBe(403);
 
-        // 6. Try to cancel as member user (has READ rights to mission, template requires READ) -> should succeed 201
+        // 6. Try to cancel as a READ-only user -> should fail 403: stopping an
+        //    action needs the same rights as launching it, i.e. at least WRITE
+        const readerHeaders = new HeaderCreator(reader);
+        const readerCancelResponse = await fetch(
+            `${DEFAULT_URL}/actions/${actionUUID}/cancel`,
+            {
+                method: 'POST',
+                headers: readerHeaders.getHeaders(),
+            },
+        );
+        expect(readerCancelResponse.status).toBe(403);
+
+        // Try to cancel as member user (has WRITE rights to mission, template requires READ) -> should succeed 201
         const memberHeaders = new HeaderCreator(member);
         const memberCancelResponse = await fetch(
             `${DEFAULT_URL}/actions/${actionUUID}/cancel`,

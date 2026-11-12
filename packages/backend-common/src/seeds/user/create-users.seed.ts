@@ -50,7 +50,7 @@ export default class CreateUsers implements Seeder {
         let config: AccessGroupConfig | undefined;
         try {
             config = loadAccessConfig();
-            await affiliationGroupService.createAccessGroups(config);
+            await affiliationGroupService.upsertAccessGroups(config);
         } catch (error: unknown) {
             console.warn('Seeding without access config:', error);
         }
@@ -62,7 +62,7 @@ export default class CreateUsers implements Seeder {
             config,
         );
 
-        const { createdMissions, tagTypes } = await seedProjects(
+        const { createdMissions, metadataTypes } = await seedProjects(
             factoryManager,
             dataSource,
             adminUser,
@@ -76,7 +76,7 @@ export default class CreateUsers implements Seeder {
             dataSource,
             adminUser,
             createdMissions,
-            tagTypes,
+            metadataTypes,
         );
     }
 }

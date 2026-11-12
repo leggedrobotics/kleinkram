@@ -15,8 +15,8 @@ SeaweedFS is a high-performance distributed storage system for blobs, objects, f
     - Metadata (filename, missionUuid, projectUuid) is stored as object tags.
 - `artifacts`: Stores Kleinkram action artifacts.
     - Files are named using the action UUID.
-- `dbdump`: Stores scheduled PostgreSQL database dumps.
-    - Filenames follow the pattern `backup-<timestamp>.sql`.
+- `dbdumps`: Stores PostgreSQL database dumps written by the deployment's backup job (see [Database Backups](#database-backups)).
+    - Kleinkram itself never writes to this bucket.
 
 The API server should never download or upload files directly to avoid performance bottlenecks. Instead, it issues presigned URLs or temporary credentials for clients to interact with SeaweedFS directly.
 
@@ -31,6 +31,44 @@ The default provided `docker-compose.prod.yml` runs SeaweedFS with a single `ser
 
 In production deployments, you should typically run these components separately instead of using our default configuration. This provides better fault isolation and horizontal scaling. For more information, please see the [official SeaweedFS Components Documentation](https://github.com/seaweedfs/seaweedfs/wiki/Components).
 :::
+
+### Database Backups
+
+Kleinkram does not back up its own database. The production images are distroless and contain neither a shell nor
+`pg_dump`, so backups are the job of the deployment, not of the API server.
+
+The `docker-compose` files in this repository do not include a backup job. For a production deployment, add one that
+runs `pg_dump` with the same major version as the database server and uploads the result to the `dbdumps` bucket
+(`S3_DB_BUCKET_NAME`). SeaweedFS deletes objects in that bucket after 30 days, a TTL that
+`docker/seaweedfs-entrypoint.sh` sets when the container starts. Keep older copies by backing up the SeaweedFS data
+directory or by copying the dumps somewhere else.
+
+The backup job of the RSL deployment, for example, runs two services next to the stack:
+
+- `db-backup` (image `postgres:17`): every 6 h it writes `pg_dump -Fc` to a shared directory as
+  `<database>_<UTC timestamp>.dump`, then checks that `pg_restore --list` can read the file.
+- `db-backup-upload` (image `rclone/rclone`): moves finished dumps into the `dbdumps` bucket and deletes the local
+  copy only after the upload succeeds.
+
+Both log one line per run (`db-backup ok: …` or `db-backup FAILED: …`). Alert on a missing `ok` line, not on an error
+line: a job that stopped running logs nothing.
+
+**Restoring a dump:**
+
+```bash
+# download the dump, e.g. with the AWS CLI or rclone
+aws --endpoint-url "$S3_ENDPOINT" s3 cp s3://dbdumps/grandtour_2026-11-11T060000Z.dump .
+
+# restore into an empty database (here a throwaway container)
+docker run -d --name restore-test -e POSTGRES_PASSWORD=test postgres:17
+until docker exec restore-test pg_isready -U postgres -q; do sleep 1; done
+docker cp grandtour_2026-11-11T060000Z.dump restore-test:/tmp/
+docker exec restore-test createdb -U postgres grandtour
+docker exec restore-test pg_restore -U postgres -d grandtour --no-owner /tmp/grandtour_2026-11-11T060000Z.dump
+
+# check that the newest migration matches the deployed version
+docker exec restore-test psql -U postgres -d grandtour -c 'select name from migrations order by id desc limit 1'
+```
 
 ### Redis (Queue & Cache)
 

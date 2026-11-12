@@ -2,6 +2,8 @@
 
 # Kleinkram - Open Robotic Data Management
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23804897.svg)](https://doi.org/10.5281/zenodo.23804897)
+
 Kleinkram is a self-hosted, open-source platform for managing and processing robotics data. It provides a structured way to store, organize, and act on your data.
 
 - **Organize**: Structure data in Projects and Missions.
@@ -89,3 +91,19 @@ For help and support:
 
 1. Check the [official documentation](https://docs.datasets.leggedrobotics.com/).
 2. If you can't find an answer, [open an issue on GitHub](https://github.com/leggedrobotics/kleinkram/issues).
+
+## Citation
+
+If you use Kleinkram in your research, please cite the archived software:
+
+> Püntener, C., Schwabe, J., Garmier, D., Frey, J., & Hutter, M. (2026). Kleinkram. Zenodo. https://doi.org/10.5281/zenodo.23804897
+
+The DOI above always resolves to the latest archived version. Each release also has its own version-specific DOI listed on the Zenodo record.
+
+## License
+
+Kleinkram is released under the [MIT License](LICENSE).
+
+Created by: Cyrill Püntener, Johann Schwabe, Dominique Garmier, Jonas Frey, Marco Hutter
+
+Copyright (c) 2024-2026 ETH Zürich

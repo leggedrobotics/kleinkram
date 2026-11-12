@@ -23,7 +23,7 @@ async function setupProjectWithAccess(
         {
             name: `delete_scope_project_${suffix}`,
             description: 'Delete scope test project',
-            requiredTags: [],
+            requiredMetadataTypes: [],
             accessGroups: [{ userUuid: accessUser.uuid, rights }],
         },
         creator,
@@ -33,8 +33,8 @@ async function setupProjectWithAccess(
         {
             name: `delete_scope_mission_${suffix}`,
             projectUUID: projectUuid,
-            tags: {},
-            ignoreTags: true,
+            metadata: {},
+            ignoreMissingMetadata: true,
         },
         creator,
     );

@@ -1,7 +1,7 @@
 import { FileEntity, UserEntity } from '@kleinkram/backend-common';
 import { AccessGroupRights, DataType, FileType } from '@kleinkram/shared';
 import {
-    createMetadataUsingPost,
+    createMetadataTypeUsingPost,
     createMissionUsingPost,
     createProjectUsingPost,
     HeaderCreator,
@@ -42,7 +42,7 @@ async function setupProjectWithAccess(
         {
             name: `test_project_${String(Date.now())}`,
             description: 'Test project',
-            requiredTags: [],
+            requiredMetadataTypes: [],
             accessGroups: [
                 {
                     userUuid: accessUser.uuid,
@@ -57,8 +57,8 @@ async function setupProjectWithAccess(
         {
             name: `test_mission_${String(Date.now())}`,
             projectUUID: projectUuid,
-            tags: {},
-            ignoreTags: true,
+            metadata: {},
+            ignoreMissingMetadata: true,
         },
         creator,
     );
@@ -87,7 +87,7 @@ describe('Verify Mission Level Admin Access', () => {
             {
                 name: 'admin_mission_project',
                 description: 'Admin project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             admin,
         );
@@ -96,8 +96,8 @@ describe('Verify Mission Level Admin Access', () => {
             {
                 name: 'admin_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             admin,
         );
@@ -173,7 +173,7 @@ describe('Verify Mission Level Admin Access', () => {
             {
                 name: 'source_project',
                 description: 'Source project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             admin,
         );
@@ -181,7 +181,7 @@ describe('Verify Mission Level Admin Access', () => {
             {
                 name: 'target_project',
                 description: 'Target project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             admin,
         );
@@ -190,8 +190,8 @@ describe('Verify Mission Level Admin Access', () => {
             {
                 name: 'movable_mission',
                 projectUUID: projectUuid1,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             admin,
         );
@@ -367,7 +367,7 @@ describe('Verify Mission Level Admin Access', () => {
             {
                 name: 'admin_upload_project',
                 description: 'Admin upload project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             admin,
         );
@@ -376,8 +376,8 @@ describe('Verify Mission Level Admin Access', () => {
             {
                 name: 'admin_upload_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             admin,
         );
@@ -406,7 +406,7 @@ describe('Verify Mission Level Admin Access', () => {
             {
                 name: 'admin_move_file_project',
                 description: 'Admin move file project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             admin,
         );
@@ -415,8 +415,8 @@ describe('Verify Mission Level Admin Access', () => {
             {
                 name: 'admin_source_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             admin,
         );
@@ -425,8 +425,8 @@ describe('Verify Mission Level Admin Access', () => {
             {
                 name: 'admin_target_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             admin,
         );
@@ -461,7 +461,7 @@ describe('Verify Mission Level Admin Access', () => {
             {
                 name: 'admin_delete_file_project',
                 description: 'Admin delete file project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             admin,
         );
@@ -470,8 +470,8 @@ describe('Verify Mission Level Admin Access', () => {
             {
                 name: 'admin_delete_file_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             admin,
         );
@@ -510,7 +510,7 @@ describe('Verify Mission Level User Access', () => {
             {
                 name: 'create_mission_project',
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         userUuid: createUser.uuid,
@@ -526,8 +526,8 @@ describe('Verify Mission Level User Access', () => {
             {
                 name: 'created_by_user',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             createUser,
         );
@@ -681,7 +681,7 @@ describe('Verify Mission Level User Access', () => {
             {
                 name: 'target_project_read',
                 description: 'Target project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             creator,
         );
@@ -775,10 +775,10 @@ describe('Verify Mission Level User Access', () => {
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
                     metadata: {
-                        [await createMetadataUsingPost(
+                        [await createMetadataTypeUsingPost(
                             {
                                 type: DataType.STRING,
-                                name: 'edit_metadata_tag',
+                                name: 'edit_metadata_type',
                             },
                             creator,
                         )]: 'test_value',
@@ -809,7 +809,7 @@ describe('Verify Mission Level User Access', () => {
             {
                 name: 'target_project_write',
                 description: 'Target project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             creator,
         );
@@ -861,7 +861,7 @@ describe('Verify Mission Level User Access', () => {
             {
                 name: 'delete_move_project',
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         userUuid: deleteUser.uuid,
@@ -876,8 +876,8 @@ describe('Verify Mission Level User Access', () => {
             {
                 name: 'movable_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             creator,
         );
@@ -886,7 +886,7 @@ describe('Verify Mission Level User Access', () => {
             {
                 name: 'target_project_delete',
                 description: 'Target project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         userUuid: deleteUser.uuid,
@@ -1110,7 +1110,7 @@ describe('Verify Mission File Level User Access', () => {
             {
                 name: 'read_move_files_project',
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         userUuid: readUser.uuid,
@@ -1125,8 +1125,8 @@ describe('Verify Mission File Level User Access', () => {
             {
                 name: 'source_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             creator,
         );
@@ -1135,8 +1135,8 @@ describe('Verify Mission File Level User Access', () => {
             {
                 name: 'target_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             creator,
         );
@@ -1244,7 +1244,7 @@ describe('Verify Mission File Level User Access', () => {
             {
                 name: 'edit_move_files_project',
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         userUuid: editUser.uuid,
@@ -1259,8 +1259,8 @@ describe('Verify Mission File Level User Access', () => {
             {
                 name: 'edit_source_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             creator,
         );
@@ -1269,8 +1269,8 @@ describe('Verify Mission File Level User Access', () => {
             {
                 name: 'edit_target_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             creator,
         );
@@ -1339,7 +1339,7 @@ describe('Verify Mission File Level User Access', () => {
             {
                 name: 'delete_move_files_project',
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         userUuid: deleteUser.uuid,
@@ -1354,8 +1354,8 @@ describe('Verify Mission File Level User Access', () => {
             {
                 name: 'delete_source_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             creator,
         );
@@ -1364,8 +1364,8 @@ describe('Verify Mission File Level User Access', () => {
             {
                 name: 'delete_target_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             creator,
         );

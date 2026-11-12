@@ -2,18 +2,6 @@ import 'tsconfig-paths/register';
 import { DataSource } from 'typeorm';
 import { getConfig } from './development-datasource.config';
 
-const datasource = new DataSource(getConfig());
-
-datasource
-    .initialize()
-    .then((ds) => {
-        // eslint-disable-next-line no-console
-        console.log(
-            `Connected to ${ds.options.database as string} on ${(ds.options as { host?: string }).host ?? 'unknown host'}`,
-        );
-    })
-    // eslint-disable-next-line unicorn/prefer-top-level-await
-    .catch((error: unknown) => {
-        console.error(error);
-    });
-export default datasource;
+// The TypeORM CLI initializes the data source itself and fails if it is
+// already connected, so it must not be initialized here.
+export default new DataSource(getConfig());

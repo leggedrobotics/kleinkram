@@ -58,6 +58,15 @@ On top of that, affiliation groups can be used to
 - can restrict or allow global access rights (e.g. all users not part of the `RoboticsCorp` affiliation group are not
   allowed create new projects or creation of new access groups)
 
+### System Page
+
+Users who may create projects (admins and members of an affiliation group) get a _System_ tab in the top navigation.
+The System page shows the storage usage, the action workers with their availability, and the running actions. Their
+dashboard shows a one-line summary of it with a link to the page.
+
+Other users do not see the tab or the summary. The API answers `403 Forbidden` when they request the storage usage
+(`GET /files/storage`) or the list of workers (`GET /workers`).
+
 ## Primary Group
 
 Each user has a primary group. This group has the same name as the user and is automatically created when the user is
@@ -71,8 +80,8 @@ project and can find, view and download it without being added to a group. Publi
 _Public_ badge and can be listed with the _Public Projects_ filter of the project list.
 
 Public access is always limited to <Read/>. To let someone upload or change data, add them (or one of their groups)
-to the project as usual. Making a project public requires the right to manage its access (<Delete/>), and it can be
-made restricted again at any time.
+to the project as usual. Making a project public, or restricted again, requires <Delete/> on the project. Users with
+<Modify/> can still manage the other access rights of a public project.
 
 Internally, public access is granted through a system access group (_All Kleinkram Users_) that every user belongs
 to implicitly. It is hidden from the group search and its members cannot be changed.

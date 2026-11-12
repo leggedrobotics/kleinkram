@@ -16,9 +16,13 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import environment from '@backend-common/environment';
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Readable } from 'node:stream';
+import { toObjectTagValue } from './object-tags';
 import { S3StorageBucket } from './s3-storage-bucket';
 import { StorageAuthService } from './storage-auth.service';
-import { S3ClientContainer } from './storage-config.factory';
+import {
+    metadataRequestOptions,
+    S3ClientContainer,
+} from './storage-config.factory';
 import { StorageMetricsService } from './storage-metrics.service';
 import {
     PresignedResponseHeaders,
@@ -41,7 +45,6 @@ export class StorageService implements OnModuleInit {
         const buckets = [
             environment.S3_DATA_BUCKET_NAME,
             environment.S3_ARTIFACTS_BUCKET_NAME,
-            environment.S3_DB_BUCKET_NAME,
         ];
 
         for (const bucketName of buckets) {
@@ -72,7 +75,10 @@ export class StorageService implements OnModuleInit {
                         ],
                     },
                 });
-                await this.clients.internal.send(command);
+                await this.clients.internal.send(
+                    command,
+                    metadataRequestOptions(),
+                );
                 Logger.debug(
                     `Configured CORS for S3 bucket ${bucketName}`,
                     'StorageService',
@@ -111,7 +117,10 @@ export class StorageService implements OnModuleInit {
             const getCommand = new GetBucketLifecycleConfigurationCommand({
                 Bucket: bucketName,
             });
-            const response = await this.clients.internal.send(getCommand);
+            const response = await this.clients.internal.send(
+                getCommand,
+                metadataRequestOptions(),
+            );
             existingRules = response.Rules ?? [];
         } catch (error: unknown) {
             if (
@@ -147,7 +156,10 @@ export class StorageService implements OnModuleInit {
                     },
                 },
             );
-            await this.clients.internal.send(lifecycleCommand);
+            await this.clients.internal.send(
+                lifecycleCommand,
+                metadataRequestOptions(),
+            );
             Logger.debug(
                 `Configured Lifecycle for S3 bucket ${bucketName}`,
                 'StorageService',
@@ -239,7 +251,10 @@ export class StorageService implements OnModuleInit {
         const command = new ListObjectsV2Command({
             Bucket: bucketName,
         });
-        const response = await this.clients.internal.send(command);
+        const response = await this.clients.internal.send(
+            command,
+            metadataRequestOptions(),
+        );
         return (
             response.Contents?.map((item) => ({
                 name: item.Key ?? '',
@@ -259,7 +274,10 @@ export class StorageService implements OnModuleInit {
             Key: objectName,
         });
         try {
-            const response = await this.clients.internal.send(command);
+            const response = await this.clients.internal.send(
+                command,
+                metadataRequestOptions(),
+            );
             return {
                 size: response.ContentLength ?? 0,
                 etag: response.ETag ?? '',
@@ -323,7 +341,7 @@ export class StorageService implements OnModuleInit {
             Bucket: bucketName,
             Key: objectName,
         });
-        await this.clients.internal.send(command);
+        await this.clients.internal.send(command, metadataRequestOptions());
     }
 
     async getTags(
@@ -334,7 +352,10 @@ export class StorageService implements OnModuleInit {
             Bucket: bucketName,
             Key: objectName,
         });
-        const response = await this.clients.internal.send(command);
+        const response = await this.clients.internal.send(
+            command,
+            metadataRequestOptions(),
+        );
         const tags: Record<string, string> = {};
         if (response.TagSet) {
             for (const tag of response.TagSet) {
@@ -357,11 +378,11 @@ export class StorageService implements OnModuleInit {
             Tagging: {
                 TagSet: Object.entries(tags).map(([key, value]) => ({
                     Key: key,
-                    Value: value,
+                    Value: toObjectTagValue(value),
                 })),
             },
         });
-        await this.clients.internal.send(command);
+        await this.clients.internal.send(command, metadataRequestOptions());
     }
 
     async removeTags(bucketName: string, objectName: string): Promise<void> {
@@ -369,7 +390,7 @@ export class StorageService implements OnModuleInit {
             Bucket: bucketName,
             Key: objectName,
         });
-        await this.clients.internal.send(command);
+        await this.clients.internal.send(command, metadataRequestOptions());
     }
 
     async getSystemMetrics(): Promise<StorageSystemMetrics> {

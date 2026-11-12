@@ -138,7 +138,7 @@ const ROUTES = {
             },
             { displayName: ':mission_name', to: undefined },
         ],
-        path: '/project/:projectUuid/mission/:missionUuid/:tab(files|actions)?',
+        path: '/project/:projectUuid/mission/:missionUuid/:tab(info|files|actions)?',
         component: () => import('pages/files-explorer-page.vue'),
         layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
@@ -207,6 +207,14 @@ const ROUTES = {
         name: 'AccessGroupDetailPage',
         path: '/access-group/:uuid',
         component: () => import('pages/access-group-details-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
+    }),
+
+    SYSTEM: routeWithLayout({
+        breadcrumbs: [{ displayName: 'System', to: undefined }],
+        name: 'SystemPage',
+        path: '/system',
+        component: () => import('pages/system-page.vue'),
         layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 

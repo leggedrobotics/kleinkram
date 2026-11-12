@@ -109,7 +109,7 @@ PROJECT_ENDPOINT = "/projects"
 # the single file route, the only one returning the topics of a file
 FILE_BY_ID_ENDPOINT = "/files/{}"
 
-TAG_TYPE_BY_NAME = "/metadata-types/filtered"
+METADATA_TYPE_BY_NAME = "/metadata-types/filtered"
 
 ACTION_ENDPOINT = "/action"
 
@@ -592,14 +592,18 @@ def _create_mission(
     project_id: UUID,
     mission_name: str,
     *,
-    tags: Dict[UUID, MetadataPayloadValue],
-    ignore_missing_tags: bool = False,
+    metadata: Dict[UUID, MetadataPayloadValue],
+    ignore_missing_metadata: bool = False,
 ) -> UUID:
+    # `tags` and `ignoreTags` are the pre-rename names of `metadata` and
+    # `ignoreMissingMetadata`. Servers before the rename require `tags` and
+    # reject unknown fields, newer servers still accept both as deprecated
+    # aliases, so the old names are the only ones every server understands.
     payload = {
         "name": mission_name,
         "projectUUID": str(project_id),
-        "tags": {str(k): v for k, v in tags.items()},
-        "ignoreTags": ignore_missing_tags,
+        "tags": {str(k): v for k, v in metadata.items()},
+        "ignoreTags": ignore_missing_metadata,
     }
     resp = client.post(CREATE_MISSION, json=payload)
     resp.raise_for_status()
@@ -614,19 +618,19 @@ def _create_project(client: AuthenticatedClient, project_name: str, description:
 
     return UUID(resp.json()["uuid"], version=4)
 
-    # TODO: add check for LOCATION tag datatype
+    # TODO: add check for LOCATION metadata datatype
 
 
-def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, tags: Dict[UUID, MetadataPayloadValue]) -> None:
+def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, metadata: Dict[UUID, MetadataPayloadValue]) -> None:
     """\
     replaces the mission's *full* metadata set
 
-    metadata types missing from `tags` are removed by the API, so callers have
+    metadata types missing from `metadata` are removed by the API, so callers have
     to pass everything the mission should end up with (see
     `kleinkram.core.update_mission`, which merges partial updates)
     """
     payload = {
-        "metadata": {str(k): v for k, v in tags.items()},
+        "metadata": {str(k): v for k, v in metadata.items()},
     }
     resp = client.post(f"/missions/{mission_id}/metadata", json=payload)
 

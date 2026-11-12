@@ -17,25 +17,46 @@ Kleinkram organizes data in a three-level hierarchy: **Project**, **Mission**, a
 
 ### Data Hierarchy
 
-- **Project**: The top-level container. Projects are used to group related missions together. For example, a project could be "Field Testing 2024" or "Warehouse Logistics". Access control is typically managed at the project level.
-- **Mission**: A specific data collection event or experiment. A mission belongs to exactly one project. For example, "Mission 1: Calibration Run" or "Mission 2: Obstacle Avoidance".
+- **Project**: The top-level container. Projects are used to group related missions together. For example, a project could be `field-testing-2024` or `warehouse_logistics`. Access control is typically managed at the project level.
+- **Mission**: A specific data collection event or experiment. A mission belongs to exactly one project. For example, `2024-05-14_calibration-run` or `obstacle-avoidance-v1.2`.
 - **File**: The actual data files (e.g., `.bag`, `.mcap`, `.db3`, `.yaml`) collected during a mission. Files belong to exactly one mission.
 
-### Metadata and Tags
+### Naming Rules
 
-Kleinkram allows you to organize and search your data using metadata and tags at different levels.
+Project and mission names are used as identifiers in the CLI and SDK (for example `klein upload -p <project> -m <mission>`), so they follow a strict format:
 
-#### Mission Level: Metadata Tags
+- 3 to 100 characters long.
+- Only ASCII letters (`a-z`, `A-Z`), digits (`0-9`), dots (`.`), underscores (`_`) and hyphens (`-`). Spaces, slashes and accented characters are not allowed.
+- Must not start with a dot (it would be a hidden directory) or a hyphen (a command line would read it as an option).
+- Must not be a UUID, so a name can never be mistaken for an id.
+- Project names must be unique across the instance. Mission names must be unique within their project.
 
-You can add key-value pairs as metadata to missions. This allows for powerful filtering and organization.
+Use `-` or `_` where you would use a space: `Field Testing 2024` becomes `field-testing-2024`. If a name is invalid, the web interface, the CLI and the API suggest a valid alternative. Access group, action template and trigger names follow the same rules.
 
-- **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" tag for every mission).
-- **Usage**: Use these tags to quickly find all missions performed by a specific robot or in a specific location.
+File names follow the same rules for the part before the extension, which is 3 to 50 characters long. The extension
+must be one of the [supported file types](./files/files.md), in lowercase: `run_01.mcap` and `calib.2024-05-14.bag`
+are valid, `a.bag`, `run 1.bag` and `REC.MCAP` are not. The web interface lowercases the extension for you, and
+`klein upload --fix-filenames` turns any name into a valid one.
+
+These rules apply to new names. Existing projects, missions, files, action templates and triggers keep their names, and
+can still be edited without renaming them: a new version of an action template keeps the name of the template. A name
+that is changed must follow the rules.
+
+### Metadata and Categories
+
+Kleinkram allows you to organize and search your data using metadata on missions and categories on files.
+
+#### Mission Level: Metadata
+
+You can add key-value pairs as metadata to missions. Each key is a **metadata type**, which defines the name and datatype (e.g. string, number, boolean, date, location, link) of a value; the value set on a mission is its **metadata**. This allows for powerful filtering and organization. A value of type link must be an absolute `http://` or `https://` URL; other values are rejected.
+
+- **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" metadata type for every mission).
+- **Usage**: Use this metadata to quickly find all missions performed by a specific robot or in a specific location.
 
 ::: tip Example: GrandTourDataset
-The GrandTourDataset uses a Metadata Tag `Short Name` to identify the mission in addition to the mission name `release_2024-11-04-10-57-34`. This is useful for quickly identifying the mission in the Kleinkram UI.
+The GrandTourDataset uses the metadata type `Short Name` to identify the mission in addition to the mission name `release_2024-11-04-10-57-34`. This is useful for quickly identifying the mission in the Kleinkram UI.
 
-![Metadata and Tags UI](/assets/metadata.png)
+![Mission metadata in the UI](/assets/metadata.png)
 :::
 
 #### File Level: Category Tags
@@ -63,8 +84,8 @@ The primary way to upload data to Kleinkram is using the **Kleinkram CLI**.
 
 3.  **Upload Data**:
     ```bash
-    klein project create "My Project" --description "Data of my robot"
-    klein upload -p "My Project" -m "Mission 1" --create ./data/*.bag
+    klein project create my-project --description "Data of my robot"
+    klein upload -p my-project -m mission-1 --create ./data/*.bag
     ```
 
 For more details on installation and usage, see the [CLI Documentation](python/cli.md).

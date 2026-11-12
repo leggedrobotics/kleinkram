@@ -48,7 +48,7 @@
                         style="height: 100%; min-height: 40px; min-width: 40px"
                     />
 
-                    <ConfigureTagsDialogOpener
+                    <ConfigureMetadataTypesDialogOpener
                         v-if="projectUuid && !isReadOnlyPublicView"
                         :project-uuid="projectUuid"
                     >
@@ -68,7 +68,7 @@
                                 Enforce Metadata
                             </q-tooltip>
                         </q-btn>
-                    </ConfigureTagsDialogOpener>
+                    </ConfigureMetadataTypesDialogOpener>
 
                     <q-btn
                         icon="sym_o_more_vert"
@@ -249,7 +249,7 @@
                 </q-btn>
 
                 <q-btn
-                    v-if="!isReadOnlyPublicView"
+                    v-if="!isReadOnlyPublicView && canDeleteSelectedMissions"
                     flat
                     dense
                     padding="6px"
@@ -312,7 +312,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import ActionConfiguration from 'components/actions/action-configuration.vue';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
-import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
+import ConfigureMetadataTypesDialogOpener from 'components/button-wrapper/dialog-opener-configure-metadata-types.vue';
 import CreateMissionDialogOpener from 'components/button-wrapper/dialog-opener-create-mission.vue';
 import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
@@ -330,6 +330,7 @@ import { copyToClipboard, useQuasar } from 'quasar';
 import { usePublicReadOnlyView } from 'src/composables/use-public-read-only-view';
 import DeleteMissionDialog from 'src/dialogs/delete-mission-dialog.vue';
 import {
+    canDeleteMission,
     canDeleteProject,
     registerNoPermissionErrorHandler,
     useHandler,
@@ -349,6 +350,13 @@ const createAction = ref(false);
 registerNoPermissionErrorHandler(isLoadingError, projectUuid, 'project', error);
 
 const { data: permissions } = usePermissionsQuery();
+
+// Deleting a mission needs DELETE rights (CanDeleteMission in the backend).
+const canDeleteSelectedMissions = computed(() =>
+    selectedMissions.value.every((m) =>
+        canDeleteMission(m.uuid, projectUuid.value, permissions.value),
+    ),
+);
 const isReadOnlyPublicView = usePublicReadOnlyView(projectUuid);
 
 /** Tells the users who manage access that the project is public. */

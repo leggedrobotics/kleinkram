@@ -1,22 +1,17 @@
 <template>
-    <div
-        :class="{
-            disabled: !canModify,
-            'cursor-pointer': !canModify,
-            'cursor-not-allowed': !canModify,
-        }"
-        @click="editFile"
-    >
+    <div v-if="canModify" class="cursor-pointer" @click="editFile">
         <slot />
-        <q-tooltip v-if="!canModify">
-            You do not have permission to modify this project
-        </q-tooltip>
     </div>
 </template>
 
 <script setup lang="ts">
+import { AccessGroupRights } from '@kleinkram/shared';
 import { useQuasar } from 'quasar';
-import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
+import {
+    canModifyFiles,
+    usePermissionsQuery,
+    useUser,
+} from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
@@ -25,13 +20,17 @@ import NewEditFile from 'components/edit-file.vue';
 const $q = useQuasar();
 const { file } = defineProps<{ file: FileWithTopicDto }>();
 const { data: permissions } = usePermissionsQuery();
-const canModify = computed(() => {
-    return canModifyMission(
+const { data: user } = useUser();
+const canModify = computed(() =>
+    canModifyFiles(
+        [file],
         file.mission.uuid,
         file.mission.project.uuid,
+        AccessGroupRights.WRITE,
+        user.value?.uuid,
         permissions.value,
-    );
-});
+    ),
+);
 
 const editFile = (): void => {
     if (!canModify.value) return;
@@ -44,9 +43,3 @@ const editFile = (): void => {
     });
 };
 </script>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>

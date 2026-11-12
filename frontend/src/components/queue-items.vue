@@ -289,6 +289,7 @@ import {
     useDeleteQueueItem,
     useQueue,
 } from 'src/composables/use-file-queue';
+import { canDeleteMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 
 const $router = useRouter();
 const queryClient = useQueryClient();
@@ -370,6 +371,7 @@ watch(queueEntries, (newValue) => {
 
 const { mutate: removeFile } = useDeleteQueueItem();
 const { mutate: _cancelProcessing } = useCancelProcessing();
+const { data: permissions } = usePermissionsQuery();
 
 const openDeleteFileDialog = (queueEntry: FileQueueEntryDto): void => {
     $q.dialog({
@@ -485,7 +487,7 @@ interface QueueRowAction {
 }
 
 function rowActions(row: FileQueueEntryDto): QueueRowAction[] {
-    return [
+    const actions: QueueRowAction[] = [
         {
             label: 'Download File',
             disabled: row.state !== QueueState.COMPLETED,
@@ -493,6 +495,21 @@ function rowActions(row: FileQueueEntryDto): QueueRowAction[] {
                 void downloadFile(row);
             },
         },
+    ];
+
+    // Deleting and cancelling need DELETE on the mission
+    // (CanDeleteQueueItem in the backend), so hide them otherwise.
+    if (
+        !canDeleteMission(
+            row.mission.uuid,
+            row.mission.project.uuid,
+            permissions.value,
+        )
+    ) {
+        return actions;
+    }
+
+    actions.push(
         {
             label: 'Delete File',
             disabled: !canDelete(row),
@@ -510,7 +527,8 @@ function rowActions(row: FileQueueEntryDto): QueueRowAction[] {
                 });
             },
         },
-    ];
+    );
+    return actions;
 }
 
 const columns = [

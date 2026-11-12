@@ -76,7 +76,7 @@ const createTestProject = async (
     const project = getRepo<ProjectEntity>(ProjectEntity).create({
         name,
         description: 'Test Project Description',
-        requiredTags: [],
+        requiredMetadataTypes: [],
         creator: owner,
     });
     await getRepo(ProjectEntity).save(project);
@@ -130,7 +130,7 @@ describe('Trigger Security', () => {
         const project = await createTestProject(user);
 
         const mission = getRepo<MissionEntity>(MissionEntity).create({
-            name: 'Mission Downgrade',
+            name: 'Mission-Downgrade',
             project,
             creator: user,
         });
@@ -139,7 +139,7 @@ describe('Trigger Security', () => {
         const template = getRepo<ActionTemplateEntity>(
             ActionTemplateEntity,
         ).create({
-            name: `Template Write ${uuidv4()}`,
+            name: `Template-Write-${uuidv4()}`,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             image_name: 'ubuntu:latest',
             version: 1,
@@ -188,7 +188,7 @@ describe('Trigger Security', () => {
         const project = await createTestProject(user);
 
         const mission = getRepo<MissionEntity>(MissionEntity).create({
-            name: 'Mission Transfer',
+            name: 'Mission-Transfer',
             project,
             creator: user,
         });
@@ -197,7 +197,7 @@ describe('Trigger Security', () => {
         const template = getRepo<ActionTemplateEntity>(
             ActionTemplateEntity,
         ).create({
-            name: `Template Transfer ${uuidv4()}`,
+            name: `Template-Transfer-${uuidv4()}`,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             image_name: 'ubuntu:latest',
             version: 1,
@@ -230,7 +230,7 @@ describe('Trigger Security', () => {
 
         // Create Group B with NO access to project
         const groupB = getRepo<AccessGroupEntity>(AccessGroupEntity).create({
-            name: 'Group B No Access',
+            name: 'Group-B-No-Access',
         });
         await getRepo(AccessGroupEntity).save(groupB);
 

@@ -1,17 +1,17 @@
 import { Exception, trace } from '@opentelemetry/api';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
-import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
+import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import {
     BatchSpanProcessor,
     ParentBasedSampler,
     TraceIdRatioBasedSampler,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import logger from './logger';
 
 const exporter = new OTLPTraceExporter({
@@ -23,7 +23,8 @@ const exporter = new OTLPTraceExporter({
 const sdk = new NodeSDK({
     traceExporter: exporter,
     spanProcessors: [
-        new BatchSpanProcessor(exporter, {
+        new BatchSpanProcessor({
+            exporter,
             exportTimeoutMillis: 20_000,
             maxQueueSize: 512,
             scheduledDelayMillis: 5000,
@@ -40,21 +41,24 @@ const sdk = new NodeSDK({
         new NestInstrumentation(),
         new ExpressInstrumentation(),
         new HttpInstrumentation(),
-        new FetchInstrumentation(),
+        new UndiciInstrumentation(),
         new WinstonInstrumentation(),
         new PgInstrumentation(),
     ],
 });
 
-// gracefully shut down the SDK on process exit
-process.on('SIGTERM', () => {
-    sdk.shutdown()
-        .then(() => logger.debug('Tracing terminated'))
-        .catch((error: unknown) =>
-            logger.debug('Error terminating tracing', error),
-        )
-        .finally(() => process.exit(0));
-});
+/**
+ * Flushes and stops the tracing SDK. `main.ts` calls it on SIGTERM, after the
+ * worker has revoked the API keys of its running actions.
+ */
+export const shutdownTracing = async (): Promise<void> => {
+    try {
+        await sdk.shutdown();
+        logger.debug('Tracing terminated');
+    } catch (error: unknown) {
+        logger.debug('Error terminating tracing', error);
+    }
+};
 
 export default sdk;
 

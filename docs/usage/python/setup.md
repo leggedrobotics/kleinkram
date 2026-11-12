@@ -50,11 +50,9 @@ klein login --headless
 :::
 
 ::: details Authentication inside Actions
-When running the CLI inside a Kleinkram automated action, the action exposes an environment variable `APIKEY` which bypasses the browser flow. In this scenario, authenticate using:
+Inside a Kleinkram action you don't need to run `klein login`. The action container sets `KLEINKRAM_API_KEY` (together with `KLEINKRAM_API_ENDPOINT` and `KLEINKRAM_S3_ENDPOINT`), and the CLI picks these up automatically, so commands like `klein upload` or `klein download` work out of the box.
 
-```bash
-klein login --key $APIKEY
-```
+These variables are only used when there is no saved `~/.kleinkram.json`. If your action image ships one, remove it before running CLI commands, otherwise the CLI uses the saved endpoint and credentials instead.
 
 :::
 
@@ -71,6 +69,45 @@ Supported providers are `google` and `github`.
 ::: info Development Providers
 For local development purposes, a `fake-oauth` provider is also available. See the [Developer Guide](../../development/getting-started.md#fake-oauth-provider) for more details.
 :::
+
+### Logging Out
+
+`klein logout` removes the saved credentials for the selected endpoint. `klein logout --all` removes them for every
+endpoint.
+
+## Endpoints and Self-Hosted Instances
+
+By default the CLI talks to the public Kleinkram instance at `datasets.leggedrobotics.com`. To use another instance,
+for example one you host yourself, register it as an endpoint. An endpoint is a name plus the URL of the API server and
+the URL of the S3 storage:
+
+```bash
+# list the known endpoints; the selected one is marked
+klein endpoint
+
+# add an endpoint and select it
+klein endpoint my-instance https://api.kleinkram.example.com https://s3.kleinkram.example.com
+
+# switch to an endpoint that is already known
+klein endpoint my-instance
+
+# log in to the selected endpoint
+klein login
+```
+
+Three endpoints are built in:
+
+| Name    | API                                           | S3                                           |
+| ------- | --------------------------------------------- | -------------------------------------------- |
+| `prod`  | `https://api.datasets.leggedrobotics.com`     | `https://s3.datasets.leggedrobotics.com`     |
+| `dev`   | `https://api.datasets.dev.leggedrobotics.com` | `https://s3.datasets.dev.leggedrobotics.com` |
+| `local` | `http://localhost:3000`                       | `http://localhost:9000`                      |
+
+A release of `kleinkram` from PyPI selects `prod` by default, a `-dev` pre-release selects `dev`, and an editable
+install from a clone of the repository selects `local`.
+
+Credentials are stored per endpoint, so you stay logged in to each endpoint you have used. The endpoints, the selected
+endpoint and the credentials are saved in `~/.kleinkram.json`.
 
 ## Next Steps
 

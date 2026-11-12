@@ -3,9 +3,9 @@ import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { CategoryEntity } from '@backend-common/entities/category/category.entity';
 import { FileEventEntity } from '@backend-common/entities/file/file-event.entity';
 import { FileEntity } from '@backend-common/entities/file/file.entity';
+import { MetadataTypeEntity } from '@backend-common/entities/metadata/metadata-type.entity';
 import { MetadataEntity } from '@backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
-import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { TopicEntity } from '@backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { MetadataContext } from '@backend-common/factories/metadata/metadata.factory';
@@ -25,16 +25,16 @@ import { DataSource } from 'typeorm';
 import { SeederFactoryManager } from 'typeorm-extension';
 
 /**
- * Seed metadata value based on tag type
+ * Seed metadata value based on metadata type
  *
- * @param tagType
+ * @param metadataType
  * @param metadataProperties
  */
 function seedMetadataValue(
-    tagType: TagTypeEntity,
+    metadataType: MetadataTypeEntity,
     metadataProperties: Partial<MetadataContext>,
 ) {
-    switch (tagType.datatype) {
+    switch (metadataType.datatype) {
         case DataType.BOOLEAN: {
             metadataProperties.valueBoolean = extendedFaker.datatype.boolean();
             break;
@@ -57,7 +57,7 @@ function seedMetadataValue(
         }
         default: {
             // STRING
-            switch (tagType.name) {
+            switch (metadataType.name) {
                 case 'coordinates': {
                     metadataProperties.valueString = `${String(extendedFaker.location.latitude())}, ${String(extendedFaker.location.longitude())}`;
 
@@ -76,7 +76,7 @@ function seedMetadataValue(
                     break;
                 }
                 default: {
-                    metadataProperties.valueString = tagType.name.includes(
+                    metadataProperties.valueString = metadataType.name.includes(
                         'description',
                     )
                         ? extendedFaker.lorem.sentence()
@@ -93,7 +93,7 @@ export const seedFiles = async (
     dataSource: DataSource,
     adminUser: UserEntity,
     createdMissions: MissionEntity[],
-    tagTypes: TagTypeEntity[],
+    metadataTypes: MetadataTypeEntity[],
 ): Promise<void> => {
     // eslint-disable-next-line no-console
     console.log('4. Generate and Upload Data...');
@@ -365,25 +365,25 @@ export const seedFiles = async (
                     .save();
 
                 // Create Metadata for Mission (if not exists)
-                // Iterate over all available tag types to ensure coverage
-                for (const tagType of tagTypes) {
-                    // Check if mission already has this tag
-                    const existingTag = await dataSource
+                // Iterate over all available metadata types to ensure coverage
+                for (const metadataType of metadataTypes) {
+                    // Check if mission already has this metadata
+                    const existingMetadata = await dataSource
                         .getRepository(MetadataEntity)
                         .findOne({
                             where: {
                                 mission: { uuid: mission.uuid },
-                                tagType: { uuid: tagType.uuid },
+                                metadataType: { uuid: metadataType.uuid },
                             },
                         });
-                    if (!existingTag) {
+                    if (!existingMetadata) {
                         const metadataProperties = {
                             mission: mission,
-                            tagType: tagType,
+                            metadataType: metadataType,
                             creator: adminUser,
                         } as Partial<MetadataContext>;
 
-                        seedMetadataValue(tagType, metadataProperties);
+                        seedMetadataValue(metadataType, metadataProperties);
 
                         await factoryManager
                             .get(MetadataEntity)

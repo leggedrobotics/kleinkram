@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import secrets
+import threading
 from collections import deque
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
@@ -85,6 +86,7 @@ def filter_mcap_from_url(
     concurrency: int = DEFAULT_CONCURRENCY,
     on_start: Optional[Callable[[int], None]] = None,
     on_progress: Optional[Callable[[int], None]] = None,
+    cancel_event: Optional[threading.Event] = None,
 ) -> McapFilterResult:
     """Write a new MCAP at `dest` holding only the selected messages of a remote MCAP.
 
@@ -100,6 +102,8 @@ def filter_mcap_from_url(
     log times. `start_time` is inclusive and `end_time` exclusive, as in
     `mcap.reader`.
 
+    `cancel_event` ends a wait between retries of a failed range request.
+
     `on_start` is called with the number of bytes about to be transferred once
     that is known, and `on_progress` with each increment as it arrives.
 
@@ -113,7 +117,7 @@ def filter_mcap_from_url(
 
     wanted_topics = set(topics) if topics else None
 
-    stream = HttpRangeReader(url, client=client, block_size=block_size)
+    stream = HttpRangeReader(url, client=client, block_size=block_size, cancel_event=cancel_event)
     result = McapFilterResult(remote_size=stream.size)
 
     dest.parent.mkdir(parents=True, exist_ok=True)
