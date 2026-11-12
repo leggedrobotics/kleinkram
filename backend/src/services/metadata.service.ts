@@ -7,7 +7,7 @@ import {
 import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/metadata-type.entity';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
-import { DataType } from '@kleinkram/shared';
+import { DataType, safeLinkUrl } from '@kleinkram/shared';
 import {
     BadRequestException,
     ConflictException,
@@ -15,7 +15,21 @@ import {
     UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, In, Repository } from 'typeorm';
+
+/**
+ * Returns a LINK value unchanged, or rejects it if it is not an absolute
+ * `http:` or `https:` URL: the frontend opens these values on click, and a
+ * `javascript:` URL would run in the viewer's session.
+ */
+const validateLink = <T>(value: T): T => {
+    if (safeLinkUrl(value) === undefined) {
+        throw new UnprocessableEntityException(
+            'Link must be an absolute http:// or https:// URL',
+        );
+    }
+    return value;
+};
 
 @Injectable()
 export class MetadataService {
@@ -115,7 +129,10 @@ export class MetadataService {
                 metadata = this.metadataRepository.create({
                     metadataType,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
-                    value_string: value,
+                    value_string:
+                        metadataType.datatype === DataType.LINK
+                            ? validateLink(value)
+                            : value,
                     mission,
                 });
                 break;
@@ -224,7 +241,10 @@ export class MetadataService {
                     );
                 }
 
-                existingMetadata.value_string = value;
+                existingMetadata.value_string =
+                    metadataType.datatype === DataType.LINK
+                        ? validateLink(value)
+                        : value;
                 break;
             }
 
@@ -285,6 +305,24 @@ export class MetadataService {
      * @throws BadRequestException if the payload would remove metadata that
      *   the project marks as required
      */
+    /**
+     * Rejects the request if a value of a LINK metadata type is not an
+     * absolute `http:` or `https:` URL. Call it before writing anything, so
+     * a bad link cannot leave a half-written mission behind; `addMetadata`
+     * and `updateMetadata` check each value again on their own.
+     */
+    async validateLinks(metadata: Record<string, unknown>): Promise<void> {
+        const metadataTypeUUIDs = Object.keys(metadata);
+        if (metadataTypeUUIDs.length === 0) return;
+        const linkTypes = await this.metadataTypeRepository.find({
+            where: { uuid: In(metadataTypeUUIDs), datatype: DataType.LINK },
+            select: { uuid: true },
+        });
+        for (const { uuid } of linkTypes) {
+            validateLink(metadata[uuid]);
+        }
+    }
+
     async replaceMissionMetadata(
         missionUUID: string,
         metadata: Record<string, string>,
@@ -352,6 +390,10 @@ export class MetadataService {
                     'in the request.',
             );
         }
+
+        // Reject invalid links before anything is written, so a bad value
+        // does not leave the mission with a partially replaced metadata set.
+        await this.validateLinks(Object.fromEntries(metadataToUpsert));
 
         if (metadataToDelete.length > 0) {
             await this.metadataRepository.remove(metadataToDelete);
