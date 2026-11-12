@@ -69,6 +69,9 @@ created yourself. Admins see all of them.
 
 ### API Keys
 
+The action container gets its key in `KLEINKRAM_API_KEY`. The key only works while the action runs: it is revoked
+when the action ends, and it never outlives the action's runtime limit by more than one hour.
+
 An API key is scoped to exactly one mission and carries its own rights level. On
 trigger endpoints that scope is the ceiling, and nothing widens it:
 

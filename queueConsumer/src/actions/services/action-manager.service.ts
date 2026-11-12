@@ -46,6 +46,12 @@ export class ActionManagerService implements OnModuleInit {
     private currentInstanceId: string | undefined;
     private initPromise!: Promise<void>;
 
+    /**
+     * Keys handed to action containers that run on this worker right now, so
+     * a shutdown can revoke them before the process exits.
+     */
+    private readonly liveKeys = new Set<DisposableAPIKey>();
+
     constructor(
         @InjectRepository(ActionEntity)
         private actionRepository: Repository<ActionEntity>,
@@ -66,6 +72,64 @@ export class ActionManagerService implements OnModuleInit {
     async onModuleInit(): Promise<void> {
         this.initPromise = this.registerRunner();
         await this.initPromise;
+        await this.revokeStaleActionKeys();
+    }
+
+    /**
+     * Revokes every action key whose action is no longer running.
+     *
+     * A key is normally revoked in the `finally` of the run that created it.
+     * A worker that dies without reaching it (SIGKILL, OOM, lost node) leaves
+     * the key valid. The janitor later marks such an action as failed, and the
+     * next sweep then revokes its key. Safe to run on every worker at once:
+     * keys of actions that are still running are never touched, wherever they
+     * run.
+     *
+     * Also revokes keys that lost their action (deleted, or replaced by a
+     * newer key when the action was retried). Creating a key and linking it
+     * to its action happen in one transaction, so a fresh key is never seen
+     * without its action.
+     */
+    async revokeStaleActionKeys(): Promise<void> {
+        try {
+            const result = await this.apikeyRepository
+                .createQueryBuilder()
+                .update()
+                .set({ deletedAt: () => 'now()' })
+                .where('"key_type" = :keyType', { keyType: KeyTypes.ACTION })
+                .andWhere('"deletedAt" IS NULL')
+                .andWhere(
+                    `NOT EXISTS (
+                        SELECT 1 FROM "action" "a"
+                        WHERE "a"."keyUuid" = "apikey"."uuid"
+                          AND "a"."deletedAt" IS NULL
+                          AND "a"."state" NOT IN (:...terminalStates)
+                    )`,
+                    { terminalStates: TERMINAL_ACTION_STATES },
+                )
+                .execute();
+            if (result.affected) {
+                logger.info(
+                    `Revoked ${result.affected.toString()} stale action API key(s)`,
+                );
+            }
+        } catch (error) {
+            logger.error(
+                `Failed to revoke stale action API keys: ${String(error)}`,
+            );
+        }
+    }
+
+    /**
+     * Revokes the keys of all actions running on this worker. Called on
+     * SIGTERM: the process exits right after, so the `finally` that would
+     * normally revoke them never runs. The containers are left behind, and the
+     * janitor of the next runner kills them, so the runs are lost anyway.
+     */
+    async revokeLiveKeys(): Promise<void> {
+        await Promise.allSettled(
+            [...this.liveKeys].map((key) => key[Symbol.asyncDispose]()),
+        );
     }
 
     private async registerRunner(): Promise<void> {
@@ -269,6 +333,7 @@ export class ActionManagerService implements OnModuleInit {
         }
 
         const apikey = await this.createAPIkey(action);
+        this.liveKeys.add(apikey);
         try {
             const {
                 container,
@@ -558,6 +623,7 @@ export class ActionManagerService implements OnModuleInit {
         } finally {
             this.cancellationService.unregisterContainer(action.uuid);
             await apikey[Symbol.asyncDispose]();
+            this.liveKeys.delete(apikey);
         }
     }
 
