@@ -532,6 +532,29 @@ describe('Project Access Rights Escalation', () => {
             ).toBeUndefined();
         });
 
+        test('should reject a writer making the project public through a non-canonical uuid', async () => {
+            const { writer, projectUuid } = await setupProject();
+            const access = await getProjectAccess(writer, projectUuid);
+
+            // PostgreSQL reads the uuid without hyphens as the public group
+            const response = await post(
+                writer,
+                `/projects/${projectUuid}/access`,
+                [
+                    ...access,
+                    {
+                        ...publicEntry,
+                        uuid: PUBLIC_ACCESS_GROUP.uuid.replaceAll('-', ''),
+                    },
+                ],
+            );
+
+            expect(response.status).toBe(400);
+            expect(
+                await storedRights(projectUuid, PUBLIC_ACCESS_GROUP.uuid),
+            ).toBeUndefined();
+        });
+
         test('should reject a writer adding the public group to the project', async () => {
             const { writer, projectUuid } = await setupProject();
 
