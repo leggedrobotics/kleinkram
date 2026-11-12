@@ -4,12 +4,20 @@ import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
 import { IsSkip, IsTake } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
-import { IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
+import {
+    IsEnum,
+    IsNumber,
+    IsString,
+    IsUUID,
+    ValidateNested,
+} from 'class-validator';
 
 @Expose()
 export class ProjectAccessDto {
     @ApiProperty()
-    @IsString()
+    // only the canonical (hyphenated) form: PostgreSQL also accepts other
+    // spellings of the same uuid, which would get past string comparisons
+    @IsUUID()
     @Expose()
     @Transform(({ value, obj }) => obj.accessGroup?.uuid ?? value)
     uuid!: string;

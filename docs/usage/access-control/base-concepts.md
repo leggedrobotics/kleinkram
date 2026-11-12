@@ -80,8 +80,8 @@ project and can find, view and download it without being added to a group. Publi
 _Public_ badge and can be listed with the _Public Projects_ filter of the project list.
 
 Public access is always limited to <Read/>. To let someone upload or change data, add them (or one of their groups)
-to the project as usual. Making a project public requires the right to manage its access (<Delete/>), and it can be
-made restricted again at any time.
+to the project as usual. Making a project public, or restricted again, requires <Delete/> on the project. Users with
+<Modify/> can still manage the other access rights of a public project.
 
 Internally, public access is granted through a system access group (_All Kleinkram Users_) that every user belongs
 to implicitly. It is hidden from the group search and its members cannot be changed.
