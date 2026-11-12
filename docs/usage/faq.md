@@ -13,7 +13,23 @@ You can use our Python SDK to script and automate your interactions. See the [Py
 :::
 
 ::: details How to write a custom action?
-See the [Developer Guide](actions/write-actions.md) for instructions on creating custom actions.
+See [Write Custom Actions](actions/write-actions.md) for instructions on creating custom actions.
+:::
+
+::: details How do I download only part of a recording?
+For `.mcap` files, `klein download` can fetch only some topics or a time window. See [Partial Download](files/partial-download.md).
+:::
+
+::: details Should I compress my MCAP files?
+Compress the chunks inside the file, never the whole file: `.mcap.zst` or `.mcap.gz` files cannot be uploaded. Compressed chunks make partial downloads by topic expensive. See [MCAP Chunking and Compression](files/compression.md).
+:::
+
+::: details Why is my file marked as Corrupted?
+Its content does not match its file type, or it cannot be read, e.g. an `.mcap` from a recording that was cut off. Hover over the state icon for the reason. See [File States](files/files.md#file-states).
+:::
+
+::: details How do I log in on a machine without a browser?
+`klein login` switches to a headless login when it finds no browser. See [Headless Login](python/setup.md#headless-login).
 :::
 
 ::: details How does the access control work?
@@ -21,5 +37,5 @@ See the [Access Control documentation](/usage/access-control/base-concepts) for 
 :::
 
 ::: details I found a bug, what should I do?
-Please report any issues on our [GitHub repository](http://github.com/leggedrobotics/kleinkram/issues).
+Please report any issues on our [GitHub repository](https://github.com/leggedrobotics/kleinkram/issues).
 :::

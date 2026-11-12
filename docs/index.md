@@ -2,7 +2,7 @@
 layout: home
 
 title: Kleinkram
-titleTemplate: A structured bag and mcap storage solution
+titleTemplate: A structured bag and MCAP storage solution
 
 hero:
     name: Kleinkram
@@ -34,7 +34,7 @@ features:
       link: /usage/python/setup.md
     - title: MCAP Support
       icon: 📦
-      details: First-class support for MCAP, alongside most common file types used in robotics including.
+      details: First-class support for MCAP, alongside ROS 1 bags, ROS 2 SQLite bags, ZED recordings and more.
       link: /usage/files/files.md
 ---
 

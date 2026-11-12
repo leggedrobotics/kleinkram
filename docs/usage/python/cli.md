@@ -34,13 +34,27 @@ All commands follow the same conventions:
 - **Projects, missions and templates can be given by name or by ID.** Wherever a command expects one, both work.
 - **Deleting asks for confirmation.** Pass `--yes` (`-y`) to skip the prompt, e.g. in scripts. In a
   non-interactive session (no terminal attached), `--yes` is required.
-- **Short flags always mean the same thing:** `-p` is the project, `-m` the mission, `-y` confirms, `-f` follows
-  logs and `-h` shows the help of any command.
+- **Short flags mean the same thing across commands:** `-p` is the project, `-m` the mission, `-y` confirms, `-f`
+  follows logs and `-h` shows the help of any command. See below for the exceptions.
 
 ```bash
 klein mission info testMission -p testProject
 klein file delete data.bag -p testProject -m testMission --yes
 ```
+
+::: warning Exceptions to the short flags
+A few short flags still mean something else on some commands. The deprecated ones print a warning and are removed in
+version 1.0.0; use the long option instead.
+
+| Short flag | Usual meaning                      | Other meaning                                                            | Status     |
+| ---------- | ---------------------------------- | ------------------------------------------------------------------------ | ---------- |
+| `-r`       | `--recursive` (`upload`, `verify`) | `--max-runtime` on `template create` / `create-version`                  | Current    |
+| `-y`       | `--yes`                            | `--type` on `trigger create` / `update`                                  | Deprecated |
+| `-f`       | `--follow`                         | the file on `file info` / `delete`, `--filename` on `execution download` | Deprecated |
+| `-m`       | `--mission`                        | `--cpu-memory` on `template create` / `create-version`                   | Deprecated |
+| `-p`       | `--project`                        | `--oauth-provider` on `login`                                            | Deprecated |
+
+:::
 
 ## Global Options
 
@@ -196,12 +210,11 @@ klein upload --create --project testProject --mission testMission *.bag
 
 The other options of `upload`:
 
-| Option                      | Effect                                                                                                                                                                                                                                                                                                 |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--metadata <file>`         | A JSON or YAML file with the metadata of the mission, as `name: value` pairs. It is only used together with `--create`, when the mission is created; the metadata of an existing mission is not changed. To change it, use `klein mission update --metadata`.                                          |
-| `--ignore-missing-metadata` | Meant to create the mission (with `--create`) even if the project requires metadata that is not in `--metadata`. It currently has no effect: the CLI checks the required metadata itself before it creates the mission, so the upload still fails. Put all required metadata in the `--metadata` file. |
-| `--fix-filenames`           | Upload files whose names Kleinkram does not accept under a fixed name, instead of failing. The local files are not renamed. See below.                                                                                                                                                                 |
-| `--skip`, `-s`              | Skip files that cannot be uploaded (unsupported type, bad name, directories) instead of failing, and upload the rest.                                                                                                                                                                                  |
+| Option              | Effect                                                                                                                                                                                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--metadata <file>` | A JSON or YAML file with the metadata of the mission, as `name: value` pairs. It is only used together with `--create`, when the mission is created; the metadata of an existing mission is not changed. To change it, use `klein mission update --metadata`. |
+| `--fix-filenames`   | Upload files whose names Kleinkram does not accept under a fixed name, instead of failing. The local files are not renamed. See below.                                                                                                                        |
+| `--skip`, `-s`      | Skip files that cannot be uploaded (unsupported type, bad name, directories) instead of failing, and upload the rest.                                                                                                                                         |
 
 File names follow the [naming rules](../getting-started.md#naming-rules): the part before the extension is 3 to 50
 characters of letters, digits, `.`, `_` and `-`, not starting with `.` or `-`, and the extension is lowercase. The CLI
@@ -379,9 +392,17 @@ follows:
 | `klein triggers create/update -y <type>`                            | `klein trigger create/update --type <type>`                      |
 | `klein login -p <provider>`                                         | `klein login --oauth-provider <provider>`                        |
 | `klein verify --skip-hash`                                          | `klein verify --no-check-file-hash`                              |
+| `--ignore-missing-tags` on `upload` / `mission create`              | Remove it: it has no effect                                      |
+| `required_tags` in the JSON of `klein --no-verbose project info`    | `required_metadata_types`                                        |
 
 Deleting a project, template, execution or trigger without `--yes` in a non-interactive session still works for now
 (with a warning) but will fail from version 1.0.0 on.
+
+The Python SDK has deprecated names too. They emit a `DeprecationWarning` and are removed in version 1.0.0:
+
+| Deprecated              | Replacement                       |
+| ----------------------- | --------------------------------- |
+| `Project.required_tags` | `Project.required_metadata_types` |
 
 ## Additional Commands
 

@@ -46,6 +46,11 @@ that is changed must follow the rules.
 
 Kleinkram allows you to organize and search your data using metadata on missions and categories on files.
 
+| Level   | What                 | Defined       | Example                                  |
+| ------- | -------------------- | ------------- | ---------------------------------------- |
+| Mission | Metadata (key-value) | Instance-wide | `Robot ID: anymal-d`, `Location: Zurich` |
+| File    | Categories (labels)  | Per project   | `Raw Data`, `Calibration`                |
+
 #### Mission Level: Metadata
 
 You can add key-value pairs as metadata to missions. Each key is a **metadata type**, which defines the name and datatype (e.g. string, number, boolean, date, location, link) of a value; the value set on a mission is its **metadata**. This allows for powerful filtering and organization. A value of type link must be an absolute `http://` or `https://` URL; other values are rejected.
@@ -59,11 +64,12 @@ The GrandTourDataset uses the metadata type `Short Name` to identify the mission
 ![Mission metadata in the UI](/assets/metadata.png)
 :::
 
-#### File Level: Category Tags
+#### File Level: Categories
 
-At the file level, you can use **Category Tags** to label specific files.
+At the file level, you can label files with **categories**. Categories belong to a project: every mission of the
+project can use them, and a file can have several.
 
-- **Usage**: Tag files as `Raw Data`, `Processed`, `Calibration`, or `Validated`. This helps in distinguishing between different types of data within the same mission.
+- **Usage**: Label files as `Raw Data`, `Processed`, `Calibration`, or `Validated`. This helps in distinguishing between different types of data within the same mission.
 - **Description**: Each category can carry an optional description explaining which files belong into it. Descriptions are shown when selecting categories and as a tooltip on the category chips, and can be edited at any time in the _Manage Categories_ tab of the category dialog.
 
 ## Next Steps: Uploading Data
