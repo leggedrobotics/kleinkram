@@ -223,6 +223,21 @@ export enum AccessGroupRights {
     _ADMIN = 100,
 }
 
+/**
+ * The rights that can be granted on a project. `_ADMIN` is excluded: it only
+ * stands for system admins in the frontend and must never be stored on a
+ * project access entry, where it would rank above DELETE.
+ */
+export const GRANTABLE_ACCESS_GROUP_RIGHTS: readonly AccessGroupRights[] = [
+    AccessGroupRights.READ,
+    AccessGroupRights.CREATE,
+    AccessGroupRights.WRITE,
+    AccessGroupRights.DELETE,
+];
+
+export const isGrantableAccessGroupRight = (rights: unknown): boolean =>
+    (GRANTABLE_ACCESS_GROUP_RIGHTS as readonly unknown[]).includes(rights);
+
 export enum FileEventType {
     // Lifecycle
     CREATED = 'CREATED',

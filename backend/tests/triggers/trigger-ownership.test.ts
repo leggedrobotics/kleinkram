@@ -1,12 +1,10 @@
 import { appVersion } from '@/app-version';
 import { UserEntity } from '@kleinkram/backend-common';
-import { ApiKeyEntity } from '@kleinkram/backend-common/entities/auth/api-key.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import {
     AccessGroupRights,
     AccessGroupType,
-    KeyTypes,
     TriggerType,
 } from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
@@ -17,7 +15,7 @@ import {
     HeaderCreator,
 } from '../utils/api-calls';
 import { database } from '../utils/database-utilities';
-import { setupDatabaseHooks } from '../utils/test-helpers';
+import { createActionApiKey, setupDatabaseHooks } from '../utils/test-helpers';
 
 describe('Trigger Ownership API Tests', () => {
     setupDatabaseHooks();
@@ -123,15 +121,11 @@ describe('Trigger Ownership API Tests', () => {
         missionUUID: string,
         rights: AccessGroupRights,
     ): Promise<string> {
-        const apiKeyRepo = database.getRepository(ApiKeyEntity);
-        const apiKeyEntity = apiKeyRepo.create({
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            key_type: KeyTypes.ACTION,
-            mission: { uuid: missionUUID },
+        const apiKeyEntity = await createActionApiKey({
+            missionUuid: missionUUID,
+            userUuid: user.uuid,
             rights,
-            user,
         });
-        await apiKeyRepo.save(apiKeyEntity);
         return apiKeyEntity.apikey;
     }
 

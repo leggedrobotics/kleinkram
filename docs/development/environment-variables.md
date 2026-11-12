@@ -4,9 +4,14 @@ This document lists the environment variables used to configure the Kleinkram ap
 
 ## Server Configuration
 
-| Variable      | Description                                   | Default |
-| :------------ | :-------------------------------------------- | :------ |
-| `SERVER_PORT` | The port on which the backend server listens. | `3000`  |
+| Variable                  | Description                                                                                                                                                                                   | Default |
+| :------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------ |
+| `SERVER_PORT`             | The port on which the backend server listens.                                                                                                                                                 | `3000`  |
+| `API_COMPRESSION_ENABLED` | Compress API responses larger than 1 KB with Brotli or gzip, depending on the client's `Accept-Encoding`. Set to `false` if a reverse proxy in front of the API already compresses responses. | `true`  |
+
+Compression runs in the API server itself, so every deployment gets it without proxy configuration. Server-sent
+events (`text/event-stream`) are never compressed, and a client can opt out for a single request by sending the
+`x-no-compression` header.
 
 ## Service URLs
 

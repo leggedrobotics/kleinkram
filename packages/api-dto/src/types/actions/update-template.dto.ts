@@ -6,9 +6,9 @@ export class UpdateTemplateDto extends TemplateFieldsDto {
     uuid!: string;
 
     /**
-     * The name of the template the new version belongs to. Templates created
-     * before the naming rules may keep their name; a name that does not exist
-     * yet is checked against the rules by `TemplateService.createVersion`.
+     * The name of the template the new version belongs to. It must be the
+     * current name (checked by `TemplateService.createVersion`), so templates
+     * created before the naming rules keep their name.
      */
     @IsString()
     @IsNotEmpty()

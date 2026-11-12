@@ -36,11 +36,17 @@ files to it. Its template asks for `Write` access.
 
 The valid operations that can be performed on an action template are:
 
-| **Operation** | **Description**                   | **Access Level** |
-| ------------- | --------------------------------- | ---------------- |
-| view          | View an existing Action Template  | <Any />          |
-| create        | Create a new Action Template      | <Create />       |
-| delete        | Action Template cannot be deleted | -                |
+| **Operation** | **Description**                                        | **Access Level**            |
+| ------------- | ------------------------------------------------------ | --------------------------- |
+| view          | View an existing Action Template                       | <Any />                     |
+| create        | Create a new Action Template                           | <Create />                  |
+| new version   | Save a new version of an Action Template               | <Creator/> or administrator |
+| delete        | Delete (or archive, if it has run) all of its versions | <Creator/> or administrator |
+
+The creator of a template is the person who saved its first version. Saving a later version does not make you an owner,
+so only the original creator (or an administrator) can keep changing or deleting it. To run a changed copy of someone
+else's template, save it as a new template under a new name. A new version always keeps the template's name.
+Platform templates such as `script-runner` cannot be changed or deleted by anyone through the API.
 
 ## Action Trigger
 
@@ -62,6 +68,9 @@ those in missions you can read, those in projects you can read, and those you
 created yourself. Admins see all of them.
 
 ### API Keys
+
+The action container gets its key in `KLEINKRAM_API_KEY`. The key only works while the action runs: it is revoked
+when the action ends, and it never outlives the action's runtime limit by more than one hour.
 
 An API key is scoped to exactly one mission and carries its own rights level. On
 trigger endpoints that scope is the ceiling, and nothing widens it:

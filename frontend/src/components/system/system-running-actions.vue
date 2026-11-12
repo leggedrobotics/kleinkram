@@ -1,5 +1,5 @@
 <template>
-    <div class="projects-container dashboard-card">
+    <div class="projects-container system-card">
         <q-card class="full-width q-pa-md header-row" flat>
             <span style="font-size: larger">Running Actions</span>
             <div class="arrow-buttons">
@@ -227,7 +227,6 @@ const handleRowClick = async (_: Event, row: any): Promise<void> => {
 
 <style scoped>
 .projects-container {
-    grid-column: span 2;
     background-color: white;
     display: grid;
     grid-template-rows: 50px 2px auto;

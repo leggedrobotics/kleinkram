@@ -118,15 +118,15 @@ describe('Action template and trigger names', () => {
         expect(response.status).toBe(201);
     });
 
-    it('refuses a version that would start a template with an invalid name', async () => {
+    it('refuses a version with another name', async () => {
         const response = await send(
             'POST',
             `/templates/${templateUuid}/versions`,
             { uuid: templateUuid, name: 'Brand New Name', ...templateFields },
         );
         expect(response.status).toBe(400);
-        expect(response.message).toContain(
-            "Template name may only contain letters, digits, '.', '-' and '_'",
+        expect(response.message).toBe(
+            'A new version cannot change the template name.',
         );
     });
 
