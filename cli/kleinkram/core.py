@@ -648,8 +648,13 @@ def update_trigger(
     if mission_uuid is None:
         mission_uuid = trigger.mission_uuid
 
-    if trigger_name is not None:
-        _validate_trigger_name(client, trigger_name, mission_uuid, trigger_uuid)
+    # like the server: an unchanged name is kept even if it predates the naming rules,
+    # but it must still be unique in the mission the trigger ends up in
+    new_name = trigger.name if trigger_name is None else trigger_name
+    if new_name != trigger.name:
+        _validate_trigger_name(client, new_name, mission_uuid, trigger_uuid)
+    elif mission_uuid != trigger.mission_uuid:
+        _raise_if_trigger_name_taken(client, new_name, mission_uuid, trigger_uuid)
 
     if template_uuid is not None:
         try:
@@ -1225,6 +1230,12 @@ def _validate_trigger_name(
     if error:
         raise kleinkram.errors.TriggerValidationError(error)
 
+    _raise_if_trigger_name_taken(client, trigger_name, mission_uuid, update_trigger_uuid)
+
+
+def _raise_if_trigger_name_taken(
+    client: AuthenticatedClient, trigger_name: str, mission_uuid: UUID, update_trigger_uuid: Optional[UUID] = None
+) -> None:
     if not _trigger_name_is_available(client, trigger_name, mission_uuid, update_trigger_uuid):
         raise kleinkram.errors.TriggerValidationError(
             f"Trigger with name: `{trigger_name}` already exists in mission: "
