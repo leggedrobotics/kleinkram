@@ -13,6 +13,8 @@ import { CookieNames } from '@kleinkram/shared';
 import {
     BadRequestException,
     ConflictException,
+    HttpException,
+    HttpStatus,
     Injectable,
     NotFoundException,
     OnModuleDestroy,
@@ -29,6 +31,13 @@ export const DEVICE_CODE_TTL_SECONDS = 10 * 60;
 export const DEVICE_POLL_INTERVAL_SECONDS = 5;
 
 /**
+ * Logins that can be started per minute on the whole instance. The endpoint
+ * needs no login, so this bounds what anonymous callers can store in Redis:
+ * at most `limit * TTL / 60` pending logins exist at any time.
+ */
+export const DEVICE_LOGINS_PER_MINUTE = 60;
+
+/**
  * Consonants only (as GitHub does): no vowels, so a code never spells a
  * word, and no letters that are easy to confuse.
  */
@@ -36,19 +45,6 @@ const USER_CODE_ALPHABET = 'BCDFGHJKLMNPQRSTVWXZ';
 const USER_CODE_LENGTH = 8;
 
 const KEY_PREFIX = 'cli-device';
-
-interface StoredDeviceAuthorization {
-    userCode: string;
-    status: DeviceAuthorizationState;
-    hostname?: string;
-    platform?: string;
-    cliVersion?: string;
-    ipAddress: string;
-    createdAt: string;
-    expiresAt: string;
-    lastPolledAt?: string;
-    userUuid?: string;
-}
 
 const hashDeviceCode = (deviceCode: string): string =>
     createHash('sha256').update(deviceCode).digest('hex');
@@ -58,6 +54,71 @@ const deviceKey = (deviceCodeHash: string): string =>
 
 const userCodeKey = (userCode: string): string =>
     `${KEY_PREFIX}:user-code:${userCode}`;
+
+const rateKey = (minute: number): string =>
+    `${KEY_PREFIX}:created:${String(minute)}`;
+
+/**
+ * Sets the decision on a pending login, atomically.
+ *
+ * Returns the stored fields after the change, `{'missing'}` when the login
+ * does not exist (any more), or `{'decided', status}` when it was already
+ * decided. Never creates a key, so a late decision cannot bring back a login
+ * whose tokens were already collected.
+ *
+ * KEYS[1] device key, ARGV[1] new status, ARGV[2] user uuid ('' for none)
+ */
+const DECIDE_SCRIPT = `
+if redis.call('EXISTS', KEYS[1]) == 0 then
+    return {'missing'}
+end
+local status = redis.call('HGET', KEYS[1], 'status')
+if status ~= 'pending' then
+    return {'decided', status}
+end
+redis.call('HSET', KEYS[1], 'status', ARGV[1])
+if ARGV[2] ~= '' then
+    redis.call('HSET', KEYS[1], 'userUuid', ARGV[2])
+end
+return redis.call('HGETALL', KEYS[1])
+`;
+
+/**
+ * One poll by the CLI, atomically.
+ *
+ * - missing: `{'expired'}`
+ * - approved: deletes the login and returns `{'approved', userUuid}`, so
+ *   the tokens are handed out exactly once
+ * - denied: deletes the login and returns `{'denied'}`
+ * - pending: records the poll time and returns `{'pending'}`, or
+ *   `{'slow_down'}` when the CLI polls faster than the interval
+ *
+ * KEYS[1] device key, ARGV[1] now (ms), ARGV[2] minimum gap between polls (ms)
+ */
+const POLL_SCRIPT = `
+if redis.call('EXISTS', KEYS[1]) == 0 then
+    return {'expired'}
+end
+local status = redis.call('HGET', KEYS[1], 'status')
+if status == 'approved' then
+    local userUuid = redis.call('HGET', KEYS[1], 'userUuid')
+    local userCode = redis.call('HGET', KEYS[1], 'userCode')
+    redis.call('DEL', KEYS[1], '${KEY_PREFIX}:user-code:' .. userCode)
+    return {'approved', userUuid}
+end
+if status == 'denied' then
+    local userCode = redis.call('HGET', KEYS[1], 'userCode')
+    redis.call('DEL', KEYS[1], '${KEY_PREFIX}:user-code:' .. userCode)
+    return {'denied'}
+end
+local last = tonumber(redis.call('HGET', KEYS[1], 'lastPolledAt') or '0')
+local now = tonumber(ARGV[1])
+redis.call('HSET', KEYS[1], 'lastPolledAt', ARGV[1])
+if now - last < tonumber(ARGV[2]) then
+    return {'slow_down'}
+end
+return {'pending'}
+`;
 
 /**
  * Brings a code typed by a person into the stored form `XXXX-XXXX`:
@@ -76,6 +137,30 @@ const generateUserCode = (): string => {
     return normalizeUserCode(letters);
 };
 
+const pairsToRecord = (pairs: string[]): Record<string, string> => {
+    const record: Record<string, string> = {};
+    for (let index = 0; index + 1 < pairs.length; index += 2) {
+        record[pairs[index] as string] = pairs[index + 1] as string;
+    }
+    return record;
+};
+
+/** fields are stored as '' when the CLI did not send them */
+const nonEmpty = (value: string | undefined): string | undefined =>
+    value === undefined || value === '' ? undefined : value;
+
+const toInfo = (
+    stored: Partial<Record<string, string>>,
+): DeviceAuthorizationInfoDto => ({
+    userCode: stored.userCode ?? '',
+    status: (stored.status ?? 'pending') as DeviceAuthorizationState,
+    hostname: nonEmpty(stored.hostname),
+    platform: nonEmpty(stored.platform),
+    cliVersion: nonEmpty(stored.cliVersion),
+    createdAt: new Date(stored.createdAt ?? 0),
+    expiresAt: new Date(stored.expiresAt ?? 0),
+});
+
 /**
  * Device authorization for the CLI, modelled on OAuth 2.0 device
  * authorization (RFC 8628).
@@ -84,8 +169,9 @@ const generateUserCode = (): string => {
  * 2. The user opens the web app, signs in and approves the user code.
  * 3. The CLI polls with the device code and receives a token pair once.
  *
- * Pending logins live in Redis and expire on their own. Only a hash of the
- * device code is stored.
+ * Pending logins are Redis hashes that expire on their own. Only a hash of
+ * the device code is stored. Every state change runs as one Lua script, so
+ * polls and decisions cannot overwrite each other.
  */
 @Injectable()
 export class DeviceAuthorizationService implements OnModuleDestroy {
@@ -111,8 +197,9 @@ export class DeviceAuthorizationService implements OnModuleDestroy {
 
     async create(
         request: CreateDeviceAuthorizationDto,
-        ipAddress: string,
     ): Promise<DeviceAuthorizationDto> {
+        await this.enforceRateLimit();
+
         const deviceCode = randomBytes(32).toString('base64url');
         const deviceCodeHash = hashDeviceCode(deviceCode);
         const now = new Date();
@@ -137,22 +224,20 @@ export class DeviceAuthorizationService implements OnModuleDestroy {
             userCode = generateUserCode();
         }
 
-        const stored: StoredDeviceAuthorization = {
-            userCode,
-            status: 'pending',
-            hostname: request.hostname,
-            platform: request.platform,
-            cliVersion: request.cliVersion,
-            ipAddress,
-            createdAt: now.toISOString(),
-            expiresAt: expiresAt.toISOString(),
-        };
-        await this.redis.set(
-            deviceKey(deviceCodeHash),
-            JSON.stringify(stored),
-            'EX',
-            DEVICE_CODE_TTL_SECONDS,
-        );
+        const key = deviceKey(deviceCodeHash);
+        await this.redis
+            .multi()
+            .hset(key, {
+                userCode,
+                status: 'pending',
+                hostname: request.hostname ?? '',
+                platform: request.platform ?? '',
+                cliVersion: request.cliVersion ?? '',
+                createdAt: now.toISOString(),
+                expiresAt: expiresAt.toISOString(),
+            })
+            .expire(key, DEVICE_CODE_TTL_SECONDS)
+            .exec();
 
         const verificationUri = `${env.FRONTEND_URL}/cli/activate`;
         return {
@@ -166,17 +251,10 @@ export class DeviceAuthorizationService implements OnModuleDestroy {
     }
 
     async info(userCode: string): Promise<DeviceAuthorizationInfoDto> {
-        const { stored } = await this.findByUserCode(userCode);
-        return {
-            userCode: stored.userCode,
-            status: stored.status,
-            hostname: stored.hostname,
-            platform: stored.platform,
-            cliVersion: stored.cliVersion,
-            ipAddress: stored.ipAddress,
-            createdAt: new Date(stored.createdAt),
-            expiresAt: new Date(stored.expiresAt),
-        };
+        const deviceCodeHash = await this.findDeviceCodeHash(userCode);
+        const stored = await this.redis.hgetall(deviceKey(deviceCodeHash));
+        if (Object.keys(stored).length === 0) throw this.notFound();
+        return toInfo(stored);
     }
 
     async approve(
@@ -195,26 +273,18 @@ export class DeviceAuthorizationService implements OnModuleDestroy {
      * the login is deleted at that point.
      */
     async poll(deviceCode: string): Promise<DeviceTokenDto> {
-        const deviceCodeHash = hashDeviceCode(deviceCode);
-        const key = deviceKey(deviceCodeHash);
-        const raw = await this.redis.get(key);
-        if (raw === null) return { status: 'expired' };
+        const result = (await this.redis.eval(
+            POLL_SCRIPT,
+            1,
+            deviceKey(hashDeviceCode(deviceCode)),
+            String(Date.now()),
+            String((DEVICE_POLL_INTERVAL_SECONDS - 1) * 1000),
+        )) as string[];
 
-        const stored = JSON.parse(raw) as StoredDeviceAuthorization;
-
-        if (stored.status === 'denied') {
-            await this.remove(deviceCodeHash, stored.userCode);
-            return { status: 'denied' };
-        }
-
-        if (stored.status === 'approved' && stored.userUuid !== undefined) {
-            // GETDEL makes sure two concurrent polls cannot both get tokens
-            const claimed = await this.redis.getdel(key);
-            if (claimed === null) return { status: 'expired' };
-            await this.redis.del(userCodeKey(stored.userCode));
-
+        const [status, userUuid] = result;
+        if (status === 'approved' && userUuid) {
             const user = await this.userRepository.findOne({
-                where: { uuid: stored.userUuid },
+                where: { uuid: userUuid },
             });
             if (user === null) return { status: 'denied' };
 
@@ -225,16 +295,14 @@ export class DeviceAuthorizationService implements OnModuleDestroy {
                 refreshToken: tokens[CookieNames.REFRESH_TOKEN],
             };
         }
-
-        const now = Date.now();
-        const tooEarly =
-            stored.lastPolledAt !== undefined &&
-            now - Date.parse(stored.lastPolledAt) <
-                (DEVICE_POLL_INTERVAL_SECONDS - 1) * 1000;
-        stored.lastPolledAt = new Date(now).toISOString();
-        await this.redis.set(key, JSON.stringify(stored), 'KEEPTTL');
-
-        return { status: tooEarly ? 'slow_down' : 'pending' };
+        if (
+            status === 'pending' ||
+            status === 'slow_down' ||
+            status === 'denied'
+        ) {
+            return { status };
+        }
+        return { status: 'expired' };
     }
 
     private async decide(
@@ -242,45 +310,47 @@ export class DeviceAuthorizationService implements OnModuleDestroy {
         status: 'approved' | 'denied',
         userUuid?: string,
     ): Promise<DeviceAuthorizationInfoDto> {
-        const { stored, deviceCodeHash } = await this.findByUserCode(userCode);
-        if (stored.status !== 'pending') {
+        const deviceCodeHash = await this.findDeviceCodeHash(userCode);
+        const result = (await this.redis.eval(
+            DECIDE_SCRIPT,
+            1,
+            deviceKey(deviceCodeHash),
+            status,
+            userUuid ?? '',
+        )) as string[];
+
+        if (result[0] === 'missing') throw this.notFound();
+        if (result[0] === 'decided') {
             throw new BadRequestException(
-                `This login was already ${stored.status}.`,
+                `This login was already ${result[1] ?? 'decided'}.`,
             );
         }
+        // the response is built from the decided record itself, so it does
+        // not depend on the CLI not having collected its tokens yet
+        return toInfo(pairsToRecord(result));
+    }
 
-        stored.status = status;
-        stored.userUuid = userUuid;
-        await this.redis.set(
-            deviceKey(deviceCodeHash),
-            JSON.stringify(stored),
-            'KEEPTTL',
+    private async findDeviceCodeHash(userCode: string): Promise<string> {
+        const deviceCodeHash = await this.redis.get(
+            userCodeKey(normalizeUserCode(userCode)),
         );
-        return this.info(stored.userCode);
-    }
-
-    private async findByUserCode(userCode: string): Promise<{
-        stored: StoredDeviceAuthorization;
-        deviceCodeHash: string;
-    }> {
-        const normalized = normalizeUserCode(userCode);
-        const deviceCodeHash = await this.redis.get(userCodeKey(normalized));
         if (deviceCodeHash === null) throw this.notFound();
-
-        const raw = await this.redis.get(deviceKey(deviceCodeHash));
-        if (raw === null) throw this.notFound();
-
-        return {
-            stored: JSON.parse(raw) as StoredDeviceAuthorization,
-            deviceCodeHash,
-        };
+        return deviceCodeHash;
     }
 
-    private async remove(
-        deviceCodeHash: string,
-        userCode: string,
-    ): Promise<void> {
-        await this.redis.del(deviceKey(deviceCodeHash), userCodeKey(userCode));
+    private async enforceRateLimit(): Promise<void> {
+        const key = rateKey(Math.floor(Date.now() / 60_000));
+        const [[, count]] = (await this.redis
+            .multi()
+            .incr(key)
+            .expire(key, 120)
+            .exec()) as [[Error | null, number], [Error | null, number]];
+        if (count > DEVICE_LOGINS_PER_MINUTE) {
+            throw new HttpException(
+                'Too many CLI logins were started. Please try again in a minute.',
+                HttpStatus.TOO_MANY_REQUESTS,
+            );
+        }
     }
 
     private notFound(): NotFoundException {

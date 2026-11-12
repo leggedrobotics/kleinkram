@@ -7,6 +7,7 @@ import sys
 import time
 import urllib.parse
 import webbrowser
+from getpass import getpass
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 from typing import Callable
@@ -215,6 +216,38 @@ SLOW_DOWN_STEP = 5
 class LoginFailed(Exception): ...
 
 
+class DeviceLoginUnsupported(Exception):
+    """the server is older than 0.67 and has no `/cli/device`"""
+
+
+LEGACY_DEFAULT_PROVIDER = "google"
+
+
+def _legacy_headless_auth(*, url: str) -> Credentials:
+    """\
+    login for servers older than 0.67 without a browser on this machine: the
+    server shows the two tokens after login, the user pastes them here
+    """
+    console = _console()
+    console.print("Open this address in a browser on any device and log in:")
+    console.print(f"  [blue]{url}[/blue]")
+    console.print("Then paste the two tokens the page shows.")
+    auth_token = getpass("authentication token: ").strip()
+    refresh_token = getpass("refresh token: ").strip()
+    if not auth_token or not refresh_token:
+        raise LoginFailed("Both tokens are needed to log in.")
+    return Credentials(auth_token=auth_token, refresh_token=refresh_token)
+
+
+def _callback_login(*, api: str, provider: str, user: Optional[str]) -> None:
+    """log in through a local callback port, the browser flow every server version supports"""
+    server, callback_port = _create_callback_server()
+    oauth_url = f"{api}{OAUTH_SLUG}{provider}?state=cli-port-{callback_port}"
+    if user is not None:
+        oauth_url += f"&user={user}"
+    _browser_auth(url=oauth_url, server=server)
+
+
 def _console() -> Console:
     return Console(file=sys.stderr, highlight=False)
 
@@ -236,6 +269,14 @@ def add_server(url: str, *, config: Optional[Config] = None) -> ServerInfo:
         raise UpdateCLIVersion()
 
     name = find_endpoint_by_api(config, info.api_url) or host_name(info.frontend_url)
+
+    # a saved server of the same name with another API is a different server:
+    # its login must never be sent to the new address
+    previous = config.endpoints.get(name)
+    if previous is not None and previous.api.rstrip("/") != info.api_url.rstrip("/"):
+        config.endpoint_credentials.pop(name, None)
+        console.print(f"[yellow]  {name} now points to a different API; its saved login was removed.[/yellow]")
+
     add_endpoint(config, Endpoint(name, info.api_url, info.s3_url))
 
     console.print(f"  [green]✓[/green] Kleinkram [bold]{name}[/bold]  [dim]server {info.server_version}[/dim]")
@@ -284,6 +325,8 @@ def _device_auth(
                 "cliVersion": __version__,
             },
         )
+        if response.status_code == 404:
+            raise DeviceLoginUnsupported()
         response.raise_for_status()
         authorization = response.json()
 
@@ -365,18 +408,29 @@ def login_flow(
         _print_signed_in(config)
         return
 
-    # explicitly chosen provider: the older flow through a local callback port
-    if oAuthProvider is not None and not headless and _has_browser():
-        server, callback_port = _create_callback_server()
-        state = f"cli-port-{callback_port}"
-        oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}{oAuthProvider}?state={state}"
-        if user is not None:
-            oauth_url += f"&user={user}"
-        _browser_auth(url=oauth_url, server=server)
+    open_browser = not headless and _has_browser()
+
+    # explicitly chosen provider: the flow through a local callback port
+    if oAuthProvider is not None and open_browser:
+        _callback_login(api=config.endpoint.api, provider=oAuthProvider, user=user)
         _print_signed_in(config)
         return
 
-    credentials = _device_auth(api=config.endpoint.api, open_browser=not headless and _has_browser())
+    try:
+        credentials = _device_auth(api=config.endpoint.api, open_browser=open_browser)
+    except DeviceLoginUnsupported:
+        # servers older than 0.67: no login codes, use the older flows
+        provider = oAuthProvider or LEGACY_DEFAULT_PROVIDER
+        _console().print(
+            f"[yellow]This server is older than 0.67 and has no login codes; "
+            f"logging in with {provider} instead (choose another with --oauth-provider).[/yellow]"
+        )
+        if open_browser:
+            _callback_login(api=config.endpoint.api, provider=provider, user=user)
+            _print_signed_in(config)
+            return
+        credentials = _legacy_headless_auth(url=f"{config.endpoint.api}{OAUTH_SLUG}{provider}?state=cli-no-redirect")
+
     config.credentials = credentials
     save_config(config)
     _print_signed_in(config)

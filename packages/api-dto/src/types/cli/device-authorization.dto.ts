@@ -146,10 +146,6 @@ export class DeviceAuthorizationInfoDto {
     @IsString()
     cliVersion?: string;
 
-    @ApiProperty({ description: 'IP address the CLI connected from' })
-    @IsString()
-    ipAddress!: string;
-
     @ApiProperty()
     @IsDate()
     createdAt!: Date;

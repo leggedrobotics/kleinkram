@@ -38,12 +38,12 @@
             </template>
 
             <!-- 2. loading the login -->
-            <div v-else-if="isLoading" class="activate-loading">
+            <div v-else-if="isLoadingLogin" class="activate-loading">
                 <q-spinner color="link-primary" size="48px" />
             </div>
 
             <!-- 3. unknown or expired code -->
-            <template v-else-if="isError || !authorization">
+            <template v-else-if="isLoginMissing || !authorization">
                 <q-icon
                     name="sym_o_timer_off"
                     size="48px"
@@ -138,10 +138,8 @@
                         <dd>{{ deviceDescription }}</dd>
                     </div>
                     <div>
-                        <dt>From</dt>
-                        <dd>
-                            {{ authorization.ipAddress }} · {{ startedAgo }}
-                        </dd>
+                        <dt>Started</dt>
+                        <dd>{{ startedAgo }}</dd>
                     </div>
                 </dl>
 
@@ -188,7 +186,7 @@ import {
     denyDeviceAuthorization,
     getDeviceAuthorization,
 } from 'src/services/queries/cli';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const $route = useRoute();
@@ -234,16 +232,36 @@ const clearCode = async (): Promise<void> => {
 
 // ----- pending login -----
 const queryKey = computed(() => ['cli-device', userCode.value]);
+
+// Once approved or denied, the page keeps showing that result. The backend
+// deletes the login as soon as the CLI collects its tokens, so looking it up
+// again (e.g. when the tab regains focus) would report "Code not found".
+const decided = ref<DeviceAuthorizationInfoDto | undefined>(undefined);
+watch(userCode, () => {
+    decided.value = undefined;
+});
+
 const {
-    data: authorization,
+    data: fetched,
     isLoading,
     isError,
 } = useQuery({
     queryKey,
     queryFn: () => getDeviceAuthorization(userCode.value ?? ''),
-    enabled: computed(() => userCode.value !== undefined),
+    enabled: computed(
+        () => userCode.value !== undefined && decided.value === undefined,
+    ),
+    refetchOnWindowFocus: false,
     retry: false,
 });
+
+const authorization = computed(() => decided.value ?? fetched.value);
+const isLoadingLogin = computed(
+    () => decided.value === undefined && isLoading.value,
+);
+const isLoginMissing = computed(
+    () => decided.value === undefined && isError.value,
+);
 
 const deviceName = computed(
     () => authorization.value?.hostname ?? 'this device',
@@ -275,7 +293,7 @@ const startedAgo = computed(() => {
 });
 
 const onDecided = (result: DeviceAuthorizationInfoDto): void => {
-    queryClient.setQueryData(queryKey.value, result);
+    decided.value = result;
 };
 
 const onError = (error: unknown): void => {

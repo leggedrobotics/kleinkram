@@ -114,12 +114,15 @@ The servers, the active server and the credentials are saved in `~/.kleinkram.js
 of the CLI (`prod`, `dev`, `local`) keep working under their old names.
 
 ::: details Servers older than version 0.67
-Older servers cannot be discovered from their address. Add them with the deprecated `klein endpoint` command, giving
-the API and S3 addresses yourself:
+Older servers cannot be discovered from their address and have no login codes. Add them with the deprecated
+`klein endpoint` command, giving the API and S3 addresses yourself, then log in:
 
 ```bash
 klein endpoint my-instance https://api.kleinkram.example.com https://s3.kleinkram.example.com
-klein login
+klein login --oauth-provider github
 ```
 
+`klein login` notices the older server and logs in through the browser with the chosen provider (Google if none is
+given). Without a browser it prints a login address instead; open it on any device and paste the two tokens the page
+shows.
 :::

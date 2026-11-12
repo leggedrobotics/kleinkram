@@ -84,3 +84,109 @@ def test_no_browser_over_ssh_without_display(monkeypatch):
     monkeypatch.delenv("DISPLAY", raising=False)
     monkeypatch.delenv("WAYLAND_DISPLAY", raising=False)
     assert not kleinkram.auth._has_browser()
+
+
+def test_device_login_reports_old_servers(monkeypatch):
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(404)
+
+    monkeypatch.setattr(
+        kleinkram.auth,
+        "_device_client",
+        lambda api: httpx.Client(base_url=api, transport=httpx.MockTransport(handler)),
+    )
+    with pytest.raises(kleinkram.auth.DeviceLoginUnsupported):
+        _device_auth(api="https://api.example.org", open_browser=False, sleep=lambda _: None)
+
+
+def test_old_server_falls_back_to_token_paste_without_browser(monkeypatch, tmp_path):
+    from kleinkram.config import Config
+    from kleinkram.config import Credentials
+    from kleinkram.config import Endpoint
+
+    config = Config(endpoints={"old": Endpoint("old", "https://api.old.org", "s3")}, selected_endpoint="old")
+    monkeypatch.setattr(kleinkram.auth, "get_config", lambda: config)
+    monkeypatch.setattr(kleinkram.auth, "save_config", lambda c: None)
+    monkeypatch.setattr(kleinkram.auth, "_print_signed_in", lambda c: None)
+    monkeypatch.setattr(kleinkram.auth, "_has_browser", lambda: False)
+
+    def no_device_login(**kwargs):
+        raise kleinkram.auth.DeviceLoginUnsupported()
+
+    urls: List[str] = []
+
+    def legacy(*, url):
+        urls.append(url)
+        return Credentials(auth_token="a", refresh_token="r")
+
+    monkeypatch.setattr(kleinkram.auth, "_device_auth", no_device_login)
+    monkeypatch.setattr(kleinkram.auth, "_legacy_headless_auth", legacy)
+
+    kleinkram.auth.login_flow(oAuthProvider="github")
+
+    assert urls == ["https://api.old.org/auth/github?state=cli-no-redirect"]
+    assert config.credentials == Credentials(auth_token="a", refresh_token="r")
+
+
+def test_add_server_drops_login_of_a_replaced_server(monkeypatch):
+    from kleinkram.config import Config
+    from kleinkram.config import Credentials
+    from kleinkram.config import Endpoint
+    from kleinkram.discovery import ServerInfo
+
+    config = Config(
+        endpoints={"datasets.example.org": Endpoint("datasets.example.org", "https://api.old.org", "s3")},
+        endpoint_credentials={"datasets.example.org": Credentials(api_key="secret")},
+        selected_endpoint="datasets.example.org",
+    )
+    monkeypatch.setattr(kleinkram.config, "save_config", lambda c, path=None: None)
+    monkeypatch.setattr(
+        kleinkram.auth,
+        "discover",
+        lambda url: ServerInfo(
+            frontend_url="https://datasets.example.org",
+            api_url="https://api.new.org",
+            s3_url="https://s3.new.org",
+            server_version="0.67.0",
+            min_cli_version="0.58.0",
+            auth_providers=[],
+            device_flow=True,
+        ),
+    )
+
+    kleinkram.auth.add_server("datasets.example.org", config=config)
+
+    assert config.endpoint.api == "https://api.new.org"
+    assert "datasets.example.org" not in config.endpoint_credentials
+
+
+def test_add_server_keeps_login_of_the_same_server(monkeypatch):
+    from kleinkram.config import Config
+    from kleinkram.config import Credentials
+    from kleinkram.config import Endpoint
+    from kleinkram.discovery import ServerInfo
+
+    config = Config(
+        endpoints={"prod": Endpoint("prod", "https://api.example.org", "s3")},
+        endpoint_credentials={"prod": Credentials(api_key="secret")},
+        selected_endpoint="prod",
+    )
+    monkeypatch.setattr(kleinkram.config, "save_config", lambda c, path=None: None)
+    monkeypatch.setattr(
+        kleinkram.auth,
+        "discover",
+        lambda url: ServerInfo(
+            frontend_url="https://datasets.example.org",
+            api_url="https://api.example.org",
+            s3_url="https://s3.example.org",
+            server_version="0.67.0",
+            min_cli_version="0.58.0",
+            auth_providers=[],
+            device_flow=True,
+        ),
+    )
+
+    kleinkram.auth.add_server("datasets.example.org", config=config)
+
+    assert config.selected_endpoint == "prod"
+    assert config.endpoint_credentials["prod"] == Credentials(api_key="secret")

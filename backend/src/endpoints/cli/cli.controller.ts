@@ -1,6 +1,9 @@
 import { ApiOkResponse } from '@/decorators';
 import { MIN_CLIENT_VERSION } from '@/routing/middlewares/version-checker-middleware.service';
-import { DeviceAuthorizationService } from '@/services/device-authorization.service';
+import {
+    DEVICE_LOGINS_PER_MINUTE,
+    DeviceAuthorizationService,
+} from '@/services/device-authorization.service';
 import { appVersion } from '@/app-version';
 import {
     CliConfigDto,
@@ -19,20 +22,10 @@ import {
     HttpCode,
     Param,
     Post,
-    Req,
 } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
-import { Request } from 'express';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { UserOnly } from '../auth/roles.decorator';
-
-const clientIp = (request: Request): string => {
-    const forwarded = request.headers['x-forwarded-for'];
-    const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)
-        ?.split(',')[0]
-        ?.trim();
-    return first ?? request.ip ?? request.socket.remoteAddress ?? 'unknown';
-};
 
 @Controller('cli')
 export class CliController {
@@ -75,7 +68,8 @@ export class CliController {
         summary: 'Start a CLI login',
         description:
             'Returns a device code for the CLI and a short user code the ' +
-            'user approves in the web app.',
+            'user approves in the web app. Limited to ' +
+            `${String(DEVICE_LOGINS_PER_MINUTE)} logins per minute on the instance.`,
     })
     @ApiOkResponse({
         description: 'Codes for the new login',
@@ -83,9 +77,8 @@ export class CliController {
     })
     async createDeviceAuthorization(
         @Body() body: CreateDeviceAuthorizationDto,
-        @Req() request: Request,
     ): Promise<DeviceAuthorizationDto> {
-        return this.deviceAuthorizationService.create(body, clientIp(request));
+        return this.deviceAuthorizationService.create(body);
     }
 
     @Post('device/token')

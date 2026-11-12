@@ -14,6 +14,7 @@ import {
 import { setupDatabaseHooks } from '../../utils/test-helpers';
 import { DEFAULT_URL } from '../utilities';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 const startLogin = async (): Promise<DeviceAuthorizationDto> => {
@@ -38,6 +39,11 @@ const poll = async (deviceCode: string): Promise<DeviceTokenDto> => {
     });
     expect(response.status).toBe(200);
     return (await response.json()) as DeviceTokenDto;
+};
+
+const pollStatus = async (deviceCode: string): Promise<string> => {
+    const result = await poll(deviceCode);
+    return result.status;
 };
 
 describe('CLI Device Login', () => {
@@ -69,7 +75,7 @@ describe('CLI Device Login', () => {
             `/cli/activate?code=${authorization.userCode}`,
         );
 
-        expect((await poll(authorization.deviceCode)).status).toBe('pending');
+        expect(await pollStatus(authorization.deviceCode)).toBe('pending');
 
         // the approval page shows the machine
         const info = await fetch(
@@ -86,6 +92,9 @@ describe('CLI Device Login', () => {
             { method: 'POST', headers: getAuthHeaders(user) },
         );
         expect(approve.status).toBe(200);
+        const approved = (await approve.json()) as DeviceAuthorizationInfoDto;
+        expect(approved.status).toBe('approved');
+        expect(approved).not.toHaveProperty('ipAddress');
 
         const tokens = await poll(authorization.deviceCode);
         expect(tokens.status).toBe('approved');
@@ -104,7 +113,15 @@ describe('CLI Device Login', () => {
         expect(me.status).toBe(200);
 
         // and are handed out only once
-        expect((await poll(authorization.deviceCode)).status).toBe('expired');
+        expect(await pollStatus(authorization.deviceCode)).toBe('expired');
+
+        // a late decision does not bring the collected login back
+        const lateApprove = await fetch(
+            `${DEFAULT_URL}/cli/device/${authorization.userCode}/approve`,
+            { method: 'POST', headers: getAuthHeaders(user) },
+        );
+        expect(lateApprove.status).toBe(404);
+        expect(await pollStatus(authorization.deviceCode)).toBe('expired');
     });
 
     test('should report a denied login to the CLI', async () => {
@@ -129,7 +146,7 @@ describe('CLI Device Login', () => {
         );
         expect(approve.status).toBe(400);
 
-        expect((await poll(authorization.deviceCode)).status).toBe('denied');
+        expect(await pollStatus(authorization.deviceCode)).toBe('denied');
     });
 
     test('should require a signed in user to approve a code', async () => {
@@ -139,7 +156,7 @@ describe('CLI Device Login', () => {
             { method: 'POST', headers: getAuthHeaders() },
         );
         expect(approve.status).toBe(401);
-        expect((await poll(authorization.deviceCode)).status).toBe('pending');
+        expect(await pollStatus(authorization.deviceCode)).toBe('pending');
     });
 
     test('should return 404 for an unknown code', async () => {
@@ -156,6 +173,6 @@ describe('CLI Device Login', () => {
     });
 
     test('should report an unknown device code as expired', async () => {
-        expect((await poll('not-a-real-device-code')).status).toBe('expired');
+        expect(await pollStatus('not-a-real-device-code')).toBe('expired');
     });
 });
