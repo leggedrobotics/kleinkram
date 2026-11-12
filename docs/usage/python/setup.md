@@ -4,7 +4,7 @@ The `kleinkram` CLI allows you to interact with Kleinkram directly from the comm
 
 ## Installation and Prerequisites
 
-The CLI requires **Python 3.10 or later**; we test it on 3.10 and 3.13. Python 3.10 is past its end of life, so we recommend Python 3.12 or newer.
+The CLI requires **Python 3.10 or later**; we test it on 3.10 and 3.13. We recommend Python 3.12 or later.
 
 It is best practice to always install Python packages inside a virtual environment:
 
