@@ -1,0 +1,299 @@
+{
+    "$comment": "Shared cases for the naming rules. The backend tests (backend/tests/functional/name-validation.unit.test.ts) and the CLI tests (cli/tests/test_name_validation.py) both check them, so the TypeScript rules (packages/validation/src/name.validation.ts, filename.validation.ts) and their Python copies (cli/kleinkram/core.py, utils.py) cannot drift apart. error: null means valid.",
+    "names": {
+        "label": "Project name",
+        "cases": [
+            {
+                "value": "abc",
+                "error": null
+            },
+            {
+                "value": "field-testing-2024",
+                "error": null
+            },
+            {
+                "value": "2024-05-14_calibration-run",
+                "error": null
+            },
+            {
+                "value": "v1.2",
+                "error": null
+            },
+            {
+                "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "error": null
+            },
+            {
+                "value": "ab",
+                "error": "Project name must be at least 3 characters long"
+            },
+            {
+                "value": "",
+                "error": "Project name is required"
+            },
+            {
+                "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "error": "Project name must be at most 100 characters long"
+            },
+            {
+                "value": "3f2ad2c6-6e2a-4c6b-9a1d-9f6f0f3b7f21",
+                "error": "Project name must not be a UUID"
+            },
+            {
+                "value": ".hidden",
+                "error": "Project name must not start with '.' or '-'. Try \"hidden\"."
+            },
+            {
+                "value": "My Project",
+                "error": "Project name may only contain letters, digits, '.', '-' and '_' (found space). Try \"My-Project\"."
+            },
+            {
+                "value": "über-run",
+                "error": "Project name may only contain letters, digits, '.', '-' and '_' (found 'ü'). Try \"uber-run\"."
+            },
+            {
+                "value": "run#1",
+                "error": "Project name may only contain letters, digits, '.', '-' and '_' (found '#'). Try \"run-1\"."
+            },
+            {
+                "value": "-dash",
+                "error": "Project name must not start with '.' or '-'. Try \"dash\"."
+            },
+            {
+                "value": "...",
+                "error": "Project name must not start with '.' or '-'."
+            },
+            {
+                "value": "Müller: run 1",
+                "error": "Project name may only contain letters, digits, '.', '-' and '_' (found 'ü', ':', space). Try \"Muller-run-1\"."
+            },
+            {
+                "value": "abc\n",
+                "error": "Project name may only contain letters, digits, '.', '-' and '_' (found '\n'). Try \"abc\"."
+            }
+        ]
+    },
+    "suggestName": [
+        {
+            "value": "My Project",
+            "suggestion": "My-Project"
+        },
+        {
+            "value": ".hidden",
+            "suggestion": "hidden"
+        },
+        {
+            "value": "über-run",
+            "suggestion": "uber-run"
+        },
+        {
+            "value": "---",
+            "suggestion": null
+        },
+        {
+            "value": "ab",
+            "suggestion": null
+        },
+        {
+            "value": "日本",
+            "suggestion": null
+        },
+        {
+            "value": "Müller: run 1",
+            "suggestion": "Muller-run-1"
+        }
+    ],
+    "fileNames": {
+        "label": "File name",
+        "cases": [
+            {
+                "value": "abc.bag",
+                "error": null
+            },
+            {
+                "value": "run_01.mcap",
+                "error": null
+            },
+            {
+                "value": "2024-05-14.calibration.db3",
+                "error": null
+            },
+            {
+                "value": "log-1.md",
+                "error": null
+            },
+            {
+                "value": "x.y.z.csv",
+                "error": null
+            },
+            {
+                "value": "meta.yaml",
+                "error": null
+            },
+            {
+                "value": "meta.yml",
+                "error": null
+            },
+            {
+                "value": "data.svo2",
+                "error": null
+            },
+            {
+                "value": "traj.tum",
+                "error": null
+            },
+            {
+                "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bag",
+                "error": null
+            },
+            {
+                "value": "a.bag",
+                "error": "File name must be at least 3 characters long without the extension"
+            },
+            {
+                "value": "ab.mcap",
+                "error": "File name must be at least 3 characters long without the extension"
+            },
+            {
+                "value": ".bag",
+                "error": "File name must end with one of .bag, .mcap, .yaml, .svo2, .tum, .db3, .md, .csv, .yml"
+            },
+            {
+                "value": ".hidden.bag",
+                "error": "File name must not start with '.' or '-'. Try \"hidden.bag\"."
+            },
+            {
+                "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bag",
+                "error": "File name must be at most 50 characters long without the extension"
+            },
+            {
+                "value": "REC.MCAP",
+                "error": "File name must end with a lowercase extension. Try \"REC.mcap\"."
+            },
+            {
+                "value": "rec.Bag",
+                "error": "File name must end with a lowercase extension. Try \"rec.bag\"."
+            },
+            {
+                "value": "notes.txt",
+                "error": "File name must end with one of .bag, .mcap, .yaml, .svo2, .tum, .db3, .md, .csv, .yml"
+            },
+            {
+                "value": "noext",
+                "error": "File name must end with one of .bag, .mcap, .yaml, .svo2, .tum, .db3, .md, .csv, .yml"
+            },
+            {
+                "value": "",
+                "error": "File name is required"
+            },
+            {
+                "value": "run 1.bag",
+                "error": "File name may only contain letters, digits, '.', '-' and '_' (found space). Try \"run-1.bag\"."
+            },
+            {
+                "value": "log(1).bag",
+                "error": "File name may only contain letters, digits, '.', '-' and '_' (found '(', ')'). Try \"log-1.bag\"."
+            },
+            {
+                "value": "über.bag",
+                "error": "File name may only contain letters, digits, '.', '-' and '_' (found 'ü'). Try \"uber.bag\"."
+            },
+            {
+                "value": "data[raw].mcap",
+                "error": "File name may only contain letters, digits, '.', '-' and '_' (found '[', ']'). Try \"data-raw.mcap\"."
+            },
+            {
+                "value": "3f2ad2c6-6e2a-4c6b-9a1d-9f6f0f3b7f21.bag",
+                "error": "File name must not be a UUID"
+            },
+            {
+                "value": "-dash.bag",
+                "error": "File name must not start with '.' or '-'. Try \"dash.bag\"."
+            },
+            {
+                "value": "a b.mcap",
+                "error": "File name may only contain letters, digits, '.', '-' and '_' (found space). Try \"a-b.mcap\"."
+            },
+            {
+                "value": "...bag",
+                "error": "File name must be at least 3 characters long without the extension"
+            },
+            {
+                "value": "run\n.bag",
+                "error": "File name may only contain letters, digits, '.', '-' and '_' (found '\n'). Try \"run.bag\"."
+            },
+            {
+                "value": "Müller: run 1.mcap",
+                "error": "File name may only contain letters, digits, '.', '-' and '_' (found 'ü', ':', space). Try \"Muller-run-1.mcap\"."
+            }
+        ]
+    },
+    "suggestFileName": [
+        {
+            "value": "run 1.MCAP",
+            "suggestion": "run-1.mcap"
+        },
+        {
+            "value": "log(1).bag",
+            "suggestion": "log-1.bag"
+        },
+        {
+            "value": ".hidden.bag",
+            "suggestion": "hidden.bag"
+        },
+        {
+            "value": "a.bag",
+            "suggestion": null
+        },
+        {
+            "value": "notes.txt",
+            "suggestion": null
+        },
+        {
+            "value": "über.bag",
+            "suggestion": "uber.bag"
+        }
+    ],
+    "scriptFileNames": [
+        {
+            "value": "check.py",
+            "valid": true
+        },
+        {
+            "value": "my_script-2.v1.py",
+            "valid": true
+        },
+        {
+            "value": "a.py",
+            "valid": true
+        },
+        {
+            "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.py",
+            "valid": true
+        },
+        {
+            "value": "über.py",
+            "valid": false
+        },
+        {
+            "value": "run me.py",
+            "valid": false
+        },
+        {
+            "value": "script.sh",
+            "valid": false
+        },
+        {
+            "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.py",
+            "valid": false
+        },
+        {
+            "value": "dir/x.py",
+            "valid": false
+        },
+        {
+            "value": ".py",
+            "valid": false
+        }
+    ]
+}

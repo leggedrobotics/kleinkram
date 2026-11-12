@@ -27,13 +27,13 @@ from kleinkram.utils import SUPPORT_FILE_TYPES
 
 # every supported file below `tree`, in sorted order
 ALL_SUPPORTED = [
-    "run1/deep/x.mcap",
+    "run1/deep/xyz.mcap",
     "run1/meta.yaml",
     "run1/one.mcap",
     "run2/two.bag",
     "top.mcap",
 ]
-ALL_MCAP = ["run1/deep/x.mcap", "run1/one.mcap", "top.mcap"]
+ALL_MCAP = ["run1/deep/xyz.mcap", "run1/one.mcap", "top.mcap"]
 
 
 @pytest.fixture
@@ -44,7 +44,7 @@ def tree(tmp_path: Path) -> Path:
       notes.txt              unsupported suffix
       run1/one.mcap
       run1/meta.yaml
-      run1/deep/x.mcap
+      run1/deep/xyz.mcap
       run2/two.bag
       run2/.hidden.mcap      hidden file
       .git/obj.mcap          inside a hidden directory
@@ -137,7 +137,7 @@ def test_recursive_does_not_enter_hidden_directories(tree, monkeypatch):
 
 def test_recursive_relative_directory(chdir_tree):
     files = expand_file_args(["run1"], recursive=True, suffixes=SUPPORT_FILE_TYPES)
-    assert [p.as_posix() for p in files] == ["run1/deep/x.mcap", "run1/meta.yaml", "run1/one.mcap"]
+    assert [p.as_posix() for p in files] == ["run1/deep/xyz.mcap", "run1/meta.yaml", "run1/one.mcap"]
 
 
 def test_recursive_empty_directory_warns(tree, capsys):
@@ -162,7 +162,7 @@ def test_single_star_glob_stays_on_one_level(chdir_tree):
 
 def test_glob_matching_directories_is_walked_with_recursive(chdir_tree):
     files = expand_file_args(["run*"], recursive=True, suffixes=SUPPORT_FILE_TYPES)
-    assert rel(files, chdir_tree) == ["run1/deep/x.mcap", "run1/meta.yaml", "run1/one.mcap", "run2/two.bag"]
+    assert rel(files, chdir_tree) == ["run1/deep/xyz.mcap", "run1/meta.yaml", "run1/one.mcap", "run2/two.bag"]
 
 
 def test_glob_matching_directories_without_recursive_passes_them_on(chdir_tree):
@@ -186,7 +186,7 @@ def test_duplicates_are_removed_in_argument_order(chdir_tree):
         recursive=True,
         suffixes=SUPPORT_FILE_TYPES,
     )
-    assert rel(files, chdir_tree) == ["top.mcap", "run1/deep/x.mcap", "run1/one.mcap", "run1/meta.yaml", "run2/two.bag"]
+    assert rel(files, chdir_tree) == ["top.mcap", "run1/deep/xyz.mcap", "run1/one.mcap", "run1/meta.yaml", "run2/two.bag"]
 
 
 # --------------------------------------------------------------------------

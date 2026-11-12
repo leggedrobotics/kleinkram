@@ -292,7 +292,7 @@ def test_cli_download_prints_summary_and_exits_130(runner, monkeypatch, tmp_path
 
 @pytest.mark.parametrize("verbose", ["--verbose", "--no-verbose"])
 def test_cli_upload_prints_summary_and_exits_130(runner, monkeypatch, tmp_path, verbose) -> None:
-    bag = tmp_path / "a.bag"
+    bag = tmp_path / "aaa.bag"
     bag.write_bytes(b"")
     monkeypatch.setattr("kleinkram.cli._upload.AuthenticatedClient", MagicMock)
     monkeypatch.setattr("kleinkram.core.upload", _interrupted(UploadResult(uploaded=2, canceled=1)))

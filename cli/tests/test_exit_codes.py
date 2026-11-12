@@ -45,7 +45,7 @@ def offline(monkeypatch, tmp_path):
     for module in ("_upload", "_verify", "_download"):
         monkeypatch.setattr(f"kleinkram.cli.{module}.AuthenticatedClient", MagicMock)
     monkeypatch.chdir(tmp_path)
-    for name in ("a.bag", "b.bag"):
+    for name in ("rec_a.bag", "rec_b.bag"):
         (tmp_path / name).write_bytes(b"x")
     (tmp_path / "dest").mkdir()
 
@@ -72,7 +72,7 @@ def fake(result: Any, messages: List[tuple] = ()) -> Callable[..., Any]:
 
 def upload(runner, monkeypatch, mode: str, result: Any, messages: List[tuple] = ()):
     monkeypatch.setattr("kleinkram.core.upload", fake(result, messages))
-    return runner.invoke(app, [mode, "upload", "-p", "p", "-m", "m", "a.bag", "b.bag"])
+    return runner.invoke(app, [mode, "upload", "-p", "p", "-m", "m", "rec_a.bag", "rec_b.bag"])
 
 
 @pytest.mark.parametrize("mode", MODES)
@@ -83,25 +83,25 @@ def test_upload_all_done_exits_0(runner, monkeypatch, mode):
 
 @pytest.mark.parametrize("mode", MODES)
 def test_upload_identical_existing_file_exits_0(runner, monkeypatch, mode, tmp_path):
-    result = upload(runner, monkeypatch, mode, UploadResult(uploaded=1, skipped=1, existing=[tmp_path / "a.bag"]))
+    result = upload(runner, monkeypatch, mode, UploadResult(uploaded=1, skipped=1, existing=[tmp_path / "rec_a.bag"]))
     assert result.exit_code == 0, result.output
 
 
 @pytest.mark.parametrize("mode", MODES)
 def test_upload_failed_file_exits_1_and_is_named(runner, monkeypatch, mode):
-    messages = [("uploaded a.bag", False), ("Error uploading b.bag: connection reset", True)]
+    messages = [("uploaded rec_a.bag", False), ("Error uploading rec_b.bag: connection reset", True)]
     result = upload(runner, monkeypatch, mode, UploadResult(uploaded=1, failed=1), messages)
 
     assert result.exit_code == 1, result.output
-    assert "Error uploading b.bag: connection reset" in result.stderr
+    assert "Error uploading rec_b.bag: connection reset" in result.stderr
     assert "1 failed" in result.stderr
 
 
 def test_upload_quiet_mode_hides_success_lines(runner, monkeypatch):
-    messages = [("uploaded a.bag", False), ("Error uploading b.bag: boom", True)]
+    messages = [("uploaded rec_a.bag", False), ("Error uploading rec_b.bag: boom", True)]
     result = upload(runner, monkeypatch, "--no-verbose", UploadResult(uploaded=1, failed=1), messages)
-    assert "uploaded a.bag" not in result.stderr + result.stdout
-    assert "Error uploading b.bag: boom" in result.stderr
+    assert "uploaded rec_a.bag" not in result.stderr + result.stdout
+    assert "Error uploading rec_b.bag: boom" in result.stderr
 
 
 @pytest.mark.parametrize("mode", MODES)
@@ -164,16 +164,16 @@ def test_download_not_done_exits_1(runner, monkeypatch, mode, states):
 
 @pytest.mark.parametrize("mode", MODES)
 def test_download_failed_file_exits_1_and_is_named(runner, monkeypatch, mode):
-    messages = [("downloaded a.bag", False), ("Error downloading b.bag: timeout", True)]
+    messages = [("downloaded rec_a.bag", False), ("Error downloading rec_b.bag: timeout", True)]
     result = download(runner, monkeypatch, mode, DownloadResult(state_counts=counts(DOWNLOADED_OK=1), failed=1), messages)
     assert result.exit_code == 1, result.output
-    assert "Error downloading b.bag: timeout" in result.stderr
+    assert "Error downloading rec_b.bag: timeout" in result.stderr
 
 
 def test_download_quiet_mode_names_skipped_files(runner, monkeypatch):
     messages = [
-        ("downloaded a.bag", False),
-        ("skipped b.bag, exists with hash mismatch (use --overwrite?)", True),
+        ("downloaded rec_a.bag", False),
+        ("skipped rec_b.bag, exists with hash mismatch (use --overwrite?)", True),
     ]
     result = download(
         runner,
@@ -183,8 +183,8 @@ def test_download_quiet_mode_names_skipped_files(runner, monkeypatch):
         messages,
     )
     assert result.exit_code == 1
-    assert "skipped b.bag, exists with hash mismatch" in result.stderr
-    assert "downloaded a.bag" not in result.stderr + result.stdout
+    assert "skipped rec_b.bag, exists with hash mismatch" in result.stderr
+    assert "downloaded rec_a.bag" not in result.stderr + result.stdout
     assert "Downloaded 1 file(s), 1 NOT downloaded." in result.stderr
 
 
@@ -202,13 +202,13 @@ def test_download_ctrl_c_exits_130(runner, monkeypatch):
 def verify(runner, monkeypatch, mode: str, statuses: Dict[str, FileVerificationStatus]):
     file_status = {Path(name): status for name, status in statuses.items()}
     monkeypatch.setattr("kleinkram.core.verify", MagicMock(return_value=file_status))
-    return runner.invoke(app, [mode, "verify", "-p", "p", "-m", "m", "a.bag", "b.bag"], env={"COLUMNS": "200"})
+    return runner.invoke(app, [mode, "verify", "-p", "p", "-m", "m", "rec_a.bag", "rec_b.bag"], env={"COLUMNS": "200"})
 
 
 @pytest.mark.parametrize("mode", MODES)
 def test_verify_all_uploaded_exits_0(runner, monkeypatch, mode):
     ok = FileVerificationStatus.UPLOADED
-    result = verify(runner, monkeypatch, mode, {"a.bag": ok, "b.bag": ok})
+    result = verify(runner, monkeypatch, mode, {"rec_a.bag": ok, "rec_b.bag": ok})
     assert result.exit_code == 0, result.output
 
 
@@ -223,16 +223,16 @@ def test_verify_all_uploaded_exits_0(runner, monkeypatch, mode):
     ],
 )
 def test_verify_problem_exits_1(runner, monkeypatch, mode, status):
-    result = verify(runner, monkeypatch, mode, {"a.bag": FileVerificationStatus.UPLOADED, "b.bag": status})
+    result = verify(runner, monkeypatch, mode, {"rec_a.bag": FileVerificationStatus.UPLOADED, "rec_b.bag": status})
     assert result.exit_code == 1, result.output
     assert "1 of 2 file(s) could not be verified." in result.stderr
     # named on stderr in both modes, so `klein verify ... > verified.txt` still shows which file
-    assert f"{status.value}: b.bag" in result.stderr.splitlines()
+    assert f"{status.value}: rec_b.bag" in result.stderr.splitlines()
 
 
 @pytest.mark.parametrize("status", [FileVerificationStatus.UPLOADING, FileVerificationStatus.COMPUTING_HASH])
 def test_verify_still_processing_exits_1_and_says_retry(runner, monkeypatch, status):
-    result = verify(runner, monkeypatch, "--no-verbose", {"a.bag": status})
+    result = verify(runner, monkeypatch, "--no-verbose", {"rec_a.bag": status})
     assert result.exit_code == 1, result.output
     assert "run `klein verify` again later" in result.stderr
 
@@ -242,7 +242,7 @@ def test_verify_quiet_mode_output(runner, monkeypatch):
         runner,
         monkeypatch,
         "--no-verbose",
-        {"a.bag": FileVerificationStatus.UPLOADED, "b.bag": FileVerificationStatus.MISMATCHED_HASH},
+        {"rec_a.bag": FileVerificationStatus.UPLOADED, "rec_b.bag": FileVerificationStatus.MISMATCHED_HASH},
     )
-    assert result.stdout.splitlines() == ["a.bag"]  # verified paths only, for piping
-    assert "hash mismatch: b.bag" in result.stderr.splitlines()
+    assert result.stdout.splitlines() == ["rec_a.bag"]  # verified paths only, for piping
+    assert "hash mismatch: rec_b.bag" in result.stderr.splitlines()

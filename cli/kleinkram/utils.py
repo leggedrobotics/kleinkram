@@ -27,14 +27,20 @@ from kleinkram.errors import FileNameNotSupported
 from kleinkram.errors import FileTypeNotSupported
 from kleinkram.errors import TransferCancelledError
 from kleinkram.models import File
+from kleinkram.naming import FILE_EXTENSIONS
+from kleinkram.naming import FILENAME_MAX_LENGTH
+from kleinkram.naming import FILENAME_MIN_LENGTH
+from kleinkram.naming import UUID_REGEX
+from kleinkram.naming import get_file_name_validation_error
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 
 logger = logging.getLogger(__name__)
 
 
-INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
-SUPPORT_FILE_TYPES = [".bag", ".mcap", ".db3", ".svo2", ".tum", ".yaml", ".yml", ".md", ".csv"]
+# characters allowed in a file name before the extension, see `kleinkram/naming.py`
+INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-" + "."
+SUPPORT_FILE_TYPES = list(FILE_EXTENSIONS)
 EXPERIMENTAL_FILE_TYPES = []
 
 
@@ -116,12 +122,12 @@ def check_file_path(file: Path, *, check_filename: bool = True) -> None:
         raise FileNotFoundError(f"{file} is a directory and not a file")
     if not file.exists():
         raise FileNotFoundError(f"{file} does not exist")
-    if file.suffix not in SUPPORT_FILE_TYPES:
+    if file.suffix.lower() not in SUPPORT_FILE_TYPES:
         raise FileTypeNotSupported(f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}")
-    if check_filename and not check_filename_is_sanatized(file.stem):
-        raise FileNameNotSupported(
-            f"only `{''.join(INTERNAL_ALLOWED_CHARS)}` are " f"allowed in filenames and at most 50chars: {file}"
-        )
+    if check_filename:
+        error = get_file_name_validation_error(file.name)
+        if error is not None:
+            raise FileNameNotSupported(f"{file}: {error}")
 
 
 def format_error(msg: str, exc: Exception, *, verbose: bool = False) -> str:
@@ -156,30 +162,37 @@ def is_valid_uuid4(uuid: str) -> bool:
 
 
 def check_filename_is_sanatized(filename: str) -> bool:
-    if len(filename) > 50:
-        return False
-    if not all(char in INTERNAL_ALLOWED_CHARS for char in filename):
-        return False
-    return True
+    """\
+    whether `filename`, the part of a file name before the extension, is
+    valid; see `kleinkram.naming.get_file_name_validation_error` for the reason
+    """
+    return get_file_name_validation_error(f"{filename}{SUPPORT_FILE_TYPES[0]}") is None
 
 
 def get_filename(path: Path) -> str:
     """\
-    takes a path and returns a sanitized filename
+    takes a path and returns a valid file name for it, see `kleinkram.naming`
 
-    the format for this internal filename is:
-    - replace all disallowed characters with "_"
-    - trim to 40 chars + 10 hashed chars
-        - the 10 hashed chars are deterministic given the original filename
+    a valid name is kept as it is, otherwise (`--fix-filenames`):
+    - every character that is not allowed becomes "_", also a leading "." or "-"
+    - a supported extension is lowercased: `REC.MCAP` -> `REC.mcap`
+    - a name longer than 50 characters is cut to 40 + 10 hashed characters
+    - a name shorter than 3 characters (or a UUID) gets "_" + 4 hashed characters
+      appended: `a.bag` -> `a_<hash>.bag`
+    the hashed characters are deterministic given the original file name
     """
-
     stem = "".join(char if char in INTERNAL_ALLOWED_CHARS else "_" for char in path.stem)
+    if stem[:1] in (".", "-"):
+        stem = f"_{stem[1:]}"
+    suffix = path.suffix.lower() if path.suffix.lower() in SUPPORT_FILE_TYPES else path.suffix
 
-    if len(stem) > 50:
-        hash = md5(path.name.encode()).hexdigest()
-        stem = f"{stem[:40]}{hash[:10]}"
+    digest = md5(path.name.encode()).hexdigest()
+    if len(stem) > FILENAME_MAX_LENGTH:
+        stem = f"{stem[:40]}{digest[:10]}"
+    elif len(stem) < FILENAME_MIN_LENGTH or UUID_REGEX.fullmatch(stem):
+        stem = f"{stem}_{digest[:4]}"
 
-    return f"{stem}{path.suffix}"
+    return f"{stem}{suffix}"
 
 
 def get_filename_map(file_paths: Sequence[Path]) -> Dict[str, Path]:
