@@ -1,10 +1,6 @@
 import { appVersion } from '@/app-version';
-import {
-    ApiKeyEntity,
-    FileEntity,
-    UserEntity,
-} from '@kleinkram/backend-common';
-import { AccessGroupRights, FileType, KeyTypes } from '@kleinkram/shared';
+import { FileEntity, UserEntity } from '@kleinkram/backend-common';
+import { AccessGroupRights, FileType } from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -12,7 +8,7 @@ import {
     getAuthHeaders,
 } from '../utils/api-calls';
 import { database } from '../utils/database-utilities';
-import { setupDatabaseHooks } from '../utils/test-helpers';
+import { createActionApiKey, setupDatabaseHooks } from '../utils/test-helpers';
 
 async function createTestFile(
     filename: string,
@@ -36,15 +32,11 @@ async function createMissionScopedApiKey(
     missionUuid: string,
     user: UserEntity,
 ): Promise<string> {
-    const apiKeyRepository = database.getRepository(ApiKeyEntity);
-    const apiKey = apiKeyRepository.create({
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        key_type: KeyTypes.ACTION,
-        mission: { uuid: missionUuid },
+    const apiKey = await createActionApiKey({
+        missionUuid,
+        userUuid: user.uuid,
         rights: AccessGroupRights.READ,
-        user: { uuid: user.uuid },
     });
-    await apiKeyRepository.save(apiKey);
     return apiKey.apikey;
 }
 
