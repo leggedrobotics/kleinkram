@@ -36,7 +36,7 @@
                     />
                     <q-btn
                         unelevated
-                        color="primary"
+                        color="button-primary"
                         label="Continue"
                         type="submit"
                         class="full-width activate-button"
@@ -47,7 +47,7 @@
 
             <!-- 2. loading the login -->
             <div v-else-if="isLoading" class="activate-center">
-                <q-spinner color="primary" size="40px" />
+                <q-spinner color="link-primary" size="40px" />
             </div>
 
             <!-- 3. unknown or expired code -->
@@ -65,7 +65,7 @@
                     <q-btn
                         flat
                         no-caps
-                        color="primary"
+                        color="link-primary"
                         label="Enter another code"
                         @click="clearCode"
                     />
@@ -91,7 +91,7 @@
                             dense
                             no-caps
                             size="sm"
-                            color="primary"
+                            color="link-primary"
                             :label="copied ? 'Copied' : 'Copy'"
                             @click="copyFirstCommand"
                         />
@@ -173,7 +173,7 @@
                     <q-btn
                         unelevated
                         no-caps
-                        color="primary"
+                        color="button-primary"
                         label="Authorize CLI"
                         class="activate-button"
                         :loading="isApproving"
@@ -356,7 +356,7 @@ const copyFirstCommand = async (): Promise<void> => {
     align-items: center;
     background: #e6efff;
     border-radius: 10px;
-    color: var(--q-primary);
+    color: #0f62fe; /* $link-primary */
     display: flex;
     flex: none;
     height: 42px;

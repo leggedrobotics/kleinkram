@@ -38,7 +38,7 @@
                                     dense
                                     no-caps
                                     size="sm"
-                                    color="primary"
+                                    color="link-primary"
                                     :label="
                                         copied === index ? 'Copied' : 'Copy'
                                     "
@@ -150,7 +150,7 @@ const copy = async (text: string, index: number): Promise<void> => {
     align-items: center;
     background: #e6efff;
     border-radius: 50%;
-    color: var(--q-primary);
+    color: #0f62fe; /* $link-primary */
     display: flex;
     font-size: 12px;
     font-weight: 600;
@@ -200,7 +200,7 @@ const copy = async (text: string, index: number): Promise<void> => {
 }
 
 .cli-menu__meta a {
-    color: var(--q-primary);
+    color: #0f62fe; /* $link-primary */
     font-weight: 500;
     text-decoration: none;
 }
