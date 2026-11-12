@@ -615,7 +615,7 @@ describe('Action Management Tests', () => {
 
     describe('Template Ownership', () => {
         const basePayload = {
-            name: 'Ownership Test Action',
+            name: 'Ownership-Test-Action',
             description: 'owned by the creator',
             accessRights: AccessGroupRights.READ,
             dockerImage: 'hello-world',
@@ -709,7 +709,7 @@ describe('Action Management Tests', () => {
                 missing,
                 {
                     ...basePayload,
-                    name: 'Brand New Name',
+                    name: 'Brand-New-Name',
                     uuid: missing,
                 },
                 owner,
@@ -718,14 +718,14 @@ describe('Action Management Tests', () => {
 
             const created = await database
                 .getRepository(ActionTemplateEntity)
-                .count({ where: { name: 'Brand New Name' } });
+                .count({ where: { name: 'Brand-New-Name' } });
             expect(created).toBe(0);
         }, 30_000);
 
         test('should reject a new version that changes the template name', async () => {
             const { owner, other, templateUuid } = await setupOwnerAndOther();
             const otherTemplateUuid = await createActionUsingPost(
-                { ...basePayload, name: 'Other Users Action' },
+                { ...basePayload, name: 'Other-Users-Action' },
                 other,
             );
             expect(otherTemplateUuid).toBeTruthy();
@@ -735,7 +735,7 @@ describe('Action Management Tests', () => {
                 templateUuid,
                 {
                     ...basePayload,
-                    name: 'Other Users Action',
+                    name: 'Other-Users-Action',
                     uuid: templateUuid,
                 },
                 owner,
@@ -744,7 +744,7 @@ describe('Action Management Tests', () => {
 
             const versions = await database
                 .getRepository(ActionTemplateEntity)
-                .count({ where: { name: 'Other Users Action' } });
+                .count({ where: { name: 'Other-Users-Action' } });
             expect(versions).toBe(1);
         }, 30_000);
 
