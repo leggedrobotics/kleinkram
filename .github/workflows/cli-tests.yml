@@ -8,11 +8,18 @@ on:
             - dev
 
 jobs:
-    cli-tests:
+    cli-tests-matrix:
+        name: cli-tests (python ${{ matrix.python-version }})
         runs-on: ubuntu-latest
 
         permissions:
             contents: read
+
+        strategy:
+            fail-fast: false
+            matrix:
+                # Oldest supported and newest tested version.
+                python-version: ['3.10', '3.13']
 
         steps:
             - uses: actions/checkout@v7
@@ -20,7 +27,7 @@ jobs:
             - name: Set up Python
               uses: actions/setup-python@v7
               with:
-                  python-version: '3.10'
+                  python-version: ${{ matrix.python-version }}
 
             - name: Build Docker stack
               run: docker compose -f docker-compose.testing.yml build
@@ -154,3 +161,18 @@ jobs:
             - name: Delete Docker volumes
               if: always()
               run: docker volume prune -f
+
+    # Branch protection requires a check named `cli-tests`; the matrix jobs
+    # report under suffixed names, so this job reports their combined result.
+    cli-tests:
+        needs: cli-tests-matrix
+        if: always()
+        runs-on: ubuntu-latest
+        permissions: {}
+        steps:
+            - name: Check matrix result
+              run: |
+                  if [ "${{ needs.cli-tests-matrix.result }}" != "success" ]; then
+                    echo "CLI tests failed: ${{ needs.cli-tests-matrix.result }}"
+                    exit 1
+                  fi
