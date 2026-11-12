@@ -8,12 +8,8 @@ import {
     IsString,
 } from 'class-validator';
 
-export class CreateProject {
-    @IsString()
-    @IsNotEmpty()
-    @IsValidName('Project name')
-    name!: string;
-
+/** Fields shared by creating and updating a project, everything but the name. */
+export class ProjectFieldsDto {
     @IsNotEmpty()
     @IsString()
     description!: string;
@@ -45,4 +41,21 @@ export class CreateProject {
     @IsOptional()
     @IsArray()
     removedDefaultGroups?: string[];
+}
+
+export class CreateProject extends ProjectFieldsDto {
+    @IsString()
+    @IsNotEmpty()
+    @IsValidName('Project name')
+    name!: string;
+}
+
+/**
+ * The name is checked by the server only if it changes, so a project named
+ * before the naming rules can still be edited without renaming it.
+ */
+export class UpdateProject extends ProjectFieldsDto {
+    @IsString()
+    @IsNotEmpty()
+    name!: string;
 }

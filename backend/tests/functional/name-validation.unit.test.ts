@@ -5,6 +5,7 @@ import {
     TemporaryAccessRequestDto,
     UpdateFile,
     UpdateMissionNameDto,
+    UpdateProject,
 } from '@kleinkram/api-dto';
 import {
     getFileNameValidationError,
@@ -202,15 +203,32 @@ describe('File name validation in requests', () => {
         ]);
     });
 
-    it('applies the same rule when renaming a file', async () => {
+    it('leaves a file name to the server, which checks it only if it changes', async () => {
+        // the web UI sends the file name with every edit, so a file named
+        // before the rules must pass when only its date or categories change
         expect(
             await validate(UpdateFile, {
                 uuid: SOME_UUID,
                 filename: 'log(1).bag',
                 date: '2024-05-14T00:00:00Z',
             }),
+        ).toEqual([]);
+    });
+
+    it('leaves a project name to the server when updating a project', async () => {
+        expect(
+            await validate(UpdateProject, {
+                name: '-demo',
+                description: 'description',
+            }),
+        ).toEqual([]);
+        expect(
+            await validate(CreateProject, {
+                name: '-demo',
+                description: 'description',
+            }),
         ).toEqual([
-            "File name may only contain letters, digits, '.', '-' and '_' (found '(', ')'). Try \"log-1.bag\".",
+            "Project name must not start with '.' or '-'. Try \"demo\".",
         ]);
     });
 });
