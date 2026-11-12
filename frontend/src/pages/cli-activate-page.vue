@@ -368,12 +368,15 @@ const copyFirstCommand = async (): Promise<void> => {
     text-align: center;
 }
 
+/* always one line: the cells shrink instead of wrapping */
 .activate-code {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
     font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
     font-size: 24px;
     gap: 4px;
+    grid-template-columns:
+        repeat(4, minmax(0, 40px)) minmax(0, 16px)
+        repeat(4, minmax(0, 40px));
     justify-content: center;
 }
 
@@ -384,14 +387,13 @@ const copyFirstCommand = async (): Promise<void> => {
     display: flex;
     height: 52px;
     justify-content: center;
-    width: 40px;
+    min-width: 0;
 }
 
 .activate-code span.activate-code__dash {
     background: none;
     border: 0;
     color: #8d8d8d;
-    width: 16px;
 }
 
 .activate-details {
@@ -498,7 +500,6 @@ const copyFirstCommand = async (): Promise<void> => {
 
     .activate-code span {
         height: 44px;
-        width: 32px;
     }
 
     .activate-details > div {
