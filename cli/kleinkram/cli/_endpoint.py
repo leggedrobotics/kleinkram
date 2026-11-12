@@ -1,7 +1,7 @@
 """
-at the moment the endpoint command lets you specify the api and s3 endpoints
-eventually it will be sufficient to just specify the api endpoint and the s3 endpoint will
-be provided by the api
+deprecated: `klein login <url>` finds the API and S3 addresses itself and
+`klein host` lists and switches servers. Kept to add servers older than 0.67,
+which cannot be discovered.
 """
 
 from __future__ import annotations
@@ -11,6 +11,7 @@ from typing import Optional
 import typer
 from rich.console import Console
 
+from kleinkram.cli._deprecation import warn_deprecated
 from kleinkram.config import Endpoint
 from kleinkram.config import add_endpoint
 from kleinkram.config import endpoint_table
@@ -18,10 +19,10 @@ from kleinkram.config import get_config
 from kleinkram.config import select_endpoint
 
 HELP = """\
-Switch between different Kleinkram hosting.
+Deprecated, use `klein login <url>` and `klein host`.
 
-The endpoint is used to determine the API server to connect to\
-(default is the API server of https://datasets.leggedrobotics.com).
+Add a server by hand with `klein endpoint <name> <api-url> <s3-url>`
+(only needed for servers older than 0.67).
 """
 
 endpoint_typer = typer.Typer(
@@ -40,6 +41,11 @@ def endpoint(
 ) -> None:
     config = get_config()
     console = Console()
+
+    if name is not None and api is not None and s3 is not None:
+        warn_deprecated("`klein endpoint <name> <api> <s3>`", "`klein login <url>`")
+    else:
+        warn_deprecated("`klein endpoint`", "`klein host`")
 
     if not any([name, api, s3]):
         console.print(endpoint_table(config))

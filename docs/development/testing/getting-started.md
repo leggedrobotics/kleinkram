@@ -53,8 +53,8 @@ production environment.
 For automated testing of CLI commands, you can use the fake OAuth provider with the `--user` parameter to automatically authenticate without browser interaction:
 
 ```bash
-# Authenticate as admin user
-klein login --oauth-provider fake-oauth --user 1
+# Add the local server and authenticate as admin user
+klein login http://localhost:3000 --oauth-provider fake-oauth --user 1
 
 # Run your CLI commands
 klein project list

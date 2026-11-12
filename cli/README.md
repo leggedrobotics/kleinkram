@@ -6,10 +6,10 @@ Install the package
 pip install kleinkram
 ```
 
-Run the CLI
+Log in to your Kleinkram server, using the address of its web app
 
 ```bash
-klein
+klein login https://datasets.example.org
 ```
 
 ## Usage

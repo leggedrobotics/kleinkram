@@ -20,7 +20,7 @@ Every function is imported from `kleinkram` and accepts an optional `client=` ke
 The SDK uses the login of the CLI. Log in once on the machine:
 
 ```bash
-klein login
+klein login https://datasets.example.org
 ```
 
 The SDK then reads the saved credentials and the selected endpoint from `~/.kleinkram.json`, and refreshes the login

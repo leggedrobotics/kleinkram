@@ -30,40 +30,45 @@ klein --help
 
 ## Authentication
 
-The CLI and the Python SDK share one login. Log in with:
+To use the CLI or the Python SDK, you must first log in. This is done exclusively using the CLI. The CLI has no
+built-in server: the first time, pass the address of your Kleinkram web app, the one you open in the browser:
 
 ```bash
-klein login
+klein login https://datasets.example.org
 ```
 
-This opens the login page of the selected [endpoint](#endpoints-and-self-hosted-instances) in your browser. After you
-log in, the browser hands the tokens back to the CLI through a short-lived server on your machine, on port 8000 or, if
-that is taken, any free port. The tokens are saved in `~/.kleinkram.json`, and the SDK picks them up from there.
+The CLI looks up the API and storage addresses of that server (from `/.well-known/kleinkram.json` of the web app and
+`/cli/config` of the API), saves the server and makes it the active one. You can also pass the address of the API, a
+bare host name (`klein login datasets.example.org`) or a link to any page of the web app.
 
-::: tip Summary
+The CLI then shows a short code such as `KQMX-TRBC` and opens the web app on the page `/cli/activate`. Sign in if
+needed, check that the page shows the same code and click **Authorize CLI**. The terminal finishes the login by itself.
+Codes are valid for 10 minutes.
 
-| Situation                                 | What to do                                           |
-| ----------------------------------------- | ---------------------------------------------------- |
-| Laptop or workstation with a browser      | `klein login`                                        |
-| Remote machine, e.g. over SSH             | `klein login`; without a browser it logs in headless |
-| The browser can't reach the CLI's machine | `klein login --headless`                             |
-| Inside a Kleinkram action                 | Nothing: the action is already authenticated         |
-| Log in with GitHub instead of Google      | `klein login --oauth-provider github`                |
+Later, `klein login` without an address logs in to the active server again.
+
+::: tip Copy the command from the web app
+The terminal icon in the header of the web app shows the install and login commands with the address of that server
+filled in.
+:::
+
+### Alternative Authentication Methods
+
+::: details Without a browser (SSH, robots, servers)
+If the machine has no browser (for example over SSH), the CLI prints the address of the activation page and the code
+instead of opening a browser. Open the page on any other device, such as your laptop or phone, and enter the code.
+Pass `--headless` to always print the code:
+
+```bash
+klein login datasets.example.org --headless
+```
 
 :::
 
-### Headless Login
-
-If the CLI finds no browser, for example on a robot or a server you reach over SSH, it logs in headless: it prints a
-URL, which you open in a browser on any device. After you log in, the page shows an authentication token and a refresh
-token; copy them into the prompts of the CLI.
-
-The browser flow only works if the browser can reach `localhost` of the machine the CLI runs on. If the login page
-opens somewhere else, or the CLI picks a terminal browser you don't want to use, force the headless flow:
-
-```bash
-klein login --headless
-```
+::: details API keys
+`klein login --key <API_KEY>` stores an API key for the active server instead of logging in. This is used inside
+actions and scripts.
+:::
 
 ::: details Authentication inside Actions
 Inside a Kleinkram action you don't need to run `klein login`. The action container sets `KLEINKRAM_API_KEY` (together with `KLEINKRAM_API_ENDPOINT` and `KLEINKRAM_S3_ENDPOINT`), and the CLI picks these up automatically, so commands like `klein upload` or `klein download` work out of the box.
@@ -72,60 +77,49 @@ These variables are only used when there is no saved `~/.kleinkram.json`. If you
 
 :::
 
-### Customizing the OAuth Provider
-
-By default, the CLI logs in with Google. To use another provider (e.g. GitHub), specify it via the flag:
+::: details Choosing the OAuth provider in the CLI
+The login page in the browser lists every provider the server offers. To skip the code and log in through a local
+callback port with one specific provider instead, pass it explicitly:
 
 ```bash
 klein login --oauth-provider github
 ```
 
-Supported providers are `google` and `github`.
-
-::: info Development Providers
-For local development purposes, a `fake-oauth` provider is also available. See the [Developer Guide](../../development/getting-started.md#fake-oauth-provider) for more details.
+Supported providers are `google`, `github` and, for local development, `fake-oauth` (see the
+[Developer Guide](../../development/getting-started.md#fake-oauth-provider)).
 :::
 
 ### Logging Out
 
-`klein logout` removes the saved credentials for the selected endpoint. `klein logout --all` removes them for every
-endpoint.
+`klein logout` removes the saved credentials for the active server. `klein logout --all` removes them for every
+server.
 
-## Endpoints and Self-Hosted Instances
+## Servers
 
-By default the CLI talks to the public Kleinkram instance at `datasets.leggedrobotics.com`. To use another instance,
-for example one you host yourself, register it as an endpoint. An endpoint is a name plus the URL of the API server and
-the URL of the S3 storage:
+The CLI can know several Kleinkram servers and keeps you logged in to each of them. Each `klein login <url>` adds a
+server under its host name (for example `datasets.example.org`) and makes it the active one.
 
 ```bash
-# list the known endpoints; the selected one is marked
-klein endpoint
+# list the saved servers; the active one is marked with *
+klein host
 
-# add an endpoint and select it
+# switch to a saved server
+klein host use datasets.example.org
+
+# forget a server and its login
+klein host remove datasets.example.org
+```
+
+The servers, the active server and the credentials are saved in `~/.kleinkram.json`. Servers saved by older versions
+of the CLI (`prod`, `dev`, `local`) keep working under their old names.
+
+::: details Servers older than version 0.67
+Older servers cannot be discovered from their address. Add them with the deprecated `klein endpoint` command, giving
+the API and S3 addresses yourself:
+
+```bash
 klein endpoint my-instance https://api.kleinkram.example.com https://s3.kleinkram.example.com
-
-# switch to an endpoint that is already known
-klein endpoint my-instance
-
-# log in to the selected endpoint
 klein login
 ```
 
-Three endpoints are built in:
-
-| Name    | API                                           | S3                                           |
-| ------- | --------------------------------------------- | -------------------------------------------- |
-| `prod`  | `https://api.datasets.leggedrobotics.com`     | `https://s3.datasets.leggedrobotics.com`     |
-| `dev`   | `https://api.datasets.dev.leggedrobotics.com` | `https://s3.datasets.dev.leggedrobotics.com` |
-| `local` | `http://localhost:3000`                       | `http://localhost:9000`                      |
-
-A release of `kleinkram` from PyPI selects `prod` by default, a `-dev` pre-release selects `dev`, and an editable
-install from a clone of the repository selects `local`.
-
-Credentials are stored per endpoint, so you stay logged in to each endpoint you have used. The endpoints, the selected
-endpoint and the credentials are saved in `~/.kleinkram.json`.
-
-## Next Steps
-
-- Read the [CLI Documentation](./cli.md) to discover core workflows.
-- For using the python package in automated scripts, see the [Python SDK Reference](./sdk.md).
+:::

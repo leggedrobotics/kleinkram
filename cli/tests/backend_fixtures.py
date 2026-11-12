@@ -92,9 +92,10 @@ def auto_login():
     Automatically logs in using the CLI before running any tests.
     """
     try:
-        # Run: python3 -m kleinkram login --user 1
+        # Run: python3 -m kleinkram login --oauth-provider fake-oauth --user 1
+        # (logs in to the active server, set it up first with `klein login <url>`)
         result = subprocess.run(
-            [sys.executable, "-m", "kleinkram", "login", "--user", "1"],
+            [sys.executable, "-m", "kleinkram", "login", "--oauth-provider", "fake-oauth", "--user", "1"],
             cwd=str(Path(__file__).parent.parent),  # Run from cli root
             capture_output=True,
             text=True,

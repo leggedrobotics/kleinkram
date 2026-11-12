@@ -16,12 +16,14 @@ from kleinkram.config import Endpoint
 from kleinkram.config import _load_config
 from kleinkram.config import _load_config_if_compatible
 from kleinkram.config import add_endpoint
+from kleinkram.errors import NoEndpointConfigured
 from kleinkram.config import check_config_compatibility
 from kleinkram.config import endpoint_table
+from kleinkram.config import find_endpoint_by_api
 from kleinkram.config import get_config
-from kleinkram.config import get_env
 from kleinkram.config import get_shared_state
 from kleinkram.config import save_config
+from kleinkram.config import remove_endpoint
 from kleinkram.config import select_endpoint
 
 CONFIG_FILENAME = ".kleinkram.json"
@@ -69,11 +71,27 @@ def test_load_config_default(config_path):
     assert Config() == config
 
     assert config.endpoint_credentials == {}
-    assert config.selected_endpoint == get_env().value
+    # there is no built-in server
+    assert config.selected_endpoint is None
+    assert config.endpoints == {}
+    assert not config.has_endpoint
+    assert config.credentials is None
+    with pytest.raises(NoEndpointConfigured):
+        _ = config.endpoint
 
 
-def test_load_default_config_with_env_var_api_key_specified(config_path, set_api_key_env):
+def test_load_default_config_with_env_var_api_key_only(config_path, set_api_key_env):
     assert set_api_key_env is None
+
+    # an API key alone does not say which server it belongs to
+    config = _load_config(path=config_path)
+    assert config.endpoint_credentials == {}
+
+
+def test_load_default_config_with_env_var_api_key_specified(config_path, set_api_key_env, monkeypatch):
+    assert set_api_key_env is None
+    monkeypatch.setenv(ACTION_API, TEST_API)
+    monkeypatch.setenv(ACTION_S3, TEST_S3)
 
     config = _load_config(path=config_path)
 
@@ -147,7 +165,10 @@ def test_get_shared_state():
 def test_select_endpoint(config_path):
     config = get_config(path=config_path)
     save_config(config, path=config_path)
-    assert config.selected_endpoint == get_env().value
+    assert config.selected_endpoint is None
+    assert config == _load_config(path=config_path)
+
+    config.endpoints["prod"] = Endpoint("prod", "api", "s3")
 
     # select existing endpoint
     select_endpoint(config, "prod", path=config_path)
@@ -161,7 +182,7 @@ def test_select_endpoint(config_path):
 def test_add_endpoint(config_path):
     config = get_config(path=config_path)
     save_config(config, path=config_path)
-    assert config.selected_endpoint == get_env().value
+    assert config.selected_endpoint is None
 
     with pytest.raises(ValueError):
         select_endpoint(config, "foo", path=config_path)
@@ -172,18 +193,59 @@ def test_add_endpoint(config_path):
     assert config.endpoint == ep
     assert config == _load_config(path=config_path)
 
-    select_endpoint(config, "dev", path=config_path)
+    add_endpoint(config, Endpoint("dev", "dev-api", "dev-s3"), path=config_path)
     assert config.selected_endpoint == "dev"
     select_endpoint(config, "foo", path=config_path)
     assert config.selected_endpoint == "foo"
 
 
+def test_remove_endpoint(config_path):
+    config = get_config(path=config_path)
+    add_endpoint(config, Endpoint("a", "api-a", "s3-a"), path=config_path)
+    add_endpoint(config, Endpoint("b", "api-b", "s3-b"), path=config_path)
+    config.credentials = kleinkram.config.Credentials(api_key="key")
+    assert config.selected_endpoint == "b"
+
+    remove_endpoint(config, "b", path=config_path)
+    assert "b" not in config.endpoints
+    assert "b" not in config.endpoint_credentials
+    assert config.selected_endpoint == "a"
+
+    remove_endpoint(config, "a", path=config_path)
+    assert config.selected_endpoint is None
+    assert config == _load_config(path=config_path)
+
+    with pytest.raises(ValueError):
+        remove_endpoint(config, "a", path=config_path)
+
+
+def test_find_endpoint_by_api():
+    config = Config(endpoints={"prod": Endpoint("prod", "https://api.example.org", "s3")})
+    assert find_endpoint_by_api(config, "https://api.example.org/") == "prod"
+    assert find_endpoint_by_api(config, "https://other.example.org") is None
+
+
+def test_load_config_written_by_older_cli(config_path):
+    # older CLIs saved the built-in servers; they stay usable
+    with open(config_path, "w") as f:
+        f.write(
+            '{"version": "0.66.0", "selected_endpoint": "prod", '
+            '"endpoints": {"prod": {"name": "prod", "api": "https://api.example.org", "s3": "https://s3.example.org"}}, '
+            '"endpoint_credentials": {}}'
+        )
+    config = _load_config(path=config_path)
+    assert config.endpoint == Endpoint("prod", "https://api.example.org", "https://s3.example.org")
+
+
 def test_endpoint_table():
-    config = Config()
+    config = Config(
+        selected_endpoint="a",
+        endpoints={"a": Endpoint("a", "api-a", "s3-a"), "b": Endpoint("b", "api-b", "s3-b")},
+    )
     table = endpoint_table(config)
 
-    assert [c.header for c in table.columns] == ["Name", "API", "S3"]
-    assert len(table.rows) == 3
+    assert [c.header for c in table.columns] == ["Host", "API", "S3", "Login"]
+    assert len(table.rows) == 2
 
 
 def test_check_config_compatiblity(config_path):
