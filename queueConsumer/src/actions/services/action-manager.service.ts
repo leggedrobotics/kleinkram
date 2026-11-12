@@ -32,6 +32,7 @@ import si from 'systeminformation';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 import { DisposableAPIKey } from '../helper/disposable-api-key';
+import { maskSecret } from '../helper/redact-environment';
 import { WideLogger } from '../helper/wide-logger';
 import { ActionCancellationService } from './action-cancellation.service';
 import { ActionErrorHintService } from './action-error-hint.service';
@@ -51,6 +52,12 @@ export class ActionManagerService implements OnModuleInit {
      * a shutdown can revoke them before the process exits.
      */
     private readonly liveKeys = new Set<DisposableAPIKey>();
+
+    /** Key creations still waiting on the database. */
+    private readonly pendingKeyCreations = new Set<Promise<unknown>>();
+
+    /** Set on SIGTERM; no new keys are created after that. */
+    private shuttingDown = false;
 
     constructor(
         @InjectRepository(ActionEntity)
@@ -125,11 +132,40 @@ export class ActionManagerService implements OnModuleInit {
      * SIGTERM: the process exits right after, so the `finally` that would
      * normally revoke them never runs. The containers are left behind, and the
      * janitor of the next runner kills them, so the runs are lost anyway.
+     *
+     * Stops new key creation first and waits for creations already underway,
+     * so a key saved while shutting down is revoked too.
      */
     async revokeLiveKeys(): Promise<void> {
+        this.shuttingDown = true;
+        await Promise.allSettled(this.pendingKeyCreations);
         await Promise.allSettled(
             [...this.liveKeys].map((key) => key[Symbol.asyncDispose]()),
         );
+    }
+
+    /**
+     * Creates the action's key and tracks it in {@link liveKeys}. The key is
+     * added to the set inside the tracked promise, so once
+     * {@link revokeLiveKeys} has awaited the pending creations, every key is
+     * in the set.
+     */
+    private async createLiveKey(
+        action: ActionEntity,
+    ): Promise<DisposableAPIKey> {
+        if (this.shuttingDown) {
+            throw new Error('Worker is shutting down; not starting the action');
+        }
+        const creation = this.createAPIkey(action).then((key) => {
+            this.liveKeys.add(key);
+            return key;
+        });
+        this.pendingKeyCreations.add(creation);
+        try {
+            return await creation;
+        } finally {
+            this.pendingKeyCreations.delete(creation);
+        }
     }
 
     private async registerRunner(): Promise<void> {
@@ -332,8 +368,7 @@ export class ActionManagerService implements OnModuleInit {
             throw new Error('Project is undefined');
         }
 
-        const apikey = await this.createAPIkey(action);
-        this.liveKeys.add(apikey);
+        const apikey = await this.createLiveKey(action);
         try {
             const {
                 container,
@@ -420,9 +455,8 @@ export class ActionManagerService implements OnModuleInit {
             );
 
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            const sanitize = (string_: string): string => {
-                return string_.replaceAll(apikey.apikey, '***');
-            };
+            const sanitize = (string_: string): string =>
+                maskSecret(string_, apikey.apikey);
 
             let lastStatsUpdate = 0;
             const statsUpdateInterval = 2000;

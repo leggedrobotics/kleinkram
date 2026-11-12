@@ -14,3 +14,10 @@ export const redactEnvironment = (
     Object.fromEntries(
         Object.keys(environment ?? {}).map((key) => [key, '***']),
     );
+
+/**
+ * Replaces every occurrence of `secret` in `text` with `***`. Used on action
+ * container output, which may print its own API key more than once per line.
+ */
+export const maskSecret = (text: string, secret: string): string =>
+    secret === '' ? text : text.replaceAll(secret, '***');
