@@ -81,10 +81,10 @@ describe('Names from before the naming rules', () => {
             'Legacy Names',
             UserRole.ADMIN,
         );
-        await uploadFile(user, 'legacy.bag', missionUuid);
+        await uploadFile(user, 'test.bag', missionUuid);
         const fileRepository = database.getRepository(FileEntity);
         const file = await fileRepository.findOneByOrFail({
-            filename: 'legacy.bag',
+            filename: 'test.bag',
         });
         await fileRepository.update(
             { uuid: file.uuid },
