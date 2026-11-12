@@ -1,30 +1,22 @@
 <template>
-    <div class="activate-page flex flex-center bg-grey-2">
-        <div class="activate-card">
+    <auth-frame>
+        <div class="activate">
+            <img src="/logoRSL.png" class="activate-logo" alt="" />
+
             <!-- 1. no code yet: ask for the one from the terminal -->
             <template v-if="!userCode">
-                <div class="activate-head">
-                    <div class="activate-glyph">
-                        <q-icon name="sym_o_terminal" size="22px" />
-                    </div>
-                    <div>
-                        <h1 class="activate-title">
-                            Enter the code from your terminal
-                        </h1>
-                        <span class="activate-caption">
-                            {{ instanceName }}
-                        </span>
-                    </div>
-                </div>
+                <h1 class="activate-title">Connect the Kleinkram CLI</h1>
+                <p class="activate-subtitle">{{ instanceName }}</p>
+
                 <p class="activate-text">
-                    <code>klein login</code> shows a code like
-                    <code>KQMX-TRBC</code>. Type it here to connect the CLI to
-                    your account.
+                    Enter the code that <code>klein login</code> shows in your
+                    terminal.
                 </p>
                 <form class="activate-form" @submit.prevent="submitCode">
                     <q-input
                         v-model="enteredCode"
                         outlined
+                        square
                         autofocus
                         maxlength="9"
                         input-class="activate-code-input"
@@ -35,100 +27,89 @@
                         @update:model-value="formatEnteredCode"
                     />
                     <q-btn
-                        unelevated
-                        color="button-primary"
+                        flat
+                        no-caps
                         label="Continue"
                         type="submit"
-                        class="full-width activate-button"
+                        class="full-width activate-button bg-button-primary"
                         :disable="!isCodeComplete"
                     />
                 </form>
             </template>
 
             <!-- 2. loading the login -->
-            <div v-else-if="isLoading" class="activate-center">
-                <q-spinner color="link-primary" size="40px" />
+            <div v-else-if="isLoading" class="activate-loading">
+                <q-spinner color="link-primary" size="48px" />
             </div>
 
             <!-- 3. unknown or expired code -->
             <template v-else-if="isError || !authorization">
-                <div class="activate-state">
-                    <div class="activate-ring activate-ring--bad">
-                        <q-icon name="sym_o_timer_off" size="26px" />
-                    </div>
-                    <h1 class="activate-title">Code not found</h1>
-                    <p class="activate-text">
-                        <b>{{ userCode }}</b> is unknown or has expired (codes
-                        are valid for 10 minutes). Run
-                        <code>klein login</code> again to get a new one.
-                    </p>
-                    <q-btn
-                        flat
-                        no-caps
-                        color="link-primary"
-                        label="Enter another code"
-                        @click="clearCode"
-                    />
-                </div>
+                <q-icon
+                    name="sym_o_timer_off"
+                    size="48px"
+                    class="activate-state-icon activate-state-icon--error"
+                />
+                <h1 class="activate-title">Code not found</h1>
+                <p class="activate-text">
+                    <b>{{ userCode }}</b> is unknown or has expired. Codes are
+                    valid for 10 minutes. Run <code>klein login</code> again to
+                    get a new one.
+                </p>
+                <q-btn
+                    flat
+                    outline
+                    no-caps
+                    label="Enter another code"
+                    class="full-width activate-button button-border"
+                    @click="clearCode"
+                />
             </template>
 
             <!-- 4. approved -->
             <template v-else-if="authorization.status === 'approved'">
-                <div class="activate-state">
-                    <div class="activate-ring activate-ring--ok">
-                        <q-icon name="sym_o_check" size="28px" />
-                    </div>
-                    <h1 class="activate-title">CLI connected</h1>
-                    <p class="activate-text">
-                        <b>{{ deviceName }}</b> is signed in as
-                        {{ user?.email ?? user?.name }}.<br />
-                        You can close this tab and return to your terminal.
-                    </p>
-                    <div class="activate-command">
-                        <code>klein project list</code>
-                        <q-btn
-                            flat
-                            dense
-                            no-caps
-                            size="sm"
-                            color="link-primary"
-                            :label="copied ? 'Copied' : 'Copy'"
-                            @click="copyFirstCommand"
-                        />
-                    </div>
+                <q-icon
+                    name="sym_o_check_circle"
+                    size="48px"
+                    class="activate-state-icon activate-state-icon--success"
+                />
+                <h1 class="activate-title">CLI connected</h1>
+                <p class="activate-text">
+                    <b>{{ deviceName }}</b> is signed in as
+                    {{ user?.email ?? user?.name }}. You can close this tab and
+                    return to your terminal.
+                </p>
+                <div class="activate-command">
+                    <code>klein project list</code>
+                    <q-btn
+                        flat
+                        dense
+                        no-caps
+                        size="sm"
+                        color="link-primary"
+                        :label="copied ? 'Copied' : 'Copy'"
+                        @click="copyFirstCommand"
+                    />
                 </div>
             </template>
 
             <!-- 5. denied -->
             <template v-else-if="authorization.status === 'denied'">
-                <div class="activate-state">
-                    <div class="activate-ring activate-ring--bad">
-                        <q-icon name="sym_o_block" size="26px" />
-                    </div>
-                    <h1 class="activate-title">Login denied</h1>
-                    <p class="activate-text">
-                        The CLI on <b>{{ deviceName }}</b> was not signed in. If
-                        this was a mistake, run <code>klein login</code>
-                        again.
-                    </p>
-                </div>
+                <q-icon
+                    name="sym_o_block"
+                    size="48px"
+                    class="activate-state-icon activate-state-icon--error"
+                />
+                <h1 class="activate-title">Login denied</h1>
+                <p class="activate-text">
+                    The CLI on <b>{{ deviceName }}</b> was not signed in. If
+                    this was a mistake, run <code>klein login</code> again.
+                </p>
             </template>
 
             <!-- 6. pending: ask for approval -->
             <template v-else>
-                <div class="activate-head">
-                    <div class="activate-glyph">
-                        <q-icon name="sym_o_terminal" size="22px" />
-                    </div>
-                    <div>
-                        <h1 class="activate-title">
-                            Connect the Kleinkram CLI
-                        </h1>
-                        <span class="activate-caption">
-                            {{ instanceName }}
-                        </span>
-                    </div>
-                </div>
+                <h1 class="activate-title">Connect the Kleinkram CLI</h1>
+                <p class="activate-subtitle">{{ instanceName }}</p>
 
                 <p class="activate-text">
                     Check that this code matches the one in your terminal.
@@ -148,34 +129,38 @@
                 </div>
 
                 <dl class="activate-details">
-                    <dt>Signed in as</dt>
-                    <dd>{{ user?.email ?? user?.name }}</dd>
-                    <dt>Device</dt>
-                    <dd>{{ deviceDescription }}</dd>
-                    <dt>From</dt>
-                    <dd>
-                        {{ authorization.ipAddress }} ·
-                        {{ startedAgo }}
-                    </dd>
+                    <div>
+                        <dt>Signed in as</dt>
+                        <dd>{{ user?.email ?? user?.name }}</dd>
+                    </div>
+                    <div>
+                        <dt>Device</dt>
+                        <dd>{{ deviceDescription }}</dd>
+                    </div>
+                    <div>
+                        <dt>From</dt>
+                        <dd>
+                            {{ authorization.ipAddress }} · {{ startedAgo }}
+                        </dd>
+                    </div>
                 </dl>
 
                 <div class="activate-buttons">
                     <q-btn
+                        flat
                         outline
                         no-caps
-                        color="grey-8"
                         label="Deny"
-                        class="activate-button"
+                        class="activate-button button-border"
                         :loading="isDenying"
                         :disable="isApproving"
                         @click="deny"
                     />
                     <q-btn
-                        unelevated
+                        flat
                         no-caps
-                        color="button-primary"
                         label="Authorize CLI"
-                        class="activate-button"
+                        class="activate-button bg-button-primary"
                         :loading="isApproving"
                         :disable="isDenying"
                         @click="approve"
@@ -183,21 +168,19 @@
                 </div>
 
                 <p class="activate-note">
-                    <q-icon name="sym_o_info" size="16px" />
-                    <span>
-                        Only approve a code you started yourself. The CLI gets
-                        the same access as your account until you run
-                        <code>klein logout</code>.
-                    </span>
+                    Only approve a code you started yourself. The CLI gets the
+                    same access as your account until you run
+                    <code>klein logout</code>.
                 </p>
             </template>
         </div>
-    </div>
+    </auth-frame>
 </template>
 
 <script setup lang="ts">
 import type { DeviceAuthorizationInfoDto } from '@kleinkram/api-dto/types/cli/device-authorization.dto';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import AuthFrame from 'components/common/auth-frame.vue';
 import { Notify } from 'quasar';
 import { useUser } from 'src/hooks/query-hooks';
 import {
@@ -329,78 +312,58 @@ const copyFirstCommand = async (): Promise<void> => {
 </script>
 
 <style scoped>
-.activate-page {
-    flex: 1 1 auto;
-    min-height: 0;
-    padding: 48px 16px;
-}
-
-.activate-card {
-    background: white;
-    border: 1px solid #e0e0e0;
+/* Same card and type scale as the login page (see login-page.vue) */
+.activate {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    width: 100%;
+}
+
+.activate-logo {
+    align-self: center;
+    height: 28px;
+    margin-bottom: 48px;
     max-width: 100%;
-    padding: 32px;
-    width: 480px;
-}
-
-.activate-head {
-    align-items: center;
-    display: flex;
-    gap: 14px;
-}
-
-.activate-glyph {
-    align-items: center;
-    background: #e6efff;
-    border-radius: 10px;
-    color: #0f62fe; /* $link-primary */
-    display: flex;
-    flex: none;
-    height: 42px;
-    justify-content: center;
-    width: 42px;
 }
 
 .activate-title {
-    font-size: 20px;
-    font-weight: 500;
-    line-height: 28px;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 36px;
     margin: 0;
 }
 
-.activate-caption {
-    color: #6b7280;
-    font-size: 13px;
+.activate-subtitle {
+    color: #6f6f6f;
+    font-size: 14px;
+    line-height: 20px;
+    margin: 4px 0 0;
 }
 
 .activate-text {
-    color: #424242;
+    color: #161616;
     font-size: 14px;
-    line-height: 1.6;
-    margin: 0;
+    letter-spacing: 0.16px;
+    line-height: 20px;
+    margin: 32px 0 24px;
 }
 
 .activate-text code,
 .activate-note code {
-    background: #f1f3f6;
-    border-radius: 4px;
+    background: #f4f4f4;
     font-size: 12px;
-    padding: 1px 5px;
+    padding: 1px 4px;
 }
 
 .activate-form {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
 }
 
 .activate-form :deep(.activate-code-input) {
-    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
     font-size: 22px;
-    font-weight: 600;
     letter-spacing: 0.2em;
     text-align: center;
 }
@@ -408,60 +371,61 @@ const copyFirstCommand = async (): Promise<void> => {
 .activate-code {
     display: flex;
     flex-wrap: wrap;
-    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
-    font-size: 22px;
-    font-weight: 600;
-    gap: 6px;
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size: 24px;
+    gap: 4px;
     justify-content: center;
 }
 
 .activate-code span {
     align-items: center;
-    background: #f6f7f9;
-    border: 1.5px solid #e0e0e0;
-    border-radius: 8px;
+    background: #f4f4f4;
+    border-bottom: 1px solid #8d8d8d;
     display: flex;
-    height: 48px;
+    height: 52px;
     justify-content: center;
-    width: 38px;
+    width: 40px;
 }
 
 .activate-code span.activate-code__dash {
     background: none;
     border: 0;
-    color: #9ca3af;
-    width: 12px;
+    color: #8d8d8d;
+    width: 16px;
 }
 
 .activate-details {
-    background: #f6f7f9;
-    border-radius: 8px;
+    font-size: 14px;
+    margin: 32px 0 0;
+    text-align: left;
+}
+
+.activate-details > div {
+    border-top: 1px solid #e0e0e0;
     display: grid;
-    font-size: 13px;
-    gap: 6px 14px;
-    grid-template-columns: auto minmax(0, 1fr);
-    margin: 0;
-    padding: 12px 14px;
+    gap: 16px;
+    grid-template-columns: 112px minmax(0, 1fr);
+    padding: 12px 0;
+}
+
+.activate-details > div:last-child {
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .activate-details dt {
-    color: #6b7280;
+    color: #6f6f6f;
 }
 
 .activate-details dd {
-    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
-    font-size: 12px;
     margin: 0;
     overflow-wrap: anywhere;
 }
 
 .activate-buttons {
-    display: flex;
-    gap: 10px;
-}
-
-.activate-buttons .activate-button {
-    flex: 1 1 0;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 32px;
 }
 
 .activate-button {
@@ -469,82 +433,77 @@ const copyFirstCommand = async (): Promise<void> => {
 }
 
 .activate-note {
-    align-items: flex-start;
-    color: #6b7280;
-    display: flex;
+    color: #6f6f6f;
     font-size: 12px;
-    gap: 8px;
-    line-height: 1.5;
-    margin: 0;
+    letter-spacing: 0.32px;
+    line-height: 16px;
+    margin: 24px 0 0;
+    text-align: left;
 }
 
-.activate-center {
+.activate-loading {
     display: flex;
     justify-content: center;
-    padding: 40px 0;
+    padding: 48px 0;
 }
 
-.activate-state {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    text-align: center;
+.activate-state-icon {
+    align-self: center;
+    margin-bottom: 24px;
 }
 
-.activate-ring {
-    align-items: center;
-    border-radius: 50%;
-    display: flex;
-    height: 54px;
-    justify-content: center;
-    width: 54px;
+.activate-state-icon--success {
+    color: #24a148; /* $support-success */
 }
 
-.activate-ring--ok {
-    background: #e5f5ec;
-    color: #1d8a4a;
-}
-
-.activate-ring--bad {
-    background: #fdecec;
-    color: #c62828;
+.activate-state-icon--error {
+    color: #da1e28; /* $support-error */
 }
 
 .activate-command {
     align-items: center;
-    background: #f6f7f9;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
+    background: #f4f4f4;
     display: flex;
     gap: 8px;
-    padding: 4px 4px 4px 10px;
-    width: 100%;
+    padding: 4px 4px 4px 12px;
+    text-align: left;
 }
 
 .activate-command code {
     flex: 1 1 auto;
     font-size: 13px;
-    text-align: left;
+}
+
+/* Comfortable touch targets on touch-sized viewports */
+@media (max-width: 1023px) {
+    .activate-button {
+        min-height: 44px;
+    }
 }
 
 @media (max-width: 599px) {
-    .activate-page {
-        padding: 24px 12px;
+    .activate-logo {
+        margin-bottom: 32px;
     }
 
-    .activate-card {
-        padding: 24px 18px;
+    .activate-title {
+        font-size: 24px;
+        line-height: 32px;
     }
 
     .activate-code {
-        font-size: 18px;
-        gap: 4px;
+        font-size: 20px;
+        gap: 2px;
     }
 
     .activate-code span {
-        height: 42px;
-        width: 30px;
+        height: 44px;
+        width: 32px;
+    }
+
+    .activate-details > div {
+        gap: 4px;
+        grid-template-columns: 1fr;
     }
 }
 </style>
