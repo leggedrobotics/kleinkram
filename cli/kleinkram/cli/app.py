@@ -20,6 +20,7 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import _claim_admin
 from kleinkram.api.routes import _get_api_version
 from kleinkram.auth import login_flow
+from kleinkram.auth import logout_on_server
 from kleinkram.cli._action import action_typer
 from kleinkram.cli._deprecation import prefer_new
 from kleinkram.cli._deprecation import warn_deprecated
@@ -43,6 +44,7 @@ from kleinkram.config import check_config_compatibility
 from kleinkram.config import get_config
 from kleinkram.config import get_shared_state
 from kleinkram.config import save_config
+from kleinkram.config import update_saved_credentials
 from kleinkram.errors import InvalidCLIVersion
 from kleinkram.utils import format_traceback
 from kleinkram.utils import get_supported_api_version
@@ -197,12 +199,14 @@ def login(
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
 def logout(all: bool = typer.Option(False, help="log out of all servers")) -> None:
+    """Log out: ends the login on the server and removes it from this machine."""
     config = get_config()
-    if all:
-        config.endpoint_credentials.clear()
-    elif config.selected_endpoint is not None:
-        config.endpoint_credentials.pop(config.selected_endpoint, None)
-    save_config(config)
+    names = list(config.endpoint_credentials) if all else [config.selected_endpoint]
+    for name in names:
+        if name is None:
+            continue
+        logout_on_server(config, name)
+        update_saved_credentials(name, lambda _: None)
 
 
 @app.command(hidden=True)

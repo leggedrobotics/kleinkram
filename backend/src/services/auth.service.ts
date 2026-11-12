@@ -4,15 +4,12 @@ import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.e
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
     AccessGroupConfig,
-    CookieNames,
     Providers,
     UserRole,
 } from '@kleinkram/shared';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { JwtPayload } from 'jsonwebtoken';
 import { Repository } from 'typeorm';
 import logger from '../logger';
 
@@ -36,7 +33,6 @@ export class AuthService implements OnModuleInit {
     private readonly config: AccessGroupConfig;
 
     constructor(
-        private jwtService: JwtService,
         @InjectRepository(AccountEntity)
         private accountRepository: Repository<AccountEntity>,
         @InjectRepository(UserEntity)
@@ -182,20 +178,6 @@ export class AuthService implements OnModuleInit {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
             photos[0].value,
         );
-    }
-
-    login(user: UserEntity) {
-        const payload: JwtPayload = {
-            uuid: user.uuid,
-        };
-        return {
-            [CookieNames.AUTH_TOKEN]: this.jwtService.sign(payload, {
-                expiresIn: '30m',
-            }),
-            [CookieNames.REFRESH_TOKEN]: this.jwtService.sign(payload, {
-                expiresIn: '7d',
-            }),
-        };
     }
 
     /**

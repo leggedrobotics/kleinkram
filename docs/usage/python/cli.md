@@ -117,7 +117,7 @@ klein --no-verbose verify -p testProject -m testMission -r ./recordings || exit 
 | `klein host`               | Lists the saved servers and marks the active one.                                |
 | `klein host use <name>`    | Makes a saved server the active one.                                             |
 | `klein host remove <name>` | Forgets a server and its login.                                                  |
-| `klein logout [--all]`     | Removes the login of the active server (or of all servers).                      |
+| `klein logout [--all]`     | Ends the login of the active server (or all), also on the server.                |
 
 See the [Setup Guide](./setup.md#authentication) for how the login works.
 

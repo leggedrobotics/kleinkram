@@ -1,4 +1,6 @@
 import { AuthService } from '@/services/auth.service';
+import { SessionService } from '@/services/session.service';
+import { SessionEntity } from '@kleinkram/backend-common/entities/auth/session.entity';
 import { Global, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -45,6 +47,7 @@ import { MissionGuardService } from './mission-guard.service';
             MissionAccessViewEntity,
             FileEntity,
             GroupMembershipEntity,
+            SessionEntity,
         ]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
@@ -56,6 +59,7 @@ import { MissionGuardService } from './mission-guard.service';
     ],
     providers: [
         AuthService,
+        SessionService,
         AffiliationGroupService,
 
         GoogleStrategy,
@@ -70,8 +74,9 @@ import { MissionGuardService } from './mission-guard.service';
     ],
     controllers: [AuthController],
     exports: [
-        // used by the CLI device login to issue tokens
+        // used by the CLI device login and the user endpoints
         AuthService,
+        SessionService,
         // Re-exported (this module is @Global) so that `AuthModuleOptions` can be
         // resolved wherever a guard derived from passport's `AuthGuard()` mixin is
         // used. @nestjs/core v12 reads the mixin's `@Optional()` constructor marker

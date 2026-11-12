@@ -15,6 +15,7 @@ export * from './entities/auth/api-key.entity';
 export * from './entities/auth/group-membership.entity';
 export * from './entities/auth/mission-access.entity';
 export * from './entities/auth/project-access.entity';
+export * from './entities/auth/session.entity';
 export * from './entities/base-entity.entity';
 export * from './entities/category/category.entity';
 export * from './entities/file/file-event.entity';
@@ -63,6 +64,7 @@ import { ApiKeyEntity } from './entities/auth/api-key.entity';
 import { GroupMembershipEntity } from './entities/auth/group-membership.entity';
 import { MissionAccessEntity } from './entities/auth/mission-access.entity';
 import { ProjectAccessEntity } from './entities/auth/project-access.entity';
+import { SessionEntity } from './entities/auth/session.entity';
 import { CategoryEntity } from './entities/category/category.entity';
 import { FileEventEntity } from './entities/file/file-event.entity';
 import { FileEntity } from './entities/file/file.entity';
@@ -100,6 +102,7 @@ export const ALL_ENTITIES = [
     ProjectEntity,
     ProjectStarEntity,
     MetadataTypeEntity,
+    SessionEntity,
     TopicEntity,
     UserEntity,
     WorkerEntity,

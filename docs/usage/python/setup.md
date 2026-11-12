@@ -125,8 +125,23 @@ Supported providers are `google`, `github` and, for local development, `fake-oau
 
 ### Logging Out
 
-`klein logout` removes the saved credentials for the active server. `klein logout --all` removes them for every
-server.
+`klein logout` ends the login of the active server on the server and removes it from this machine.
+`klein logout --all` does this for every server. API keys stay valid; they are not logins.
+
+### Sessions
+
+Every login is a session that you can see and end in the web app under **Profile → Sessions**: browsers and CLI
+logins (named after the machine, e.g. `anymal-d-042`). **Sign out** ends a session at once, for example on a lost
+laptop or a robot you no longer use. Admins can sign out all sessions of a user.
+
+| Login   | Ends after this long without use | Ends at the latest after |
+| ------- | -------------------------------- | ------------------------ |
+| CLI     | 30 days                          | 90 days                  |
+| Browser | 7 days                           | 30 days                  |
+
+The CLI renews its login on its own and keeps the latest token in `~/.kleinkram.json` (readable only by you). Each
+renewal replaces the previous token; if an old token is used again, someone copied it, and the server ends the
+session. Then run `klein login` again.
 
 ## Servers
 

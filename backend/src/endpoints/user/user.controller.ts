@@ -1,4 +1,5 @@
 import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '@/decorators';
+import { SessionService } from '@/services/session.service';
 import { UserService } from '@/services/user.service';
 import {
     ApiKeysDto,
@@ -7,11 +8,24 @@ import {
     PaginatedQueryDto,
     PermissionsDto,
     ResolveUsersDto,
+    SessionsDto,
+    SuccessResponseDto,
     SortablePaginatedQueryDto,
     UserDto,
     UsersDto,
 } from '@kleinkram/api-dto';
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    NotFoundException,
+    Param,
+    ParseUUIDPipe,
+    Post,
+    Query,
+} from '@nestjs/common';
 import {
     ApiOperation,
     ApiCreatedResponse as SwaggerApiCreatedResponse,
@@ -21,7 +35,10 @@ import { AdminOnly, LoggedIn, UserOnly } from '../auth/roles.decorator';
 
 @Controller('users')
 export class UserController {
-    constructor(private readonly userService: UserService) {}
+    constructor(
+        private readonly userService: UserService,
+        private readonly sessionService: SessionService,
+    ) {}
 
     @Post('admin/claim')
     @UserOnly()
@@ -135,5 +152,79 @@ export class UserController {
         @Body() body: ResolveUsersDto,
     ): Promise<Record<string, string>> {
         return this.userService.resolveUsers(body.uuids);
+    }
+
+    @Get('me/sessions')
+    @UserOnly()
+    @ApiOperation({
+        summary: 'List the active logins (web app and CLI) of the current user',
+    })
+    @ApiOkResponse({ description: 'Active sessions', type: SessionsDto })
+    async sessions(
+        @Query() _query: NoQueryParametersDto,
+        @AddUser() authHeader: AuthHeader,
+    ): Promise<SessionsDto> {
+        return {
+            sessions: await this.sessionService.listActive(
+                authHeader.user.uuid,
+                authHeader.sessionUuid,
+            ),
+        };
+    }
+
+    @Delete('me/sessions/:uuid')
+    @UserOnly()
+    @ApiOperation({
+        summary: 'Sign out one login of the current user',
+        description:
+            'Ends the session on the server: its access token stops working at once and its refresh token cannot be used again.',
+    })
+    @ApiOkResponse({ description: 'Session ended', type: SuccessResponseDto })
+    async revokeSession(
+        @Param('uuid', new ParseUUIDPipe()) uuid: string,
+        @AddUser() authHeader: AuthHeader,
+    ): Promise<SuccessResponseDto> {
+        const revoked = await this.sessionService.revoke(
+            uuid,
+            'user',
+            authHeader.user.uuid,
+        );
+        if (!revoked) throw new NotFoundException('Session not found');
+        return { success: true };
+    }
+
+    @Post('me/sessions/revoke-others')
+    @HttpCode(200)
+    @UserOnly()
+    @ApiOperation({
+        summary: 'Sign out all other logins of the current user',
+        description: 'Keeps the session of this request.',
+    })
+    @ApiOkResponse({ description: 'Sessions ended', type: SuccessResponseDto })
+    async revokeOtherSessions(
+        @AddUser() authHeader: AuthHeader,
+    ): Promise<SuccessResponseDto> {
+        await this.sessionService.revokeAllOfUser(
+            authHeader.user.uuid,
+            'user',
+            authHeader.sessionUuid,
+        );
+        return { success: true };
+    }
+
+    @Post(':uuid/sessions/revoke')
+    @HttpCode(200)
+    @AdminOnly()
+    @ApiOperation({
+        summary: 'Sign out all logins of a user (admin)',
+        description:
+            'For example when someone leaves: every web and CLI session of the user ends at once.',
+    })
+    @ApiOkResponse({ description: 'Sessions ended', type: SuccessResponseDto })
+    async revokeSessionsOfUser(
+        @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    ): Promise<SuccessResponseDto> {
+        await this.sessionService.revokeAllOfUser(uuid, 'admin');
+        return { success: true };
     }
 }

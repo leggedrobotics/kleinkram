@@ -386,6 +386,41 @@ Defined in: `project/project.entity.ts`
 
 ---
 
+<h2 id="sessionentity-user_session">SessionEntity (user_session)</h2>
+
+Defined in: `auth/session.entity.ts`
+
+One login of a user in the web app or the CLI. Refresh tokens are not stored: they are an HMAC over the session,
+its `generation` and `secret`, so a rotated-out token can be recognised. Access tokens carry the session id (`sid`),
+so revoking a session takes effect on the next request.
+
+### Columns
+
+| Column          | Type                           | Constraints  | Description                                      |
+| :-------------- | :----------------------------- | :----------- | :----------------------------------------------- |
+| `uuid`          | `uuid`                         | PK           |                                                  |
+| `user`          | [UserEntity](#userentity-user) | FK, Not Null | Deleted with the user                            |
+| `kind`          | `enum` (`WEB`, `CLI`)          | Not Null     | Decides the lifetime                             |
+| `name`          | `string`                       | Nullable     | Browser or host name                             |
+| `platform`      | `string`                       | Nullable     | Operating system                                 |
+| `clientVersion` | `string`                       | Nullable     | CLI version that started the session             |
+| `createdAt`     | `timestamptz`                  | Not Null     |                                                  |
+| `lastUsedAt`    | `timestamptz`                  | Not Null     | Last refresh; idle limit counts from here        |
+| `expiresAt`     | `timestamptz`                  | Not Null     | Absolute end                                     |
+| `revokedAt`     | `timestamptz`                  | Nullable     | Set on logout, sign-out or detected token reuse  |
+| `revokedReason` | `string`                       | Nullable     | `logout`, `user`, `admin` or `reuse`             |
+| `generation`    | `integer`                      | Not Null     | Number of the current refresh token              |
+| `rotatedAt`     | `timestamptz`                  | Nullable     | Start of the grace period for the previous token |
+| `secret`        | `string`                       | Not Null     | Per-session input to the refresh token HMAC      |
+
+### Indices
+
+| Index Definition                                     |
+| :--------------------------------------------------- |
+| `idx_user_session_user` on (`userUuid`, `revokedAt`) |
+
+---
+
 <h2 id="topicentity-topic">TopicEntity (topic)</h2>
 
 Defined in: `topic/topic.entity.ts`

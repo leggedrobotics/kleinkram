@@ -384,6 +384,33 @@ def _print_signed_in(config: Config) -> None:
     console.print(f"[green]✓[/green] Signed in as {who} on [bold]{config.selected_endpoint}[/bold]")
 
 
+def logout_on_server(config: Config, name: str) -> None:
+    """\
+    end the session of a saved login on its server (best effort)
+
+    API keys are not sessions and stay valid; if the server is unreachable or
+    older than 0.67, the login is only removed from this machine.
+    """
+    credentials = config.endpoint_credentials.get(name)
+    endpoint = config.endpoints.get(name)
+    if credentials is None or endpoint is None or credentials.api_key is not None:
+        return
+    cookies = {}
+    if credentials.refresh_token:
+        cookies["refreshtoken"] = credentials.refresh_token
+    if credentials.auth_token:
+        cookies["authtoken"] = credentials.auth_token
+    try:
+        httpx.post(
+            f"{endpoint.api}/auth/logout",
+            cookies=cookies,
+            headers={CLI_VERSION_HEADER: __version__},
+            timeout=10.0,
+        )
+    except httpx.HTTPError as e:
+        _console().print(f"[yellow]Could not reach {name} to end the session there ({e}).[/yellow]")
+
+
 def login_flow(
     *,
     url: Optional[str] = None,

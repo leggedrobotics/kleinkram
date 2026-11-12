@@ -10,11 +10,14 @@ import json
 import logging
 import os
 import tempfile
+from contextlib import contextmanager
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
 from typing import Any
+from typing import Callable
 from typing import Dict
+from typing import Iterator
 from typing import NamedTuple
 from typing import Optional
 
@@ -150,15 +153,25 @@ def _config_from_dict(dct: Dict[str, Any]) -> Config:
 
 
 def _safe_config_write(config: Config, path: Path, tmp_dir: Optional[Path] = None) -> None:
-    fd, temp_path = tempfile.mkstemp(dir=tmp_dir)
-    with os.fdopen(fd, "w") as f:
-        json.dump(_config_to_dict(config), f)
-    os.replace(temp_path, path)
+    # the temporary file must be on the same file system as the config, else
+    # `os.replace` fails (e.g. /tmp on tmpfs); mkstemp creates it with 0600
+    fd, temp_path = tempfile.mkstemp(dir=tmp_dir or path.parent, prefix=f".{path.name}.")
+    try:
+        with os.fdopen(fd, "w") as f:
+            json.dump(_config_to_dict(config), f)
+        os.replace(temp_path, path)
+    except BaseException:
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+        raise
 
 
 def _unsafe_config_write(config: Config, path: Path) -> None:
-    with open(path, "w") as f:
+    # the file holds tokens: readable only by the user
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
         json.dump(_config_to_dict(config), f)
+    os.chmod(path, 0o600)
 
 
 def save_config(config: Config, path: Path = CONFIG_PATH) -> None:
@@ -204,6 +217,59 @@ def get_config(path: Path = CONFIG_PATH) -> Config:
     if path not in LOADED_CONFIGS:
         LOADED_CONFIGS[path] = _load_config(path=path)
     return LOADED_CONFIGS[path]
+
+
+@contextmanager
+def config_file_lock(path: Path = CONFIG_PATH) -> Iterator[None]:
+    """\
+    serialize read-modify-write of the config file across `klein` processes
+
+    Needed for refresh token rotation: two processes refreshing at the same time
+    must not overwrite each other's newer token. Without `fcntl` (Windows) this
+    is a no-op; the server's grace period covers the remaining race.
+    """
+    try:
+        import fcntl
+    except ImportError:  # pragma: no cover - Windows
+        yield
+        return
+
+    lock_path = path.with_name(path.name + ".lock")
+    fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+
+
+def update_saved_credentials(
+    name: str,
+    update: Callable[[Optional[Credentials]], Optional[Credentials]],
+    path: Path = CONFIG_PATH,
+) -> Optional[Credentials]:
+    """\
+    change the saved credentials of one endpoint based on what is on disk now
+
+    Re-reads the file under the lock, so changes another process made to other
+    endpoints (or a newer token for this one) are kept. Returns the new value.
+    """
+    with config_file_lock(path):
+        on_disk = _load_config(path=path)
+        new = update(on_disk.endpoint_credentials.get(name))
+        if new is None:
+            on_disk.endpoint_credentials.pop(name, None)
+        else:
+            on_disk.endpoint_credentials[name] = new
+        save_config(on_disk, path)
+    loaded = LOADED_CONFIGS.get(path)
+    if loaded is not None:
+        if new is None:
+            loaded.endpoint_credentials.pop(name, None)
+        else:
+            loaded.endpoint_credentials[name] = new
+    return new
 
 
 def select_endpoint(config: Config, name: str, path: Path = CONFIG_PATH) -> None:
