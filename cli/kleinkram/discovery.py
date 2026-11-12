@@ -45,6 +45,28 @@ class ServerInfo:
     docs_url: Optional[str] = None
 
 
+def _is_loopback(netloc: str) -> bool:
+    host = urllib.parse.urlparse(f"//{netloc}").hostname or ""
+    return host in ("localhost", "127.0.0.1", "::1", "0.0.0.0")
+
+
+def require_secure(url: str, *, what: str) -> str:
+    """\
+    refuse plain http except for local development (localhost)
+
+    Logins and tokens must never travel unencrypted, so neither an address the
+    user typed nor one a server announces or redirects to may be http.
+    """
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme == "https":
+        return url
+    if parsed.scheme == "http" and _is_loopback(parsed.netloc):
+        return url
+    raise ServerDiscoveryError(
+        f"Refusing the insecure {what} {url}: Kleinkram servers must use https " "(plain http is only allowed for localhost)."
+    )
+
+
 def normalize_url(url: str) -> str:
     """\
     turn what a user typed into `scheme://host[:port]`
@@ -64,7 +86,7 @@ def normalize_url(url: str) -> str:
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         raise ServerDiscoveryError(f"`{url}` is not a valid http(s) address.")
-    return f"{parsed.scheme}://{parsed.netloc}"
+    return require_secure(f"{parsed.scheme}://{parsed.netloc}", what="address")
 
 
 def host_name(url: str) -> str:
@@ -89,6 +111,9 @@ def _get_json(client: httpx.Client, url: str) -> Optional[Any]:
     except httpx.RequestError as e:
         logger.info(f"discovery request to {url} failed: {e!r}")
         return None
+    # a redirect must not downgrade to http
+    for hop in [*response.history, response]:
+        require_secure(str(hop.url), what="redirect to")
     if response.status_code != 200:
         logger.info(f"discovery request to {url} returned {response.status_code}")
         return None
@@ -145,8 +170,11 @@ def discover(url: str, client: Optional[httpx.Client] = None) -> ServerInfo:
         candidates.append(base)
 
         for api in dict.fromkeys(candidates):
+            require_secure(api, what="API address")
             info = _server_info_from_json(_get_json(client, f"{api}{CLI_CONFIG_PATH}"))
             if info is not None:
+                require_secure(info.api_url, what="API address")
+                require_secure(info.s3_url, what="storage address")
                 return info
     finally:
         if own_client:

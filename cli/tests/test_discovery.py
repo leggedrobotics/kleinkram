@@ -25,7 +25,7 @@ CLI_CONFIG = {
 
 def _client(routes):
     def handler(request: httpx.Request) -> httpx.Response:
-        key = f"{request.url.scheme}://{request.url.host}{request.url.path}"
+        key = f"{request.url.scheme}://{request.url.netloc.decode()}{request.url.path}"
         if key in routes:
             return httpx.Response(200, content=json.dumps(routes[key]))
         return httpx.Response(404)
@@ -38,7 +38,6 @@ def _client(routes):
     [
         ("datasets.example.org", "https://datasets.example.org"),
         ("https://datasets.example.org/projects/abc?x=1", "https://datasets.example.org"),
-        ("http://datasets.example.org/", "http://datasets.example.org"),
         ("localhost:8003", "http://localhost:8003"),
         ("127.0.0.1:3000/", "http://127.0.0.1:3000"),
         ("  datasets.example.org  ", "https://datasets.example.org"),
@@ -48,7 +47,7 @@ def test_normalize_url(typed, expected):
     assert normalize_url(typed) == expected
 
 
-@pytest.mark.parametrize("typed", ["", "ftp://example.org", "https://"])
+@pytest.mark.parametrize("typed", ["", "ftp://example.org", "https://", "http://datasets.example.org"])
 def test_normalize_url_rejects_invalid(typed):
     with pytest.raises(ServerDiscoveryError):
         normalize_url(typed)
@@ -98,3 +97,43 @@ def test_discover_fails_for_unknown_server():
 )
 def test_is_version_supported(cli, minimum, supported):
     assert is_version_supported(cli, minimum) is supported
+
+
+def test_discover_rejects_http_api_announced_by_https_web_app():
+    client = _client(
+        {
+            "https://datasets.example.org/.well-known/kleinkram.json": {"apiUrl": "http://api.datasets.example.org"},
+            "http://api.datasets.example.org/cli/config": CLI_CONFIG,
+        }
+    )
+    with pytest.raises(ServerDiscoveryError, match="insecure API address"):
+        discover("datasets.example.org", client=client)
+
+
+def test_discover_rejects_http_addresses_in_cli_config():
+    config = {**CLI_CONFIG, "s3Url": "http://s3.datasets.example.org"}
+    client = _client({"https://api.datasets.example.org/cli/config": config})
+    with pytest.raises(ServerDiscoveryError, match="insecure storage address"):
+        discover("https://api.datasets.example.org", client=client)
+
+
+def test_discover_rejects_redirect_to_http():
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.scheme == "https":
+            return httpx.Response(301, headers={"Location": f"http://{request.url.host}{request.url.path}"})
+        return httpx.Response(200, content=json.dumps(CLI_CONFIG))
+
+    client = httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=True)
+    with pytest.raises(ServerDiscoveryError, match="insecure redirect"):
+        discover("https://api.datasets.example.org", client=client)
+
+
+def test_discover_allows_http_on_localhost():
+    local = {**CLI_CONFIG, "apiUrl": "http://localhost:3000", "s3Url": "http://localhost:9000"}
+    client = _client(
+        {
+            "http://localhost:8003/.well-known/kleinkram.json": {"apiUrl": "http://localhost:3000"},
+            "http://localhost:3000/cli/config": local,
+        }
+    )
+    assert discover("localhost:8003", client=client).api_url == "http://localhost:3000"

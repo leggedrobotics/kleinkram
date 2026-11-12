@@ -41,6 +41,9 @@ The CLI looks up the API and storage addresses of that server (from `/.well-know
 `/cli/config` of the API), saves the server and makes it the active one. You can also pass the address of the API, a
 bare host name (`klein login datasets.example.org`) or a link to any page of the web app.
 
+The server must use https. The CLI refuses plain `http://` addresses, including API or storage addresses the
+server announces and redirects, except for `localhost` during local development.
+
 The CLI then shows a short code such as `KQMX-TRBC` and opens the web app on the page `/cli/activate`. Sign in if
 needed, check that the page shows the same code and click **Authorize CLI**. The terminal finishes the login by itself.
 Codes are valid for 10 minutes.
