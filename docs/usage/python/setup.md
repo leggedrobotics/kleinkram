@@ -30,24 +30,40 @@ klein --help
 
 ## Authentication
 
-To use the CLI or the Python SDK, you must first authenticate your local setup. This is done exclusively using the CLI:
+The CLI and the Python SDK share one login. Log in with:
 
 ```bash
 klein login
 ```
 
-### Alternative Authentication Methods
+This opens the login page of the selected [endpoint](#endpoints-and-self-hosted-instances) in your browser. After you
+log in, the browser hands the tokens back to the CLI through a short-lived server on your machine, on port 8000 or, if
+that is taken, any free port. The tokens are saved in `~/.kleinkram.json`, and the SDK picks them up from there.
 
-If the default login process does not work for your environment, consider one of the following options:
+::: tip Summary
 
-::: details Headless Authentication
-In case your device development server does not support a browser, or if the default port **8000** is already in use, you can run the login flow in headless mode:
+| Situation                                 | What to do                                           |
+| ----------------------------------------- | ---------------------------------------------------- |
+| Laptop or workstation with a browser      | `klein login`                                        |
+| Remote machine, e.g. over SSH             | `klein login`; without a browser it logs in headless |
+| The browser can't reach the CLI's machine | `klein login --headless`                             |
+| Inside a Kleinkram action                 | Nothing: the action is already authenticated         |
+| Log in with GitHub instead of Google      | `klein login --oauth-provider github`                |
+
+:::
+
+### Headless Login
+
+If the CLI finds no browser, for example on a robot or a server you reach over SSH, it logs in headless: it prints a
+URL, which you open in a browser on any device. After you log in, the page shows an authentication token and a refresh
+token; copy them into the prompts of the CLI.
+
+The browser flow only works if the browser can reach `localhost` of the machine the CLI runs on. If the login page
+opens somewhere else, or the CLI picks a terminal browser you don't want to use, force the headless flow:
 
 ```bash
 klein login --headless
 ```
-
-:::
 
 ::: details Authentication inside Actions
 Inside a Kleinkram action you don't need to run `klein login`. The action container sets `KLEINKRAM_API_KEY` (together with `KLEINKRAM_API_ENDPOINT` and `KLEINKRAM_S3_ENDPOINT`), and the CLI picks these up automatically, so commands like `klein upload` or `klein download` work out of the box.
@@ -58,7 +74,7 @@ These variables are only used when there is no saved `~/.kleinkram.json`. If you
 
 ### Customizing the OAuth Provider
 
-By default, the CLI opens Google as the OAuth provider. If you want to use another provider (e.g. GitHub), specify it via the flag:
+By default, the CLI logs in with Google. To use another provider (e.g. GitHub), specify it via the flag:
 
 ```bash
 klein login --oauth-provider github

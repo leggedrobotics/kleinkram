@@ -1,272 +1,155 @@
-# MCAP File Compression Best Practices
+# MCAP Chunking and Compression
 
-This guide explains how to efficiently compress MCAP files for storage in Kleinkram while maintaining optimal performance for data access and processing.
+How an `.mcap` file is written decides how large it is, whether Kleinkram can read it, and how much a
+[partial download](./partial-download.md) has to transfer. Kleinkram stores the file exactly as you upload it, so these
+choices are made on the robot or before the upload.
 
-## TL;DR
+::: tip Summary
 
-✅ **DO**: Use MCAP's built-in chunk compression
-❌ **DON'T**: Compress entire files with `.zst` or `.gz`
+- **Compress inside the file, never the whole file.** MCAP compresses each chunk on its own. A whole-file compressed
+  `.mcap.zst` or `.mcap.gz` cannot be uploaded at all: only the [supported extensions](./files.md) are accepted.
+- **Uncompressed chunks** (the `ros2 bag record` default) are the most flexible: partial downloads can select both
+  topics and a time window.
+- **Compressed chunks** (`zstd_fast`, `zstd_small`) make files smaller, but a partial download can only save
+  bandwidth with a time window, not with `--topics` alone.
+- **No chunks** (the `fastwrite` preset) means a partial download transfers the whole file. Convert such files
+  before uploading if you want to slice them later.
+- **A file without a summary section** (e.g. a recording that was cut off) is marked _Corrupted_. Repair it with
+  `mcap recover` before uploading.
 
-## Why MCAP Chunk Compression?
+:::
 
-MCAP files support internal **chunk-level compression** that provides:
+## How an MCAP file is laid out
 
-- **Storage savings**: 3-5x smaller files
-- **Random access**: Read specific topics without decompressing everything
-- **Transparent decompression**: Libraries handle it automatically
-- **Industry standard**: Recommended by Foxglove and ROS 2 community
+An MCAP file has a **data section** and, at the end, a **summary section**:
 
-## Recommended Workflow
+- In the data section, messages are grouped into **chunks**. Each chunk can be compressed with `zstd` or `lz4`, and is
+  followed by a **message index** that lists the offset and log time of every message in it.
+- The summary section lists the topics, the message counts and, for every chunk, its time range, the topics it holds
+  and where its message index is.
 
-### On the Robot
+When it processes an upload, Kleinkram takes the topics, message counts, frequencies and the recording time from the
+summary section, so a file without one is marked _Corrupted_. A partial download uses the summary and the message indexes to fetch only the bytes it needs.
+A compressed chunk can only be decompressed as a whole, so it can only be fetched as a whole.
 
-Record with the `fastwrite` profile for maximum performance during data collection:
+## Choosing a layout
 
-```bash
-ros2 bag record --storage mcap --storage-preset-profile fastwrite \
-    /camera/image /imu/data /lidar/scan
-```
+| Layout                                                                | Typical source                         | Size     | Partial download by time         | Partial download by topic     |
+| --------------------------------------------------------------------- | -------------------------------------- | -------- | -------------------------------- | ----------------------------- |
+| Uncompressed chunks                                                   | `ros2 bag record -s mcap` (no preset)  | Largest  | Fetches only the messages        | Fetches only the messages     |
+| Compressed chunks                                                     | `zstd_fast` or `zstd_small` preset     | Smaller  | Fetches the chunks in the window | Fetches nearly the whole file |
+| No chunks                                                             | `fastwrite` preset                     | Largest  | Fetches the whole file           | Fetches the whole file        |
+| No summary section                                                    | Recording cut off (crash, power loss)  | —        | Marked _Corrupted_ on upload     | Marked _Corrupted_ on upload  |
+| Whole-file compressed (`.mcap.zst`, rosbag2 `compression_mode: file`) | `zstd`, `gzip`, `ros2 bag` compression | Smallest | Cannot be uploaded               | Cannot be uploaded            |
 
-**What this does:**
+Which one to use depends on how the data is read later:
 
-- Writes uncompressed data for speed
-- Minimal CPU usage during recording
-- No CRC calculation (faster writes)
-- No message index (added later)
+- If people download **single topics** (e.g. `/rosout`, or one camera) from long recordings, keep the chunks
+  **uncompressed**.
+- If storage or upload bandwidth matters more, and recordings are mostly processed with
+  [Actions](../actions/use-actions.md) (which run next to the storage) or sliced by **time**, use **compressed chunks**.
 
-### Post-Processing (Offline)
+## Recording on the robot
 
-After recording, compress the files before uploading to Kleinkram:
+The MCAP storage plugin of rosbag2 has these presets, selected with `--storage-preset-profile`:
 
-```bash
-# Add chunk compression and message index
-ros2 bag convert input.mcap -o output.mcap \
-    --output-options "compression_mode=file,compression_format=zstd"
-```
-
-**Alternative using MCAP CLI:**
-
-```bash
-# Install MCAP CLI
-pip install mcap-cli
-
-# Compress with zstd (recommended)
-mcap compress input.mcap --compression zstd --chunk-size 4MB
-
-# Or use LZ4 for faster decompression
-mcap compress input.mcap --compression lz4 --chunk-size 4MB
-```
-
-### Upload to Kleinkram
-
-```bash
-# Upload compressed MCAP (file extension is still .mcap)
-klein upload --project "my-project" --mission "my-mission" output.mcap
-```
-
-## Compression Formats
-
-MCAP supports two compression algorithms:
-
-### Zstd (Recommended)
+| Preset         | What it writes                                                      | Use it when                                                                  |
+| -------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| none (default) | Uncompressed chunks with message indexes.                           | You want the most flexible partial downloads.                                |
+| `fastwrite`    | No chunks, so no message indexes. No summary CRC.                   | Write throughput is the bottleneck. Convert the file before uploading.       |
+| `zstd_fast`    | Chunks compressed with zstd at its fastest level, no chunk CRC.     | Disk space on the robot is limited, but CPU must stay low.                   |
+| `zstd_small`   | 4 MiB chunks compressed with zstd at its slowest (strongest) level. | Files have to be as small as possible, e.g. to transfer them over a network. |
 
 ```bash
-mcap compress input.mcap --compression zstd
+# uncompressed chunks
+ros2 bag record -s mcap --all
+
+# compressed chunks, low CPU cost
+ros2 bag record -s mcap --storage-preset-profile zstd_fast --all
 ```
 
-**Pros:**
+For other settings, pass a YAML file with the MCAP writer options. Options in this file override the preset:
 
-- Best compression ratios (3-5x savings)
-- Good decompression speed
-- Industry standard
-
-**Use when:** Storage cost is a priority
-
-### LZ4 (Alternative)
+```yaml
+# mcap_writer_options.yaml
+compression: 'Zstd' # "None", "Lz4" or "Zstd"
+compressionLevel: 'Default' # "Fastest", "Fast", "Default", "Slow" or "Slowest"
+chunkSize: 4194304 # target uncompressed chunk size, in bytes
+```
 
 ```bash
-mcap compress input.mcap --compression lz4
+ros2 bag record -s mcap --storage-config-file mcap_writer_options.yaml --all
 ```
 
-**Pros:**
+::: warning Chunk size and crashes
+Messages are kept in memory until their chunk is full and written. If the recorder crashes or loses power, the
+current chunk is lost, and the file has no summary section. Keep chunks small enough that a new one is written every
+few seconds.
+:::
 
-- Faster decompression (~2x faster than zstd)
-- Still good compression (2-3x savings)
+## Converting before uploading
 
-**Use when:** Decompression speed is critical
+To change the layout of an existing recording, e.g. one recorded with `fastwrite`, rewrite it with `ros2 bag convert`.
+It takes a YAML file that describes the output:
 
-## Storage Preset Profiles
-
-ROS 2 provides several preset profiles for different scenarios:
-
-### `fastwrite` (Recording)
-
-Best for on-robot recording:
+```yaml
+# convert.yaml
+output_bags:
+    - uri: recording_chunked # output directory
+      storage_id: mcap
+      storage_config_uri: mcap_writer_options.yaml # see above; leave out for uncompressed chunks
+```
 
 ```bash
-ros2 bag record --storage mcap --storage-preset-profile fastwrite <topics>
+ros2 bag convert -i recording_fastwrite -o convert.yaml
 ```
 
-- No compression
-- No CRC
-- No message index
-- Minimal CPU/memory usage
+::: danger Don't use rosbag2 compression
+`compression_mode` and `compression_format` in the output YAML (or `--compression-mode` when recording) are rosbag2's
+own compression, not MCAP chunk compression. `compression_mode: file` compresses the whole file into a `.mcap.zstd`,
+which Kleinkram does not accept; the MCAP plugin rejects `compression_mode: message`. Set `compression` in the MCAP
+writer options instead.
+:::
 
-### `zstd_small` (Balanced)
-
-Good balance of speed and compression:
+Without ROS, use the [MCAP CLI](https://mcap.dev/guides/cli). It is a standalone binary, not a Python package:
+download it from the [MCAP releases](https://github.com/foxglove/mcap/releases) or install it with
+`brew install mcap`.
 
 ```bash
-ros2 bag record --storage mcap --storage-preset-profile zstd_small <topics>
+# write a copy with compressed chunks
+mcap compress recording.mcap -o recording_compressed.mcap
 ```
 
-- Zstd compression (lowest ratio)
-- No CRC calculation
-- Good throughput
+`mcap compress --help` lists the options for the compression format and the chunk size. The chunk size is given in
+bytes.
 
-### `zstd_fast` (Maximum Compression)
-
-Best compression, slower writes:
+## Checking a file before uploading
 
 ```bash
-ros2 bag record --storage mcap --storage-preset-profile zstd_fast <topics>
+mcap info recording.mcap
 ```
 
-- Zstd compression (highest ratio)
-- 4MB chunks
-- Maximum storage savings
+The `compression` line shows how many chunks use which compression, for example
+`compression: zstd: [14/14 chunks] [124.89 MB/61.46 MB (50.79%)]`. If there is no chunk information at all, the file
+has no chunks.
 
-## Chunk Size Configuration
+`mcap doctor recording.mcap` checks the structure of a file. `mcap recover damaged.mcap -o recovered.mcap` rewrites a
+damaged or cut-off file, including a new summary section, so that Kleinkram can read it.
 
-Larger chunk sizes generally provide better compression:
+## zstd or lz4
 
-```bash
-# Small chunks (good for random access)
-mcap compress input.mcap --compression zstd --chunk-size 1MB
+Both compress chunks inside the file, and every MCAP library reads both without changes to your code. In
+[Foxglove's measurements](https://foxglove.dev/blog/understanding-mcap-chunk-size-and-compression), zstd gave the
+better compression ratio and lz4 the faster compression and decompression. Which one is better for your data is best
+measured on a real recording.
 
-# Medium chunks (balanced - recommended)
-mcap compress input.mcap --compression zstd --chunk-size 4MB
+Larger chunks compress better, but the gains get smaller as the chunk size grows, and a larger chunk means more data
+lost in a crash and more data fetched for a partial download.
 
-# Large chunks (best compression)
-mcap compress input.mcap --compression zstd --chunk-size 8MB
-```
+## Further reading
 
-**Recommendation:** Use 4MB chunks for a good balance of compression ratio and read performance.
-
-## What NOT to Do
-
-### ❌ File-Level Compression
-
-**Don't compress entire MCAP files:**
-
-```bash
-# ❌ BAD - loses random access
-zstd data.mcap           # Creates data.mcap.zst
-gzip data.mcap           # Creates data.mcap.gz
-```
-
-**Why this is problematic:**
-
-- Cannot read specific topics without full decompression
-- Actions must decompress entire file (slow, lots of disk I/O)
-- Not the standard practice in the community
-- Kleinkram can't extract topic metadata without decompression
-
-## How Kleinkram Handles Compressed Files
-
-When you upload a chunk-compressed MCAP:
-
-1. **Upload**: File uploaded directly to storage (already compressed)
-2. **Topic Extraction**: Kleinkram's queue consumer:
-    - Downloads the file
-    - MCAP library automatically decompresses chunks as needed
-    - Extracts topic metadata (names, types, message counts, frequencies)
-    - Stores metadata in database
-3. **Storage**: Compressed MCAP stored as-is
-4. **Actions**: Your action containers:
-    - Download compressed MCAP
-    - MCAP libraries handle decompression transparently
-    - Can efficiently read specific topics (random access works!)
-
-## Verifying Compression
-
-Check if your MCAP is compressed:
-
-```bash
-# Using MCAP CLI
-mcap info data.mcap
-
-# Look for:
-# compression: zstd (or lz4)
-# chunk count: > 0
-```
-
-Example output:
-
-```
-library:
-profile:
-messages: 45123
-duration: 1m23.456s
-start: 2024-01-15T10:30:00Z
-end: 2024-01-15T10:31:23Z
-compression: zstd
-chunk count: 42
-```
-
-## Performance Comparison
-
-Example with a 10 GB dataset:
-
-| Method                  | File Size | Upload Time | Storage Cost     | Action Access |
-| ----------------------- | --------- | ----------- | ---------------- | ------------- |
-| Uncompressed            | 10 GB     | Slow        | High (1x)        | Fast ✅       |
-| Chunk Compressed (zstd) | 2 GB      | Fast        | Low (5x savings) | Fast ✅       |
-| File-level .zst         | 2 GB      | Fast        | Low (5x savings) | Slow ❌       |
-
-## FAQs
-
-### Q: Do I need to decompress chunk-compressed MCAPs before uploading?
-
-**A:** No! Upload them directly. Kleinkram's libraries handle decompression automatically.
-
-### Q: Will my actions need to decompress files?
-
-**A:** No! MCAP libraries (`@mcap/core`, Python `mcap`, C++ `mcap`, etc.) handle decompression transparently. Your action code doesn't change.
-
-### Q: Can I still seek to specific timestamps/topics?
-
-**A:** Yes! Chunk compression maintains the MCAP index, so random access works perfectly.
-
-### Q: What if I have `.mcap.zst` files?
-
-**A:** These are file-level compressed. Consider recompressing with chunk compression:
-
-```bash
-# Decompress
-zstd -d data.mcap.zst
-
-# Recompress with chunk compression
-mcap compress data.mcap --compression zstd --chunk-size 4MB
-```
-
-### Q: Can I compress during recording?
-
-**A:** Yes, but it may impact recording performance on resource-constrained robots. Use `--storage-preset-profile zstd_small` for real-time compression with minimal overhead.
-
-## Additional Resources
-
-- [MCAP Specification](https://mcap.dev/spec)
-- [Understanding MCAP Chunk Size and Compression](https://foxglove.dev/blog/understanding-mcap-chunk-size-and-compression)
-- [ROS 2 rosbag2_storage_mcap Documentation](https://docs.ros.org/en/humble/p/rosbag2_storage_mcap/)
-- [MCAP CLI Tools](https://github.com/foxglove/mcap/tree/main/python/mcap-cli)
-
-## Summary
-
-For optimal performance with Kleinkram:
-
-1. ✅ Record with `fastwrite` profile on robot
-2. ✅ Post-process with `mcap compress` or `ros2 bag convert`
-3. ✅ Upload chunk-compressed `.mcap` files
-4. ✅ Enjoy fast uploads, storage savings, and efficient actions
-5. ❌ Don't use file-level `.zst` or `.gz` compression
+- [MCAP CLI](https://mcap.dev/guides/cli)
+- [rosbag2 MCAP storage plugin](https://github.com/ros2/rosbag2/tree/rolling/rosbag2_storage_mcap): presets and writer
+  options
+- [Understanding MCAP chunk size and compression](https://foxglove.dev/blog/understanding-mcap-chunk-size-and-compression)
+- [MCAP specification](https://mcap.dev/spec)

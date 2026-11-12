@@ -2,15 +2,49 @@
 
 Installing `kleinkram` using `pip` installs both the CLI and a Python package. The `kleinkram` Python package provides programmatic access to Kleinkram, mirroring most of the CLI's capabilities.
 
+::: tip Summary
+
+| Task                      | Functions                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------------- |
+| Find data                 | `list_projects`, `list_missions`, `list_files`, `get_project`, `get_mission`, `get_file`          |
+| Move data                 | `upload`, `download` (also [part of an `.mcap`](#downloading-part-of-a-recording)), `verify`      |
+| Create, change and delete | `create_project`, `create_mission`, `update_project`, `update_mission`, `delete_*`                |
+| Actions                   | `*_template*`, `launch_execution`, `run_script`, `*_execution`, `download_artifact`, `*_trigger*` |
+| Inside an action          | `warn`, `fail`, `info`, `list_diagnostics`                                                        |
+
+Every function is imported from `kleinkram` and accepts an optional `client=` keyword argument (see below).
+:::
+
 ## Authentication
 
-Before using the SDK, make sure to authenticate your environment using the CLI:
+The SDK uses the login of the CLI. Log in once on the machine:
 
 ```bash
 klein login
 ```
 
-Currently, authentication is only possible by running this CLI command. Once authenticated, the SDK will automatically pick up your credentials.
+The SDK then reads the saved credentials and the selected endpoint from `~/.kleinkram.json`, and refreshes the login
+when it expires. See [Authentication](./setup.md#authentication) for headless machines and other providers, and
+[Endpoints](./setup.md#endpoints-and-self-hosted-instances) to talk to another Kleinkram instance. Inside a Kleinkram
+action, the SDK is already authenticated, like the CLI.
+
+If you are not logged in, every call raises `kleinkram.errors.NotAuthenticated`.
+
+### Reusing a Client
+
+Each call creates its own HTTP client unless you pass one. To make many calls, create one client and pass it as
+`client=`, so the connection and the login are reused:
+
+```python
+import kleinkram
+from kleinkram.api.client import AuthenticatedClient
+
+client = AuthenticatedClient()
+for mission in kleinkram.list_missions(project_names=["testProject"], client=client):
+    files = kleinkram.list_files(mission_ids=[mission.id], client=client)
+```
+
+`AuthenticatedClient(config_path=...)` reads the endpoint and credentials from another file than `~/.kleinkram.json`.
 
 ## Core Usage
 
@@ -136,6 +170,34 @@ status = kleinkram.verify(
 )
 ```
 
+### Checking the Result of a Transfer
+
+Like the CLI, `upload`, `download` and `verify` handle every file and report problems per file instead of raising on
+the first one. Check what they return:
+
+```python
+from kleinkram.api.file_transfer import DOWNLOAD_STATES_NOT_DONE
+from kleinkram.models import FileVerificationStatus
+
+result = kleinkram.upload(project_name="testProject", mission_name="testMission", files=["data.bag"])
+# conflicts: the name is taken in the mission by a file with different content
+# unchecked: the name is taken, and the content could not be compared yet
+not_uploaded = result.failed + len(result.conflicts) + len(result.unchecked)
+
+result = kleinkram.download(project_name="testProject", mission_name="testMission", dest="./data")
+# skipped files, e.g. a local file with the same name but different content, count as not downloaded
+not_downloaded = result.failed + sum(result.state_counts.get(s, 0) for s in DOWNLOAD_STATES_NOT_DONE)
+
+status = kleinkram.verify(project_name="testProject", mission_name="testMission", files=["data.bag"])
+not_verified = [path for path, s in status.items() if s != FileVerificationStatus.UPLOADED]
+```
+
+These are the same checks that decide the [exit code](./cli.md#exit-codes) of the CLI.
+
+`verify` returns a status per local file: `uploaded`, `uploading`, `computing hash`, `missing`, `hash mismatch`,
+`size mismatch` or `unknown`. On Ctrl+C, `upload` and `download` raise `KeyboardInterrupt`;
+`kleinkram.errors.get_transfer_result(exc)` returns what finished before.
+
 ### Updating Resources
 
 Modify the metadata and descriptions of existing resources.
@@ -146,9 +208,6 @@ kleinkram.update_project(project_id="...", description="Updated Description")
 
 # Update a mission's metadata
 kleinkram.update_mission(mission_id="...", metadata={"status": "completed"})
-
-# Trigger a file update (re-process the file)
-kleinkram.update_file(file_id="...")
 ```
 
 ### Kleinkram Actions
