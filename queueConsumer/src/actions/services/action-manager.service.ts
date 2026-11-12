@@ -356,7 +356,7 @@ export class ActionManagerService implements OnModuleInit {
 
             // eslint-disable-next-line @typescript-eslint/naming-convention
             const sanitize = (string_: string): string => {
-                return string_.replace(apikey.apikey, '***');
+                return string_.replaceAll(apikey.apikey, '***');
             };
 
             let lastStatsUpdate = 0;
