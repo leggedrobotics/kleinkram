@@ -15,6 +15,7 @@ import { Logger } from '@nestjs/common';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import { toObjectTagValue } from './object-tags';
 import { StorageAuthService } from './storage-auth.service';
 import {
     metadataRequestOptions,
@@ -281,7 +282,7 @@ export class S3StorageBucket implements IStorageBucket {
             Tagging: {
                 TagSet: Object.entries(tags).map(([key, value]) => ({
                     Key: key,
-                    Value: value,
+                    Value: toObjectTagValue(value),
                 })),
             },
         });
