@@ -26,13 +26,16 @@ interface Tokens {
 }
 
 /** Logs in like the CLI does: device login approved by `user`. */
-const cliLogin = async (user: UserEntity): Promise<Tokens> => {
+const cliLogin = async (
+    user: UserEntity,
+    cliVersion = CLI_VERSION,
+): Promise<Tokens> => {
     const start = await fetch(`${DEFAULT_URL}/cli/device`, {
         method: 'POST',
         headers: { ...getAuthHeaders(), ...JSON_HEADERS },
         body: JSON.stringify({
             hostname: 'anymal-d-042',
-            cliVersion: '0.67.0',
+            cliVersion,
         }),
     });
     const authorization = (await start.json()) as DeviceAuthorizationDto;
@@ -160,7 +163,7 @@ describe('User Sessions', () => {
 
     test('should not rotate for CLI versions that cannot store a new token', async () => {
         const user = await newUser('session-old-cli@leggedrobotics.com');
-        const tokens = await cliLogin(user);
+        const tokens = await cliLogin(user, '0.66.0');
 
         const result = await refresh(tokens.refreshToken, '0.66.0');
         expect(result.status).toBe(200);
@@ -291,5 +294,93 @@ describe('User Sessions', () => {
         expect(result.status).toBe(200);
         expect(result.refreshToken).toBeUndefined();
         expect(await me(result.authToken ?? '')).toBe(200);
+    });
+
+    test('should not let a caller switch rotation off by sending an old version', async () => {
+        const user = await newUser('session-downgrade@leggedrobotics.com');
+        const tokens = await cliLogin(user);
+
+        const old = await refresh(tokens.refreshToken, '0.66.0');
+        expect(old.refreshToken).toBeDefined();
+        expect(old.refreshToken).not.toBe(tokens.refreshToken);
+
+        await database
+            .getRepository(SessionEntity)
+            .update(
+                { uuid: sessionUuidOf(tokens.authToken) },
+                { rotatedAt: new Date(Date.now() - 5 * 60 * 1000) },
+            );
+        const none = await refresh(old.refreshToken ?? '', '');
+        expect(none.refreshToken).toBeDefined();
+        expect(none.refreshToken).not.toBe(old.refreshToken);
+    });
+
+    test('should switch an old CLI session to rotation once a new CLI refreshes it', async () => {
+        const user = await newUser('session-upgrade@leggedrobotics.com');
+        const tokens = await cliLogin(user, '0.66.0');
+
+        const upgraded = await refresh(tokens.refreshToken);
+        expect(upgraded.refreshToken).toBeDefined();
+
+        // and it stays rotating, also for requests claiming an old version
+        await database
+            .getRepository(SessionEntity)
+            .update(
+                { uuid: sessionUuidOf(tokens.authToken) },
+                { rotatedAt: new Date(Date.now() - 5 * 60 * 1000) },
+            );
+        const again = await refresh(upgraded.refreshToken ?? '', '0.66.0');
+        expect(again.refreshToken).toBeDefined();
+        expect(again.refreshToken).not.toBe(upgraded.refreshToken);
+    });
+
+    test('should keep quick successive refreshes on one generation', async () => {
+        const user = await newUser('session-burst@leggedrobotics.com');
+        const first = await cliLogin(user);
+
+        const second = await refresh(first.refreshToken);
+        // a second tab refreshes with the new token right away ...
+        const third = await refresh(second.refreshToken ?? '');
+        expect(third.refreshToken).toBe(second.refreshToken);
+        // ... and a delayed request with the first token is still fine
+        const delayed = await refresh(first.refreshToken);
+        expect(delayed.status).toBe(200);
+        expect(delayed.refreshToken).toBe(second.refreshToken);
+        expect(await me(third.authToken ?? '')).toBe(200);
+    });
+
+    test('should not accept an access token as a refresh token', async () => {
+        const user = await newUser(
+            'session-access-as-refresh@leggedrobotics.com',
+        );
+        const tokens = await cliLogin(user);
+
+        // a session access token, also after its session ended
+        expect(await refreshStatus(tokens.authToken)).toBe(401);
+        await fetch(`${DEFAULT_URL}/auth/logout`, {
+            method: 'POST',
+            headers: { cookie: `refreshtoken=${tokens.refreshToken}` },
+        });
+        expect(await refreshStatus(tokens.authToken)).toBe(401);
+
+        // an access token from before sessions (30 minutes)
+        const legacyAccess = jwt.sign(
+            { uuid: user.uuid },
+            process.env.JWT_SECRET ?? '',
+            { expiresIn: '30m' },
+        );
+        expect(await refreshStatus(legacyAccess)).toBe(401);
+    });
+
+    test('should not accept an old refresh token as an access token', async () => {
+        const user = await newUser(
+            'session-refresh-as-access@leggedrobotics.com',
+        );
+        const legacyRefresh = jwt.sign(
+            { uuid: user.uuid },
+            process.env.JWT_SECRET ?? '',
+            { expiresIn: '7d' },
+        );
+        expect(await me(legacyRefresh)).toBe(401);
     });
 });

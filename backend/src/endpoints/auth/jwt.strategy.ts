@@ -6,6 +6,8 @@ import { Request } from 'express';
 import { Strategy } from 'passport-jwt';
 import {
     AccessTokenPayload,
+    isLegacyRefreshToken,
+    LegacyTokenPayload,
     SessionService,
 } from '../../services/session.service';
 import { UserService } from '../../services/user.service';
@@ -50,6 +52,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
                 throw new UnauthorizedException('Session ended');
             }
             return { user: session.user, sessionUuid: session.uuid };
+        }
+
+        // an old refresh token is not an access token
+        if (isLegacyRefreshToken(payload as LegacyTokenPayload)) {
+            throw new UnauthorizedException('Not an access token');
         }
 
         // tokens from before sessions existed (at most 7 days after the

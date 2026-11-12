@@ -18,7 +18,22 @@
             />
         </div>
 
+        <div v-if="isError" class="sessions__error" role="alert">
+            <q-icon name="sym_o_error" size="20px" />
+            <span>Could not load your sessions.</span>
+            <q-btn
+                flat
+                dense
+                no-caps
+                color="link-primary"
+                label="Try again"
+                :loading="isFetching"
+                @click="retry"
+            />
+        </div>
+
         <q-table
+            v-else
             flat
             :bordered="!$q.screen.xs"
             :grid="$q.screen.xs"
@@ -141,10 +156,14 @@ import { computed, ref } from 'vue';
 const $q = useQuasar();
 const queryClient = useQueryClient();
 
-const { data, isLoading } = useQuery({
+const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ['my-sessions'],
     queryFn: getMySessions,
 });
+
+const retry = (): void => {
+    void refetch();
+};
 
 const sessions = computed(() => data.value?.sessions ?? []);
 const otherSessions = computed(() =>
@@ -204,13 +223,13 @@ const notifyError = (error: unknown): void => {
 const revoking = ref<string | undefined>(undefined);
 
 const signOut = async (session: SessionDto): Promise<void> => {
-    // signing out this session is a normal logout
-    if (session.current) {
-        await logout();
-        return;
-    }
     revoking.value = session.uuid;
     try {
+        // signing out this session is a normal logout (reloads the page)
+        if (session.current) {
+            await logout();
+            return;
+        }
         await revokeMySession(session.uuid);
         Notify.create({
             message: `Signed out ${deviceName(session)}`,
@@ -300,6 +319,20 @@ const confirmRevokeOthers = (): void => {
     font-size: 12px;
     margin-left: 8px;
     padding: 1px 8px;
+}
+
+.sessions__error {
+    align-items: center;
+    background: #fff1f1;
+    border-left: 3px solid #da1e28;
+    color: #161616;
+    display: flex;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+.sessions__error .q-icon {
+    color: #da1e28;
 }
 
 .sessions__card {

@@ -8,7 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { IsNull, LessThan, Not, Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import logger from '../logger';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -84,6 +84,22 @@ const isOlderThan = (
         if (a !== b) return a < b;
     }
     return false;
+};
+
+/**
+ * Whether a client stores rotated refresh tokens: the web app always (it is a
+ * cookie), the CLI from 0.67 on.
+ */
+const supportsRotation = (
+    kind: SessionKind,
+    clientVersion: string | undefined,
+): boolean => {
+    if (kind !== SessionKind.CLI) return true;
+    const version = parseVersion(clientVersion);
+    return (
+        version !== undefined &&
+        !isOlderThan(version, FIRST_ROTATING_CLI_VERSION)
+    );
 };
 
 /** When the session ends if nobody uses it: idle or absolute limit. */
@@ -169,6 +185,7 @@ export class SessionService {
                     now.getTime() + SESSION_LIFETIMES[client.kind].absoluteMs,
                 ),
                 generation: 0,
+                rotating: supportsRotation(client.kind, client.clientVersion),
                 secret,
             }),
         );
@@ -202,13 +219,38 @@ export class SessionService {
         const now = new Date();
         const current = session.generation;
 
+        // a client that turns out to store rotated tokens switches the
+        // session to rotation for good; there is no way back
+        if (
+            !session.rotating &&
+            supportsRotation(session.kind, clientVersion)
+        ) {
+            await this.sessionRepository.update(
+                { uuid: session.uuid },
+                { rotating: true },
+            );
+            session.rotating = true;
+        }
+
         if (parsed.generation === current) {
-            if (!this.rotates(session, clientVersion)) {
+            if (!session.rotating) {
                 await this.touch(session, now);
                 return {
                     session,
                     tokens: this.issueTokens(session, session.secret),
                     rotated: false,
+                };
+            }
+            // several refreshes in quick succession (parallel requests, a
+            // second tab) stay on one generation: rotating again within the
+            // grace period would turn a still delayed request with the
+            // previous token into "reuse" and end a legitimate session
+            if (this.rotatedRecently(session, now)) {
+                await this.touch(session, now);
+                return {
+                    session,
+                    tokens: this.issueTokens(session, session.secret),
+                    rotated: true,
                 };
             }
             // only one of several parallel requests wins the rotation; the
@@ -331,16 +373,31 @@ export class SessionService {
         return isSessionActive(session) ? session : null;
     }
 
+    /**
+     * Deletes sessions that ended more than 30 days ago: revoked, past their
+     * absolute end, or unused for longer than their idle limit.
+     */
     @Cron(CronExpression.EVERY_DAY_AT_3AM)
     async deleteEndedSessions(): Promise<void> {
-        const cutoff = new Date(Date.now() - KEEP_ENDED_SESSIONS_MS);
-        const revoked = await this.sessionRepository.delete({
-            revokedAt: LessThan(cutoff),
-        });
-        const expired = await this.sessionRepository.delete({
-            expiresAt: LessThan(cutoff),
-        });
-        const count = (revoked.affected ?? 0) + (expired.affected ?? 0);
+        const cutoff = Date.now() - KEEP_ENDED_SESSIONS_MS;
+        const query = this.sessionRepository
+            .createQueryBuilder()
+            .delete()
+            .where('"revokedAt" < :cutoff', { cutoff: new Date(cutoff) })
+            .orWhere('"expiresAt" < :cutoff', { cutoff: new Date(cutoff) });
+        for (const kind of Object.values(SessionKind)) {
+            query.orWhere(
+                `(kind = :kind${kind} AND "lastUsedAt" < :idleCutoff${kind})`,
+                {
+                    [`kind${kind}`]: kind,
+                    [`idleCutoff${kind}`]: new Date(
+                        cutoff - SESSION_LIFETIMES[kind].idleMs,
+                    ),
+                },
+            );
+        }
+        const result = await query.execute();
+        const count = result.affected ?? 0;
         if (count > 0) logger.info(`Deleted ${String(count)} ended sessions`);
     }
 
@@ -351,9 +408,7 @@ export class SessionService {
     ): Promise<RefreshResult> {
         const inGrace =
             presented === session.generation - 1 &&
-            session.rotatedAt !== null &&
-            session.rotatedAt !== undefined &&
-            now.getTime() - session.rotatedAt.getTime() <= ROTATION_GRACE_MS;
+            this.rotatedRecently(session, now);
 
         if (!inGrace) {
             await this.revoke(session.uuid, 'reuse');
@@ -371,14 +426,12 @@ export class SessionService {
         };
     }
 
-    private rotates(
-        session: SessionEntity,
-        clientVersion: string | undefined,
-    ): boolean {
-        if (session.kind !== SessionKind.CLI) return true;
-        const version = parseVersion(clientVersion);
-        if (version === undefined) return false;
-        return !isOlderThan(version, FIRST_ROTATING_CLI_VERSION);
+    private rotatedRecently(session: SessionEntity, now: Date): boolean {
+        return (
+            session.rotatedAt !== null &&
+            session.rotatedAt !== undefined &&
+            now.getTime() - session.rotatedAt.getTime() <= ROTATION_GRACE_MS
+        );
     }
 
     private async touch(session: SessionEntity, now: Date): Promise<void> {
@@ -457,6 +510,25 @@ export class SessionService {
         };
     }
 }
+
+/** Claims of a JWT from before sessions existed (refresh or access token). */
+export interface LegacyTokenPayload extends AccessTokenPayload {
+    iat?: number;
+    exp?: number;
+}
+
+/** Old refresh tokens lived 7 days, access tokens 30 to 60 minutes. */
+const LEGACY_REFRESH_MIN_LIFETIME_S = 24 * 60 * 60;
+
+/**
+ * Whether a JWT is a refresh token issued before sessions existed. Such
+ * tokens keep working until they expire (at most 7 days after the update).
+ */
+export const isLegacyRefreshToken = (payload: LegacyTokenPayload): boolean =>
+    payload.sid === undefined &&
+    payload.iat !== undefined &&
+    payload.exp !== undefined &&
+    payload.exp - payload.iat >= LEGACY_REFRESH_MIN_LIFETIME_S;
 
 /** Whether a refresh token uses the session format (and not a legacy JWT). */
 export const isSessionRefreshToken = (token: string): boolean =>

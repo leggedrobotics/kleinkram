@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import base64
+import json
 import logging
+import time
 from collections import abc
 from pathlib import Path
 from threading import Lock
@@ -66,6 +69,22 @@ def _convert_query_params_to_httpx_format(
     return ret
 
 
+def _access_token_expired(token: str, leeway: float = 30.0) -> bool:
+    """\
+    whether a JWT access token is (about to be) expired, read from its `exp`
+    claim without checking the signature (the server does that)
+    """
+    try:
+        payload = token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        exp = json.loads(base64.urlsafe_b64decode(payload)).get("exp")
+    except (IndexError, ValueError):
+        return True
+    if not isinstance(exp, (int, float)):
+        return False
+    return exp <= time.time() + leeway
+
+
 class AuthenticatedClient(httpx.Client):
     _config: Config
     _config_lock: Lock
@@ -107,7 +126,11 @@ class AuthenticatedClient(httpx.Client):
             current = on_disk or in_memory
             # another thread or `klein` process refreshed in the meantime:
             # use its tokens instead of presenting an already rotated one
-            if current.auth_token is not None and current.auth_token != failed_access_token:
+            if (
+                current.auth_token is not None
+                and current.auth_token != failed_access_token
+                and not _access_token_expired(current.auth_token)
+            ):
                 logger.info("using tokens refreshed by another process...")
                 return current
             if current.refresh_token is None:

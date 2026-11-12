@@ -1,12 +1,6 @@
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { SessionKind } from '@kleinkram/shared';
-import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    Index,
-    ManyToOne,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, ManyToOne } from 'typeorm';
 
 /**
  * One login of a user, in the web app or the CLI.
@@ -63,6 +57,15 @@ export class SessionEntity {
     /** Why the session ended early, e.g. `logout`, `user`, `reuse`. */
     @Column({ type: 'varchar', length: 32, nullable: true })
     revokedReason?: string | null;
+
+    /**
+     * Whether refresh tokens of this session rotate. Set once the client is
+     * known to store rotated tokens (web app, CLI 0.67+) and never switched
+     * off again, so a caller cannot opt out of rotation (and its reuse
+     * detection) by sending an old client version.
+     */
+    @Column({ type: 'boolean', default: false })
+    rotating!: boolean;
 
     /** Number of the current refresh token, increased on every rotation. */
     @Column({ type: 'integer', default: 0 })

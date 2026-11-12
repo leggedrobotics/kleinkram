@@ -4,7 +4,9 @@ import {
     AccessTokenPayload,
     describeBrowser,
     InvalidSessionError,
+    isLegacyRefreshToken,
     isSessionRefreshToken,
+    LegacyTokenPayload,
     SessionService,
 } from '@/services/session.service';
 import { UserService } from '@/services/user.service';
@@ -240,7 +242,16 @@ export class AuthController {
         // until they expire (7 days), without becoming revocable
         try {
             const payload =
-                this.jwtService.verify<AccessTokenPayload>(refreshToken);
+                this.jwtService.verify<LegacyTokenPayload>(refreshToken);
+
+            // only real refresh tokens from before sessions: not access
+            // tokens of a session (they would shed the session check), and
+            // not 30 minute access tokens (each would mint the next one)
+            if (!isLegacyRefreshToken(payload)) {
+                return response
+                    .status(401)
+                    .json({ message: 'Invalid refresh token' });
+            }
 
             const user = await this.userService.findOneByUUID(
                 payload.uuid,
