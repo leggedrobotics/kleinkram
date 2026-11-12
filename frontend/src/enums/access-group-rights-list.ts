@@ -1,7 +1,8 @@
-import { AccessGroupRights } from '@kleinkram/shared';
-
-export const accessGroupRightsList: AccessGroupRights[] = Object.values(
+import {
     AccessGroupRights,
-)
-    .filter((x) => typeof x === 'number')
-    .filter((x) => x !== AccessGroupRights._ADMIN);
+    GRANTABLE_ACCESS_GROUP_RIGHTS,
+} from '@kleinkram/shared';
+
+export const accessGroupRightsList: AccessGroupRights[] = [
+    ...GRANTABLE_ACCESS_GROUP_RIGHTS,
+];
