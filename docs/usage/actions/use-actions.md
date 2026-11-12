@@ -56,6 +56,10 @@ Action Templates are version-controlled. When you create or modify an action tem
 allows you to track changes over time and revert to previous versions if needed. Each execution of an action is tied to
 a specific version of the template, ensuring consistency and reproducibility.
 
+Only the creator of a template (the person who saved its first version) and administrators can save new versions of it
+or delete it. If you want to change a template someone else made, save your changes as a new template with its own
+name. See [Access Control for Actions](../access-control/action.md#action-template).
+
 ::: tip
 We recommend using version tags while specifying Docker images in your action templates. This ensures that your actions
 are always reproducible and not affected by changes in the `latest` image. E.g., use `python:3.10-slim` instead of
