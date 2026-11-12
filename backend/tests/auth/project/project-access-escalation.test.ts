@@ -366,6 +366,34 @@ describe('Project Access Rights Escalation', () => {
             );
         });
 
+        test('should reject an access group uuid that is not in canonical form', async () => {
+            const { writer, projectUuid, coOwnerGroup } = await setupProject();
+            const access = await getProjectAccess(writer, projectUuid);
+            const coOwnerEntry = access.find(
+                (entry) => entry.uuid === coOwnerGroup.uuid,
+            );
+            expect(coOwnerEntry).toBeDefined();
+
+            // PostgreSQL reads the uuid without hyphens as the same group
+            const response = await post(
+                writer,
+                `/projects/${projectUuid}/access`,
+                [
+                    ...access,
+                    {
+                        ...coOwnerEntry,
+                        uuid: coOwnerGroup.uuid.replaceAll('-', ''),
+                        rights: AccessGroupRights.WRITE,
+                    },
+                ],
+            );
+
+            expect(response.status).toBe(400);
+            expect(await storedRights(projectUuid, coOwnerGroup.uuid)).toBe(
+                AccessGroupRights.DELETE,
+            );
+        });
+
         test('should reject a writer whose delete membership expired granting delete rights', async () => {
             const { owner, writer, projectUuid, writerGroup } =
                 await setupProject();
