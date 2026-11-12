@@ -142,13 +142,13 @@ def test_upload_ctrl_c_during_compare_keeps_the_result(monkeypatch, routes, file
 
 
 def test_cli_quiet_mode_reports_a_failed_compare(runner, offline_cli, monkeypatch, routes, files):
-    """no message callback with --no-verbose: the warning must still be printed"""
+    """--no-verbose must still name the files and their problem"""
     routes.get_files.side_effect = httpx.ConnectError("down")
     monkeypatch.setattr(kleinkram.api.file_transfer, "upload_files", fake_upload_files([files[1]]))
 
     result = runner.invoke(app, ["--no-verbose", "upload", "-p", "proj", "-m", "run42", *map(str, files)])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1, result.output  # not compared: not confirmed in the mission
     assert "could not be compared" in result.stderr
     assert f"  {files[1]}\n" in result.stderr
 
@@ -207,13 +207,13 @@ def test_cli_changed_file_fails(runner, cli, files, verbose):
     assert f"  {busy}\n" in result.stderr
 
 
-def test_cli_unchecked_only_warns(runner, cli, files):
+def test_cli_unchecked_files_fail(runner, cli, files):
     busy = files[2]
     cli(UploadResult(uploaded=3, skipped=1, existing=[busy], unchecked=[busy]))
 
     result = runner.invoke(app, ["--no-verbose", "upload", "-p", "proj", "-m", "run42", *map(str, files)])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1, result.output  # not compared: not confirmed in the mission
     assert "could not be compared" in result.stderr
     assert "NOT uploaded" not in result.stderr
 

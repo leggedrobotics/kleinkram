@@ -363,3 +363,39 @@ def test_upload_changed_file_with_taken_name_fails(project, tmp_path, api):
     assert res.returncode == 1
     assert "1 file(s) were NOT uploaded" in res.stderr
     assert str(tree / "top.bag") in res.stderr
+
+
+@pytest.mark.slow
+def test_exit_codes_for_verify_and_download(project, tmp_path, api):
+    """exit 0 only if every requested file was handled, in both output modes (the server rejects one-letter names)"""
+    assert api
+    local = tmp_path / "local"
+    local.mkdir()
+    shutil.copy(DATA_PATH / "10_KB.bag", local / "rec_a.bag")
+    shutil.copy(DATA_PATH / "50_KB.bag", local / "rec_b.bag")
+    mission_name = secrets.token_hex(8)
+    scope = ["-p", project.name, "-m", mission_name]
+    assert run_cmd(f"{CLI} upload -p {project.name} -m {mission_name} --create {local / 'rec_a.bag'}") == 0
+
+    for mode in ("--verbose", "--no-verbose"):
+        # b.bag was never uploaded
+        res = subprocess.run(
+            [CLI, mode, "verify", *scope, str(local / "rec_a.bag"), str(local / "rec_b.bag")], capture_output=True, text=True
+        )
+        assert res.returncode == 1, res.stderr
+        assert "1 of 2 file(s) could not be verified." in res.stderr
+        res = subprocess.run([CLI, mode, "verify", *scope, str(local / "rec_a.bag")], capture_output=True, text=True)
+        assert res.returncode == 0, res.stderr
+
+    dest = tmp_path / "dest"
+    dest.mkdir()
+    (dest / "rec_a.bag").write_bytes(b"a different local file")
+    for mode in ("--verbose", "--no-verbose"):
+        res = subprocess.run([CLI, mode, "download", *scope, "--dest", str(dest)], capture_output=True, text=True)
+        assert res.returncode == 1, res.stderr
+        assert "exists with file size mismatch" in res.stderr  # named in both modes
+    res = subprocess.run(
+        [CLI, "--no-verbose", "download", *scope, "--dest", str(dest), "--overwrite"], capture_output=True, text=True
+    )
+    assert res.returncode == 0, res.stderr
+    assert (dest / "rec_a.bag").read_bytes() == (local / "rec_a.bag").read_bytes()

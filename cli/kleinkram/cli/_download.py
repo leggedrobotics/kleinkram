@@ -13,12 +13,17 @@ import typer
 
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.file_transfer import DOWNLOAD_STATES_NOT_DONE
+from kleinkram.api.file_transfer import DownloadResult
 from kleinkram.api.file_transfer import DownloadState
 from kleinkram.api.file_transfer import McapSlice
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.cli._context import OPTIONS_ANYWHERE
+from kleinkram.cli._exit_codes import EXIT_INCOMPLETE
+from kleinkram.cli._exit_codes import EXIT_INTERRUPTED
+from kleinkram.cli._exit_codes import print_errors_only
 from kleinkram.cli._progress import run_interruptible
 from kleinkram.cli._progress import transfer_progress
 from kleinkram.config import get_shared_state
@@ -65,6 +70,11 @@ using the file's own index to fetch only the selected messages (or, for \
 compressed chunks, only the chunks holding them). Files that are not .mcap \
 cannot be sliced and are skipped.
 """
+
+
+def _count_not_done(result: DownloadResult) -> int:
+    """files that did not end up locally as requested: failures and the skips in `DOWNLOAD_STATES_NOT_DONE`"""
+    return result.failed + sum(result.state_counts.get(state, 0) for state in DOWNLOAD_STATES_NOT_DONE)
 
 
 download_typer = typer.Typer(
@@ -233,8 +243,17 @@ def download(
             f"{result.state_counts.get(DownloadState.CANCELED, 0)} canceled, "
             f"{result.failed} failed"
         )
+        not_done = _count_not_done(result)
+        if not_done and not interrupted:
+            typer.echo(
+                typer.style(
+                    f"\n{not_done} file(s) were NOT downloaded as requested, see the messages above.",
+                    fg=typer.colors.RED,
+                ),
+                err=True,
+            )
     else:
-        # No verbose: no progress bars, no callbacks
+        # No verbose: no progress bars, but every problem still gets a line on stderr
         result, interrupted = run_interruptible(
             lambda: kleinkram.core.download(
                 client=AuthenticatedClient(),
@@ -244,6 +263,7 @@ def download(
                 nested=nested,
                 overwrite=overwrite,
                 mcap_slice=mcap_slice if mcap_slice else None,
+                on_message_cb=print_errors_only,
             )
         )
 
@@ -254,27 +274,30 @@ def download(
             + result.state_counts.get(DownloadState.OVERWRITTEN_OK, 0)
             + result.state_counts.get(DownloadState.OVERWRITTEN_CORRUPTED, 0)
         )
+        present = result.state_counts.get(DownloadState.SKIPPED_OK, 0) + result.state_counts.get(
+            DownloadState.SKIPPED_CORRUPTED_LOCAL_OK, 0
+        )
         canceled = result.state_counts.get(DownloadState.CANCELED, 0)
-        if result.failed > 0 or canceled > 0:
-            parts = [f"Downloaded {downloaded} file(s)"]
+        not_done = _count_not_done(result)
+        parts = [f"Downloaded {downloaded} file(s)"]
+        if present > 0:
+            parts.append(f"{present} already present")
+        if not_done > 0 or canceled > 0:
+            if not_done > 0:
+                parts.append(f"{not_done} NOT downloaded")
             if canceled > 0:
                 parts.append(f"{canceled} canceled")
-            if result.failed > 0:
-                parts.append(f"{result.failed} failed")
             typer.echo(
                 typer.style(
                     f"\n{', '.join(parts)}.",
-                    fg=typer.colors.YELLOW if result.failed == 0 else typer.colors.RED,
+                    fg=typer.colors.RED if not_done else typer.colors.YELLOW,
                 ),
                 err=True,
             )
         else:
-            typer.echo(
-                typer.style(
-                    f"\nSuccessfully downloaded/verified {downloaded} file(s).",
-                    fg=typer.colors.GREEN,
-                )
-            )
+            typer.echo(typer.style(f"\n{', '.join(parts)}.", fg=typer.colors.GREEN))
 
     if interrupted:
-        raise typer.Exit(code=130)  # 128 + SIGINT, the shell convention for Ctrl+C
+        raise typer.Exit(code=EXIT_INTERRUPTED)
+    if _count_not_done(result):
+        raise typer.Exit(code=EXIT_INCOMPLETE)

@@ -627,6 +627,20 @@ class UploadResult:
     unchecked: List[Path] = field(default_factory=list)
 
 
+# download outcomes where the requested file did NOT end up as asked; `klein
+# download` exits with 1 if any file ends in one of them (failures count too)
+DOWNLOAD_STATES_NOT_DONE = frozenset(
+    {
+        DownloadState.DOWNLOADED_INVALID_HASH,
+        DownloadState.SKIPPED_INVALID_HASH,
+        DownloadState.SKIPPED_FILE_SIZE_MISMATCH,
+        DownloadState.SKIPPED_INVALID_REMOTE_STATE,
+        DownloadState.SKIPPED_CORRUPTED,
+        DownloadState.SKIPPED_SLICE_EXISTS,
+    }
+)
+
+
 @dataclass
 class DownloadResult:
     state_counts: Dict[DownloadState, int] = field(default_factory=dict)
@@ -650,15 +664,15 @@ def _download_state_message(state: DownloadState, path: Path, file: File) -> Opt
         ),
         DownloadState.DOWNLOADED_INVALID_HASH: (f"downloaded {path} but failed hash check", True),
         DownloadState.SKIPPED_OK: (f"skipped {path} already downloaded (hash ok)", False),
-        DownloadState.SKIPPED_INVALID_HASH: (f"skipped {path}, exists with hash mismatch (use --overwrite?)", False),
+        DownloadState.SKIPPED_INVALID_HASH: (f"skipped {path}, exists with hash mismatch (use --overwrite?)", True),
         DownloadState.SKIPPED_FILE_SIZE_MISMATCH: (
             f"skipped {path}, exists with file size mismatch (use --overwrite?)",
-            False,
+            True,
         ),
         DownloadState.SKIPPED_INVALID_REMOTE_STATE: (
             f"skipped {path}, remote file has invalid state ({file.state.value})"
             + (f": {file.state_comment}" if file.state_comment else ""),
-            False,
+            True,
         ),
         DownloadState.DOWNLOADED_PARTIAL: (
             f"downloaded a filtered slice of {path}",
@@ -670,13 +684,13 @@ def _download_state_message(state: DownloadState, path: Path, file: File) -> Opt
         ),
         DownloadState.SKIPPED_SLICE_EXISTS: (
             f"skipped {path}, already exists (use --overwrite to replace it with the slice)",
-            False,
+            True,
         ),
         DownloadState.SKIPPED_CORRUPTED: (
             f"skipped {path}, remote file is CORRUPTED"
             + (f": {file.state_comment}" if file.state_comment else "")
             + " (use --allow-corrupt to override)",
-            False,
+            True,
         ),
         DownloadState.SKIPPED_CORRUPTED_LOCAL_OK: (
             f"skipped {path}, already present locally (hash ok) but remote file is CORRUPTED; " "treat as potentially harmful",
@@ -790,10 +804,11 @@ def upload_files(
     try:
         for name, path in files.items():
             if not path.is_file():
-                logger.warning(f"Skipping non-existent file: {path}")
+                # it was checked before; it vanished since, so it is not uploaded
+                logger.error(f"File disappeared before upload: {path}")
                 if on_message_cb is not None:
-                    on_message_cb(f"Skipping non-existent file: {path}", False)
-                result.skipped += 1
+                    on_message_cb(f"Error uploading {path}: file does not exist anymore", True)
+                result.failed += 1
                 if on_overall_progress_cb is not None:
                     on_overall_progress_cb()
                 continue
