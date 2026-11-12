@@ -247,6 +247,26 @@ export function CanWriteFile(source: AccessSource = fromParameter()) {
     );
 }
 
+/**
+ * Requires CREATE rights on the mission of a file, i.e. the right that was
+ * needed to start its upload. The creator of the file always passes.
+ *
+ * @param source where the file uuid lives, defaults to the `uuid` body property
+ */
+export function CanConfirmFileUpload(source: AccessSource = fromBody('uuid')) {
+    return applyDecorators(
+        SetMetadata('accessRight', AccessGroupRights.CREATE),
+        SetMetadata(ACCESS_SOURCE_METADATA_KEY, source),
+        UseGuards(FileAccessGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Create permissions on the specified project.',
+        }),
+    );
+}
+
 export function CanMoveFiles() {
     return applyDecorators(
         SetMetadata('CanWriteFile', true),
