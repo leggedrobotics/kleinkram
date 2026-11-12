@@ -11,6 +11,7 @@ import traceback
 from hashlib import md5
 from pathlib import Path
 from typing import Any
+from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -219,6 +220,26 @@ def get_filename_map(file_paths: Sequence[Path]) -> Dict[str, Path]:
     if clashes:
         details = "; ".join(f"{name}: {', '.join(str(p) for p in paths)}" for name, paths in clashes.items())
         raise ValueError(f"multiple files would be uploaded under the same name: {details}")
+
+    return {name: paths[0] for name, paths in paths_by_name.items()}
+
+
+def get_verify_filename_map(file_paths: Sequence[Path], remote_names: Collection[str]) -> Dict[str, Path]:
+    """\
+    like `get_filename_map`, but for looking files up in a mission: a file that
+    is stored under its local name (e.g. `-dash.bag`, uploaded before the
+    current naming rule) is matched by that name, any other file by the name
+    an upload would give it (see `get_filename`)
+    """
+    paths_by_name: Dict[str, List[Path]] = {}
+    for file in file_paths:
+        name = file.name if file.name in remote_names else get_filename(file)
+        paths_by_name.setdefault(name, []).append(file)
+
+    clashes = {name: paths for name, paths in paths_by_name.items() if len(paths) > 1}
+    if clashes:
+        details = "; ".join(f"{name}: {', '.join(str(p) for p in paths)}" for name, paths in clashes.items())
+        raise ValueError(f"multiple files would be verified against the same name: {details}")
 
     return {name: paths[0] for name, paths in paths_by_name.items()}
 

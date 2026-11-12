@@ -843,6 +843,13 @@ def upload_files(
         cancel_event.set()
         executor.shutdown(wait=False, cancel_futures=True)
         _wait_for_cancelled_workers(futures)
+    except BaseException:
+        # any other error, e.g. from a callback: stop the transfers as Ctrl+C
+        # does, so none of them keeps running after this call has failed
+        cancel_event.set()
+        executor.shutdown(wait=False, cancel_futures=True)
+        _wait_for_cancelled_workers(futures)
+        raise
     else:
         executor.shutdown(wait=True)
 
@@ -1047,6 +1054,13 @@ def download_files(
         cancel_event.set()
         executor.shutdown(wait=False, cancel_futures=True)
         _wait_for_cancelled_workers(futures)
+    except BaseException:
+        # any other error, e.g. from a callback: stop the transfers as Ctrl+C
+        # does, so none of them keeps running after this call has failed
+        cancel_event.set()
+        executor.shutdown(wait=False, cancel_futures=True)
+        _wait_for_cancelled_workers(futures)
+        raise
     else:
         executor.shutdown(wait=True)
 

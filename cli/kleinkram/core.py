@@ -80,6 +80,7 @@ from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import file_paths_from_files
 from kleinkram.utils import get_filename_map
+from kleinkram.utils import get_verify_filename_map
 from kleinkram.utils import is_valid_uuid4
 from kleinkram.utils import split_args
 
@@ -460,14 +461,17 @@ def verify(
         )
         check_file_hash = not skip_hash
 
-    # check that file paths are for valid files and have valid suffixes
-    check_file_paths(file_paths)
-    filename_map = get_filename_map(file_paths)
+    # check that file paths are for valid files and have valid suffixes; the
+    # naming rule for new files is not checked, verify only looks files up
+    check_file_paths(file_paths, check_filename=False)
+    # raises on name clashes before any request is made
+    get_filename_map(file_paths)
 
     # check that the mission exists
     _ = kleinkram.api.routes.get_mission(client, query)
 
     remote_files = {f.name: f for f in kleinkram.api.routes.get_files(client, file_query=FileQuery(mission_query=query))}
+    filename_map = get_verify_filename_map(file_paths, remote_files)
 
     # verify files
     file_status: Dict[Path, FileVerificationStatus] = {}

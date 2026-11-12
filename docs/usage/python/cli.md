@@ -142,7 +142,9 @@ klein upload --project testProject --mission testMission *.bag
 ```
 
 To upload files from subdirectories, pass a directory with `--recursive` (`-r`). The CLI collects every file with a
-supported type below it and ignores everything else (including hidden files and directories):
+supported type below it, in any case (`REC.MCAP` too), and ignores everything else (including hidden files and
+directories). A file whose name doesn't follow the naming rules stops the upload, unless you add `--fix-filenames` or
+`--skip` (see below):
 
 ```bash
 klein upload --project testProject --mission testMission --recursive ./recordings
@@ -246,6 +248,9 @@ Use the `verify` command to double-check if your local files were successfully u
 ```bash
 klein verify --project testProject --mission testMission data.bag
 ```
+
+`verify` doesn't check the naming rules, so files uploaded under an older rule (e.g. `-dash.bag`) can still be
+verified. It looks a file up under its local name first, and otherwise under the name `--fix-filenames` would give it.
 
 It exits with code 0 only if every file is in the mission with the same size and hash, and with 1 otherwise (see
 [Exit Codes](#exit-codes)). With `--no-verbose`, it prints the verified paths on stdout and every other file as

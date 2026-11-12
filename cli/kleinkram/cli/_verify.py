@@ -98,6 +98,7 @@ def verify(
     validator = FileValidator(
         skip=skip,
         experimental_datatypes=experimental_datatypes,
+        check_filename=False,
     )
     files_to_verify = validator.filter_files(original_file_paths)
 
