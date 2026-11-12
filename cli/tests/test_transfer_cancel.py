@@ -162,6 +162,75 @@ def test_run_interruptible_returns_partial_result_and_reraises_plain_ctrl_c() ->
         run_interruptible(plain_ctrl_c)
 
 
+class CallbackError(Exception):
+    pass
+
+
+def _raising_callback(started: threading.Event) -> Callable[[], None]:
+    """fails once another transfer is running, so the test does not depend on thread timing"""
+
+    def callback() -> None:
+        assert started.wait(WAIT)
+        raise CallbackError("callback failed")
+
+    return callback
+
+
+def _tracked_transfer(active: set, started: threading.Event, done, canceled):
+    """Per-file fake: a.mcap finishes, every other file runs until `cancel_event` is set."""
+    lock = threading.Lock()
+
+    def transfer(*, path: Path, cancel_event: threading.Event, **_):
+        if path.name == "a.mcap":
+            return done
+        with lock:
+            active.add(path.name)
+        started.set()
+        try:
+            assert cancel_event.wait(WAIT)
+            return canceled
+        finally:
+            with lock:
+                active.discard(path.name)
+
+    return transfer
+
+
+def test_download_files_stops_transfers_when_a_callback_raises(tmp_path: Path, monkeypatch) -> None:
+    active: set = set()
+    started = threading.Event()
+    monkeypatch.setattr(
+        file_transfer,
+        "download_file",
+        _tracked_transfer(active, started, (DownloadState.DOWNLOADED_OK, 1), (DownloadState.CANCELED, 0)),
+    )
+    files = {tmp_path / name: _remote_file(name) for name in ("a.mcap", "b.mcap", "c.mcap")}
+
+    with pytest.raises(CallbackError):
+        download_files(MagicMock(), files, n_workers=2, on_overall_progress_cb=_raising_callback(started))
+
+    assert active == set()  # nothing keeps running after the call has failed
+
+
+def test_upload_files_stops_transfers_when_a_callback_raises(tmp_path: Path, monkeypatch) -> None:
+    active: set = set()
+    started = threading.Event()
+    monkeypatch.setattr(
+        file_transfer,
+        "upload_file",
+        _tracked_transfer(active, started, (UploadState.UPLOADED, 1), (UploadState.CANCELED, 0)),
+    )
+    files = {}
+    for name in ("a.mcap", "b.mcap", "c.mcap"):
+        (tmp_path / name).write_bytes(b"x")
+        files[name] = tmp_path / name
+
+    with pytest.raises(CallbackError):
+        upload_files(MagicMock(), files, uuid4(), n_workers=2, on_overall_progress_cb=_raising_callback(started))
+
+    assert active == set()  # nothing keeps running after the call has failed
+
+
 def test_transfers_without_ctrl_c_return_normally(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(file_transfer, "download_file", lambda **_: (DownloadState.DOWNLOADED_OK, 1))
     result = download_files(MagicMock(), {tmp_path / "a.mcap": _remote_file("a.mcap")})

@@ -30,6 +30,9 @@ class FileValidator:
     skip: bool
     experimental_datatypes: bool
     fix_filenames: bool = False
+    # `klein verify` only looks files up, so the naming rule for new files does
+    # not apply: a file uploaded under an older rule must still be verifiable
+    check_filename: bool = True
 
     # Stores (file, reason) for skipped files
     skipped_files: List[tuple[Path, str]] = field(default_factory=list)
@@ -86,7 +89,7 @@ class FileValidator:
             raise DatatypeNotSupported(f"Experimental datatype '{file_suffix}' not enabled for file {file}")
 
         # 4. Check filename, unless it gets sanitized on upload anyway
-        if self.fix_filenames:
+        if self.fix_filenames or not self.check_filename:
             return
 
         error = get_file_name_validation_error(file.name)

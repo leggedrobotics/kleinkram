@@ -42,3 +42,15 @@ def test_fix_filenames_does_not_skip_other_checks():
 
         assert validator.filter_files([bad_type, is_dir]) == []
         assert len(validator.skipped_files) == 2
+
+
+@pytest.mark.parametrize("name", ["-dash.bag", "bad name!.bag", "REC.MCAP", "0b4e4a5e-6c1e-4c5e-9f3e-1d2c3b4a5f6e.bag"])
+def test_name_rule_is_not_checked_without_check_filename(name):
+    """`klein verify` must reach files uploaded under an older naming rule"""
+    with TemporaryDirectory() as temp_dir:
+        path = Path(temp_dir) / name
+        path.touch()
+
+        validator = FileValidator(skip=False, experimental_datatypes=False, check_filename=False)
+
+        assert validator.filter_files([path]) == [path]
