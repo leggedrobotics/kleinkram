@@ -78,7 +78,7 @@ What counts as handled:
   not.
 - **`download`**: the file is in the destination, either downloaded now or already there with the right hash. Files
   that are skipped because a local file with the same name differs (use `--overwrite`), because the remote file is
-  corrupted (use `--allow-corrupt`) or not in a downloadable state, or that fail the hash check, are not. Non-`.mcap`
+  corrupted (use `--include-corrupt-files`) or not in a downloadable state, or that fail the hash check, are not. Non-`.mcap`
   files skipped by `--topics` / `--start-time` / `--end-time` only get a warning.
 - **`verify`**: the file is in the mission with the same size and hash. A file that is still being uploaded or
   processed is not verified yet: run `klein verify` again later.

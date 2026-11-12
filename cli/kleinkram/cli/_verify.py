@@ -125,6 +125,10 @@ def verify(
     # like `sha256sum -c`: exit with 1 unless every file is confirmed in the mission
     not_verified = [s for s in file_status.values() if s != FileVerificationStatus.UPLOADED]
     if not_verified:
+        if verbose:  # the table is on stdout, name each problem on stderr too, as the quiet mode does
+            for path, status in file_status.items():
+                if status != FileVerificationStatus.UPLOADED:
+                    typer.echo(f"{status.value}: {path}", err=True)
         pending = sum(s in (FileVerificationStatus.UPLOADING, FileVerificationStatus.COMPUTING_HASH) for s in not_verified)
         message = f"{len(not_verified)} of {len(file_status)} file(s) could not be verified."
         if pending:

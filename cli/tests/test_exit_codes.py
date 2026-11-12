@@ -226,6 +226,8 @@ def test_verify_problem_exits_1(runner, monkeypatch, mode, status):
     result = verify(runner, monkeypatch, mode, {"a.bag": FileVerificationStatus.UPLOADED, "b.bag": status})
     assert result.exit_code == 1, result.output
     assert "1 of 2 file(s) could not be verified." in result.stderr
+    # named on stderr in both modes, so `klein verify ... > verified.txt` still shows which file
+    assert f"{status.value}: b.bag" in result.stderr.splitlines()
 
 
 @pytest.mark.parametrize("status", [FileVerificationStatus.UPLOADING, FileVerificationStatus.COMPUTING_HASH])
