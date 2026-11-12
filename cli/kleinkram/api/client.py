@@ -21,6 +21,7 @@ from kleinkram.config import Config
 from kleinkram.config import Credentials
 from kleinkram.config import get_config
 from kleinkram.config import save_config
+from kleinkram.errors import NoEndpointConfigured
 from kleinkram.errors import NotAuthenticated
 from kleinkram.errors import UpdateCLIVersion
 
@@ -75,6 +76,8 @@ class AuthenticatedClient(httpx.Client):
         self._config = get_config(path=config_path)
         self._config_lock = Lock()
 
+        if not self._config.has_endpoint:
+            raise NoEndpointConfigured()
         if self._config.credentials is None:
             logger.info("not authenticated...")
             raise NotAuthenticated
