@@ -36,6 +36,9 @@ An Api key has a:
 
 As an Api key inherits its rights from the user, on key creation, the rights it has are at maximum the rights of the user on the mission.
 Api keys have no rights on projects, only on missions. Thus many listing operations like listing projects and missions are not allowed for Api keys (@UserOnly() guard).
+A key only reaches its own mission: file listings are limited to it, and a single file (read, update, delete, upload
+confirmation) is only accessible when it belongs to the key's mission, even if the user has access to other missions of
+the same project.
 
 In the middleware (backend/src/UserResolverMiddleware.ts), before the JWT is checked & resolved, the Api key is checked. If an Api key is present,
 the user is resolved to the user the key represents. Written into the request object is `req.user = {user: User, apiKey: ApiKey}`.

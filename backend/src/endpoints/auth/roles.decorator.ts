@@ -16,7 +16,6 @@ import {
 } from './access-source';
 import {
     AdminOnlyGuard,
-    API_KEY_SAME_MISSION_METADATA_KEY,
     CancelActionGuard,
     CanEditGroupByGroupUuid,
     CanModifyTriggerGuard,
@@ -250,8 +249,7 @@ export function CanWriteFile(source: AccessSource = fromParameter()) {
 
 /**
  * Requires CREATE rights on the mission of a file, i.e. the right that was
- * needed to start its upload. The creator of the file always passes. Like
- * `POST /files/temporaryAccess`, an API key must belong to the file's mission.
+ * needed to start its upload. The creator of the file always passes.
  *
  * @param source where the file uuid lives, defaults to the `uuid` body property
  */
@@ -259,7 +257,6 @@ export function CanConfirmFileUpload(source: AccessSource = fromBody('uuid')) {
     return applyDecorators(
         SetMetadata('accessRight', AccessGroupRights.CREATE),
         SetMetadata(ACCESS_SOURCE_METADATA_KEY, source),
-        SetMetadata(API_KEY_SAME_MISSION_METADATA_KEY, true),
         UseGuards(FileAccessGuard),
         ApiResponse({
             status: 403,

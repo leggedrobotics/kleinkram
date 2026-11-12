@@ -54,8 +54,9 @@ interface FileListing {
 /**
  * A mission scoped API key must only ever see files of its own mission, even
  * when the user the key belongs to has access to the other missions as well.
+ * That holds for listings and for single files addressed by uuid.
  */
-describe('Mission scoped API keys can only list their own mission', () => {
+describe('Mission scoped API keys can only reach their own mission', () => {
     setupDatabaseHooks();
 
     let owner: UserEntity;
@@ -188,5 +189,51 @@ describe('Mission scoped API keys can only list their own mission', () => {
 
         expect(uuids).toContain(fileInA.uuid);
         expect(uuids).toContain(fileInB.uuid);
+    }, 30_000);
+
+    test('a file of the key mission can be read by uuid', async () => {
+        const response = await fetch(`${DEFAULT_URL}/files/${fileInA.uuid}`, {
+            method: 'GET',
+            headers: apiKeyHeaders(apiKey),
+        });
+
+        expect(response.status).toBe(200);
+    }, 30_000);
+
+    test.each([
+        ['GET /files/:uuid', (uuid: string) => `/files/${uuid}`],
+        ['GET /files/:uuid/events', (uuid: string) => `/files/${uuid}/events`],
+        ['GET /files/exists', (uuid: string) => `/files/exists?uuid=${uuid}`],
+    ])(
+        'a file of another mission cannot be read through %s',
+        async (_route, buildPath) => {
+            const response = await fetch(
+                `${DEFAULT_URL}${buildPath(fileInB.uuid)}`,
+                { method: 'GET', headers: apiKeyHeaders(apiKey) },
+            );
+
+            expect(response.status).toBe(403);
+        },
+        30_000,
+    );
+
+    test('a file of another mission cannot be deleted, even with DELETE rights', async () => {
+        const deleteKey = await createActionApiKey({
+            missionUuid: missionA,
+            userUuid: owner.uuid,
+            rights: AccessGroupRights.DELETE,
+        });
+
+        const response = await fetch(`${DEFAULT_URL}/files/${fileInB.uuid}`, {
+            method: 'DELETE',
+            headers: apiKeyHeaders(deleteKey.apikey),
+        });
+
+        expect(response.status).toBe(403);
+        expect(
+            await database
+                .getRepository(FileEntity)
+                .existsBy({ uuid: fileInB.uuid }),
+        ).toBe(true);
     }, 30_000);
 });

@@ -28,7 +28,7 @@ and confirm the launch.
 ![Launch Kleinkram Actions](../../assets/launch_action.png)
 
 Actions are executed within the context of a specific mission or project. The action will have access to all files
-within that mission. For your convenience, you can also access files of other missions within the same project.
+within that mission. It has no access to files of other missions, not even of missions in the same project.
 
 Actions are queued and executed on hosted action runners within your Kleinkram instance. You can monitor the progress of
 your actions in the "Executions" tab.
