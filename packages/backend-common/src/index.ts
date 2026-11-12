@@ -36,6 +36,7 @@ export * from './modules/action-dispatcher/action-dispatcher.module';
 export * from './modules/action-dispatcher/action-dispatcher.service';
 export * from './modules/loki-health/loki-health.module';
 export * from './modules/loki-health/loki-health.service';
+export * from './modules/storage/object-tags';
 export * from './modules/storage/storage-auth.service';
 export * from './modules/storage/storage-config.factory';
 export * from './modules/storage/storage-metrics.service';

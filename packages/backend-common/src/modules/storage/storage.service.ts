@@ -16,6 +16,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import environment from '@backend-common/environment';
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Readable } from 'node:stream';
+import { toObjectTagValue } from './object-tags';
 import { S3StorageBucket } from './s3-storage-bucket';
 import { StorageAuthService } from './storage-auth.service';
 import {
@@ -377,7 +378,7 @@ export class StorageService implements OnModuleInit {
             Tagging: {
                 TagSet: Object.entries(tags).map(([key, value]) => ({
                     Key: key,
-                    Value: value,
+                    Value: toObjectTagValue(value),
                 })),
             },
         });
