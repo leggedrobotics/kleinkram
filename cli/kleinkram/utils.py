@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import base64
-import functools
 import hashlib
 import logging
 import math
-import random
 import re
 import string
-import time
+import threading
 import traceback
 from hashlib import md5
 from pathlib import Path
 from typing import Any
+from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -27,53 +26,22 @@ from rich.console import Console
 from kleinkram._version import __version__
 from kleinkram.errors import FileNameNotSupported
 from kleinkram.errors import FileTypeNotSupported
+from kleinkram.errors import TransferCancelledError
 from kleinkram.models import File
+from kleinkram.naming import FILE_EXTENSIONS
+from kleinkram.naming import FILENAME_MAX_LENGTH
+from kleinkram.naming import FILENAME_MIN_LENGTH
+from kleinkram.naming import UUID_REGEX
+from kleinkram.naming import get_file_name_validation_error
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 
 logger = logging.getLogger(__name__)
 
 
-def retry(
-    max_attempts: int = 5,
-    backoff_base: int = 2,
-    exceptions: Tuple[type[Exception], ...] = (Exception,),
-    exclude_exceptions: Tuple[type[Exception], ...] = (),
-):
-    """
-    Decorator for retrying a function on specified exceptions with exponential backoff and jitter.
-    Can override max_attempts dynamically by passing `_retry_attempts` to the wrapped function.
-    """
-
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            attempts = kwargs.pop("_retry_attempts", max_attempts)
-
-            for attempt in range(1, attempts + 1):
-                try:
-                    return func(*args, **kwargs)
-                except exclude_exceptions:
-                    raise
-                except exceptions as e:
-                    if attempt == attempts:
-                        logger.error(f"Function '{func.__name__}' failed after {attempts} attempts. Final error: {e}")
-                        raise
-
-                    delay = (backoff_base**attempt) + random.uniform(0, 0.5)
-                    logger.warning(
-                        f"Function '{func.__name__}' failed (Error: {e}). "
-                        f"Attempt {attempt}/{attempts} failed. Retrying in {delay:.2f}s..."
-                    )
-                    time.sleep(delay)
-
-        return wrapper
-
-    return decorator
-
-
-INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
-SUPPORT_FILE_TYPES = [".bag", ".mcap", ".db3", ".svo2", ".tum", ".yaml", ".yml", ".md", ".csv"]
+# characters allowed in a file name before the extension, see `kleinkram/naming.py`
+INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-" + "."
+SUPPORT_FILE_TYPES = list(FILE_EXTENSIONS)
 EXPERIMENTAL_FILE_TYPES = []
 
 
@@ -155,12 +123,12 @@ def check_file_path(file: Path, *, check_filename: bool = True) -> None:
         raise FileNotFoundError(f"{file} is a directory and not a file")
     if not file.exists():
         raise FileNotFoundError(f"{file} does not exist")
-    if file.suffix not in SUPPORT_FILE_TYPES:
+    if file.suffix.lower() not in SUPPORT_FILE_TYPES:
         raise FileTypeNotSupported(f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}")
-    if check_filename and not check_filename_is_sanatized(file.stem):
-        raise FileNameNotSupported(
-            f"only `{''.join(INTERNAL_ALLOWED_CHARS)}` are " f"allowed in filenames and at most 50chars: {file}"
-        )
+    if check_filename:
+        error = get_file_name_validation_error(file.name)
+        if error is not None:
+            raise FileNameNotSupported(f"{file}: {error}")
 
 
 def format_error(msg: str, exc: Exception, *, verbose: bool = False) -> str:
@@ -195,30 +163,37 @@ def is_valid_uuid4(uuid: str) -> bool:
 
 
 def check_filename_is_sanatized(filename: str) -> bool:
-    if len(filename) > 50:
-        return False
-    if not all(char in INTERNAL_ALLOWED_CHARS for char in filename):
-        return False
-    return True
+    """\
+    whether `filename`, the part of a file name before the extension, is
+    valid; see `kleinkram.naming.get_file_name_validation_error` for the reason
+    """
+    return get_file_name_validation_error(f"{filename}{SUPPORT_FILE_TYPES[0]}") is None
 
 
 def get_filename(path: Path) -> str:
     """\
-    takes a path and returns a sanitized filename
+    takes a path and returns a valid file name for it, see `kleinkram.naming`
 
-    the format for this internal filename is:
-    - replace all disallowed characters with "_"
-    - trim to 40 chars + 10 hashed chars
-        - the 10 hashed chars are deterministic given the original filename
+    a valid name is kept as it is, otherwise (`--fix-filenames`):
+    - every character that is not allowed becomes "_", also a leading "." or "-"
+    - a supported extension is lowercased: `REC.MCAP` -> `REC.mcap`
+    - a name longer than 50 characters is cut to 40 + 10 hashed characters
+    - a name shorter than 3 characters (or a UUID) gets "_" + 4 hashed characters
+      appended: `a.bag` -> `a_<hash>.bag`
+    the hashed characters are deterministic given the original file name
     """
-
     stem = "".join(char if char in INTERNAL_ALLOWED_CHARS else "_" for char in path.stem)
+    if stem[:1] in (".", "-"):
+        stem = f"_{stem[1:]}"
+    suffix = path.suffix.lower() if path.suffix.lower() in SUPPORT_FILE_TYPES else path.suffix
 
-    if len(stem) > 50:
-        hash = md5(path.name.encode()).hexdigest()
-        stem = f"{stem[:40]}{hash[:10]}"
+    digest = md5(path.name.encode()).hexdigest()
+    if len(stem) > FILENAME_MAX_LENGTH:
+        stem = f"{stem[:40]}{digest[:10]}"
+    elif len(stem) < FILENAME_MIN_LENGTH or UUID_REGEX.fullmatch(stem):
+        stem = f"{stem}_{digest[:4]}"
 
-    return f"{stem}{path.suffix}"
+    return f"{stem}{suffix}"
 
 
 def get_filename_map(file_paths: Sequence[Path]) -> Dict[str, Path]:
@@ -231,23 +206,58 @@ def get_filename_map(file_paths: Sequence[Path]) -> Dict[str, Path]:
     if len(file_paths) != len(set(file_paths)):
         raise ValueError("files paths must be unique")
 
-    internal_file_map = {}
+    paths_by_name: Dict[str, List[Path]] = {}
     for file in file_paths:
         if file.is_dir():
             raise ValueError(f"got dir {file} expected file")
 
-        internal_file_map[get_filename(file)] = file
+        paths_by_name.setdefault(get_filename(file), []).append(file)
 
-    if len(internal_file_map) != len(set(internal_file_map.values())):
-        raise RuntimeError("hash collision")
+    # files in different directories (e.g. `run1/data.mcap` and `run2/data.mcap`)
+    # or names that sanitize to the same value (e.g. `a b.mcap` and `a_b.mcap`)
+    # would otherwise silently overwrite each other
+    clashes = {name: paths for name, paths in paths_by_name.items() if len(paths) > 1}
+    if clashes:
+        details = "; ".join(f"{name}: {', '.join(str(p) for p in paths)}" for name, paths in clashes.items())
+        raise ValueError(f"multiple files would be uploaded under the same name: {details}")
 
-    return internal_file_map
+    return {name: paths[0] for name, paths in paths_by_name.items()}
 
 
-def b64_md5(file: Path) -> str:
+def get_verify_filename_map(file_paths: Sequence[Path], remote_names: Collection[str]) -> Dict[str, Path]:
+    """\
+    like `get_filename_map`, but for looking files up in a mission: a file that
+    is stored under its local name (e.g. `-dash.bag`, uploaded before the
+    current naming rule) is matched by that name, any other file by the name
+    an upload would give it (see `get_filename`)
+    """
+    paths_by_name: Dict[str, List[Path]] = {}
+    for file in file_paths:
+        name = file.name if file.name in remote_names else get_filename(file)
+        paths_by_name.setdefault(name, []).append(file)
+
+    clashes = {name: paths for name, paths in paths_by_name.items() if len(paths) > 1}
+    if clashes:
+        details = "; ".join(f"{name}: {', '.join(str(p) for p in paths)}" for name, paths in clashes.items())
+        raise ValueError(f"multiple files would be verified against the same name: {details}")
+
+    return {name: paths[0] for name, paths in paths_by_name.items()}
+
+
+HASH_CHUNK_SIZE = 1024 * 1024
+
+
+def b64_md5(file: Path, cancel_event: Optional[threading.Event] = None) -> str:
+    """Base64 MD5 of a file, as the server stores it.
+
+    Hashing a large file takes seconds, so with `cancel_event` it stops
+    between chunks and raises `TransferCancelledError` once the event is set.
+    """
     hash_md5 = hashlib.md5()
     with open(file, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
+        for chunk in iter(lambda: f.read(HASH_CHUNK_SIZE), b""):
+            if cancel_event is not None and cancel_event.is_set():
+                raise TransferCancelledError("Transfer cancelled by user")
             hash_md5.update(chunk)
     binary_digest = hash_md5.digest()
     return base64.b64encode(binary_digest).decode("utf-8")

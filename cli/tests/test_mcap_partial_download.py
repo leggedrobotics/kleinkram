@@ -27,6 +27,7 @@ import kleinkram.api.routes
 import kleinkram.core
 from kleinkram.api import file_transfer
 from kleinkram.api import mcap_filter
+from kleinkram.api import retry
 from kleinkram.api.file_transfer import DownloadState
 from kleinkram.api.file_transfer import McapSlice
 from kleinkram.api.file_transfer import download_file
@@ -53,6 +54,12 @@ TOPICS = ("/tf", "/odom", "/camera")
 PAYLOAD_SIZES = {"/tf": 64, "/odom": 128, "/camera": 4096}
 MESSAGES_PER_TOPIC = 400
 INTERVAL_NS = 10_000_000  # 100 Hz
+
+
+@pytest.fixture(autouse=True)
+def no_retry_backoff(monkeypatch) -> None:
+    """Storage failures here are permanent; retrying them should not cost real seconds."""
+    monkeypatch.setattr(retry, "_sleep", lambda seconds, cancel_event: False)
 
 
 def _payload(topic: str, index: int) -> bytes:
@@ -755,6 +762,28 @@ def test_download_file_slice_does_not_replace_existing_file_unless_asked(remote_
     state, _ = download_file(MagicMock(), file=remote_mcap, path=path, mcap_slice=mcap_slice, overwrite=True)
     assert state == DownloadState.DOWNLOADED_PARTIAL
     assert {topic for topic, *_rest in _messages(path)} == {"/tf"}
+
+
+def test_download_file_slice_cancel_keeps_existing_file(remote_mcap: File, tmp_path: Path) -> None:
+    """Ctrl+C mid-slice reports CANCELED and leaves the target as it was."""
+    path = tmp_path / "local" / "recording.mcap"
+    path.parent.mkdir()
+    path.write_bytes(b"the full recording")
+    cancel_event = threading.Event()
+
+    state, transferred = download_file(
+        MagicMock(),
+        file=remote_mcap,
+        path=path,
+        mcap_slice=McapSlice(topics=("/tf",)),
+        overwrite=True,
+        on_file_start_cb=lambda p, total: cancel_event.set(),
+        cancel_event=cancel_event,
+    )
+
+    assert (state, transferred) == (DownloadState.CANCELED, 0)
+    assert path.read_bytes() == b"the full recording"
+    assert list(path.parent.iterdir()) == [path]
 
 
 def test_download_file_without_range_support_fails_cleanly(mcap_file: Path, tmp_path: Path, monkeypatch) -> None:

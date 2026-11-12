@@ -22,6 +22,7 @@ import {
     TriggerType,
     UserRole,
 } from '@kleinkram/shared';
+import { getNameValidationError } from '@kleinkram/validation';
 import {
     BadRequestException,
     ForbiddenException,
@@ -190,7 +191,12 @@ export class TriggerService implements OnModuleInit {
             trigger.mission = mission;
         }
 
-        // Partial update of matching fields
+        // Partial update of matching fields. A changed name follows the naming
+        // rules; an unchanged one is kept even if it predates them.
+        if (dto.name !== undefined && dto.name !== trigger.name) {
+            const error = getNameValidationError(dto.name, 'Trigger name');
+            if (error !== undefined) throw new BadRequestException(error);
+        }
         if (dto.name !== undefined) trigger.name = dto.name;
         if (dto.description !== undefined)
             trigger.description = dto.description;

@@ -13,11 +13,18 @@ import typer
 
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.file_transfer import DOWNLOAD_STATES_NOT_DONE
+from kleinkram.api.file_transfer import DownloadResult
 from kleinkram.api.file_transfer import DownloadState
 from kleinkram.api.file_transfer import McapSlice
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.cli._context import OPTIONS_ANYWHERE
+from kleinkram.cli._exit_codes import EXIT_INCOMPLETE
+from kleinkram.cli._exit_codes import EXIT_INTERRUPTED
+from kleinkram.cli._exit_codes import print_errors_only
+from kleinkram.cli._progress import run_interruptible
 from kleinkram.cli._progress import transfer_progress
 from kleinkram.config import get_shared_state
 from kleinkram.utils import format_bytes
@@ -65,7 +72,18 @@ cannot be sliced and are skipped.
 """
 
 
-download_typer = typer.Typer(name="download", no_args_is_help=True, invoke_without_command=True, help=HELP)
+def _count_not_done(result: DownloadResult) -> int:
+    """files that did not end up locally as requested: failures and the skips in `DOWNLOAD_STATES_NOT_DONE`"""
+    return result.failed + sum(result.state_counts.get(state, 0) for state in DOWNLOAD_STATES_NOT_DONE)
+
+
+download_typer = typer.Typer(
+    name="download",
+    no_args_is_help=True,
+    invoke_without_command=True,
+    help=HELP,
+    context_settings=OPTIONS_ANYWHERE,
+)
 
 
 @download_typer.callback()
@@ -184,18 +202,20 @@ def download(
         # We don't know total file count upfront (core.download resolves the query),
         # so we use an indeterminate overall task (total=None)
         with transfer_progress("Downloading files", total=None) as cbs:
-            result = kleinkram.core.download(
-                client=AuthenticatedClient(),
-                query=file_query,
-                allow_corrupt_files=include_corrupt_files,
-                base_dir=dest_dir,
-                nested=nested,
-                overwrite=overwrite,
-                mcap_slice=mcap_slice if mcap_slice else None,
-                on_overall_progress_cb=cbs.on_overall_progress,
-                on_file_start_cb=cbs.on_file_start,
-                on_file_progress_cb=cbs.on_file_progress,
-                on_message_cb=cbs.on_message,
+            result, interrupted = run_interruptible(
+                lambda: kleinkram.core.download(
+                    client=AuthenticatedClient(),
+                    query=file_query,
+                    allow_corrupt_files=include_corrupt_files,
+                    base_dir=dest_dir,
+                    nested=nested,
+                    overwrite=overwrite,
+                    mcap_slice=mcap_slice if mcap_slice else None,
+                    on_overall_progress_cb=cbs.on_overall_progress,
+                    on_file_start_cb=cbs.on_file_start,
+                    on_file_progress_cb=cbs.on_file_progress,
+                    on_message_cb=cbs.on_message,
+                )
             )
 
         # Print summary
@@ -220,18 +240,31 @@ def download(
             f"{result.state_counts.get(DownloadState.SKIPPED_FILE_SIZE_MISMATCH, 0)} skipped size mismatch, "
             f"{result.state_counts.get(DownloadState.SKIPPED_INVALID_REMOTE_STATE, 0)} skipped invalid remote state, "
             f"{result.state_counts.get(DownloadState.DOWNLOADED_INVALID_HASH, 0)} downloaded with invalid hash, "
+            f"{result.state_counts.get(DownloadState.CANCELED, 0)} canceled, "
             f"{result.failed} failed"
         )
+        not_done = _count_not_done(result)
+        if not_done and not interrupted:
+            typer.echo(
+                typer.style(
+                    f"\n{not_done} file(s) were NOT downloaded as requested, see the messages above.",
+                    fg=typer.colors.RED,
+                ),
+                err=True,
+            )
     else:
-        # No verbose: no progress bars, no callbacks
-        result = kleinkram.core.download(
-            client=AuthenticatedClient(),
-            query=file_query,
-            allow_corrupt_files=include_corrupt_files,
-            base_dir=dest_dir,
-            nested=nested,
-            overwrite=overwrite,
-            mcap_slice=mcap_slice if mcap_slice else None,
+        # No verbose: no progress bars, but every problem still gets a line on stderr
+        result, interrupted = run_interruptible(
+            lambda: kleinkram.core.download(
+                client=AuthenticatedClient(),
+                query=file_query,
+                allow_corrupt_files=include_corrupt_files,
+                base_dir=dest_dir,
+                nested=nested,
+                overwrite=overwrite,
+                mcap_slice=mcap_slice if mcap_slice else None,
+                on_message_cb=print_errors_only,
+            )
         )
 
         downloaded = (
@@ -241,18 +274,30 @@ def download(
             + result.state_counts.get(DownloadState.OVERWRITTEN_OK, 0)
             + result.state_counts.get(DownloadState.OVERWRITTEN_CORRUPTED, 0)
         )
-        if result.failed > 0:
+        present = result.state_counts.get(DownloadState.SKIPPED_OK, 0) + result.state_counts.get(
+            DownloadState.SKIPPED_CORRUPTED_LOCAL_OK, 0
+        )
+        canceled = result.state_counts.get(DownloadState.CANCELED, 0)
+        not_done = _count_not_done(result)
+        parts = [f"Downloaded {downloaded} file(s)"]
+        if present > 0:
+            parts.append(f"{present} already present")
+        if not_done > 0 or canceled > 0:
+            if not_done > 0:
+                parts.append(f"{not_done} NOT downloaded")
+            if canceled > 0:
+                parts.append(f"{canceled} canceled")
             typer.echo(
                 typer.style(
-                    f"\nDownloaded {downloaded} file(s), {result.failed} failed.",
-                    fg=typer.colors.RED,
+                    f"\n{', '.join(parts)}.",
+                    fg=typer.colors.RED if not_done else typer.colors.YELLOW,
                 ),
                 err=True,
             )
         else:
-            typer.echo(
-                typer.style(
-                    f"\nSuccessfully downloaded/verified {downloaded} file(s).",
-                    fg=typer.colors.GREEN,
-                )
-            )
+            typer.echo(typer.style(f"\n{', '.join(parts)}.", fg=typer.colors.GREEN))
+
+    if interrupted:
+        raise typer.Exit(code=EXIT_INTERRUPTED)
+    if _count_not_done(result):
+        raise typer.Exit(code=EXIT_INCOMPLETE)

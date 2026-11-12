@@ -19,7 +19,6 @@ import re
 import sys
 import tarfile
 import tempfile
-import unicodedata
 import warnings
 from pathlib import Path
 from typing import Any
@@ -53,6 +52,7 @@ from kleinkram.api.query import check_mission_query_is_creatable
 from kleinkram.errors import InvalidFileQuery
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import TemplateNotFound
+from kleinkram.errors import transfer_interrupted
 from kleinkram.models import ArtifactState
 from kleinkram.models import Diagnostic
 from kleinkram.models import FileConfig
@@ -61,26 +61,30 @@ from kleinkram.models import FileVerificationStatus
 from kleinkram.models import MetadataPayloadValue
 from kleinkram.models import MetadataValue
 from kleinkram.models import MetadataValueType
+from kleinkram.models import PlannedUpload
 from kleinkram.models import TimeConfig
 from kleinkram.models import TriggerConfig
 from kleinkram.models import TriggerType
+from kleinkram.models import UploadAction
+from kleinkram.models import UploadPlan
 from kleinkram.models import WebhookConfig
+from kleinkram.naming import (  # noqa: F401 (part of the public interface of core)
+    NAME_MAX_LENGTH,
+)
+from kleinkram.naming import NAME_MIN_LENGTH  # noqa: F401
+from kleinkram.naming import NAME_REGEX  # noqa: F401
+from kleinkram.naming import SCRIPT_FILENAME_PATTERN
+from kleinkram.naming import get_name_validation_error
+from kleinkram.naming import suggest_name  # noqa: F401
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import file_paths_from_files
 from kleinkram.utils import get_filename_map
+from kleinkram.utils import get_verify_filename_map
 from kleinkram.utils import is_valid_uuid4
 from kleinkram.utils import split_args
 
-# naming rules for projects, missions, templates and triggers, duplicated from
-# `packages/validation/src/name.validation.ts`, keep both in sync
-NAME_MIN_LENGTH = 3
-NAME_MAX_LENGTH = 100
-_NAME_ALLOWED_CHARACTERS = r"A-Za-z0-9_.\-"
-# must not start with a dot, so a name never becomes a hidden directory
-NAME_REGEX = re.compile(rf"^(?!\.)[{_NAME_ALLOWED_CHARACTERS}]{{{NAME_MIN_LENGTH},{NAME_MAX_LENGTH}}}$")
-_NAME_INVALID_CHARACTER_REGEX = re.compile(rf"[^{_NAME_ALLOWED_CHARACTERS}]")
-_UUID_REGEX = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+# naming rules (projects, missions, templates, triggers, files): see `kleinkram/naming.py`
 DOCKER_IMAGE_REGEX = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._\-/]*(?::[a-zA-Z0-9._\-]+)?(?:@sha256:[a-fA-F0-9]{64})?$")
 DOCKER_IMAGE_MAX_LENGTH = 256
 DOCKER_HUB_NAMESPACE_REGEX = re.compile(r"^[a-z0-9]+(?:[_-]+[a-z0-9]+)*$")
@@ -256,6 +260,8 @@ def upload(
     """
     # check that file paths are for valid files and have valid suffixes
     check_file_paths(file_paths, check_filename=not fix_filenames)
+    # fail on clashing upload names before touching the server
+    filename_map = get_filename_map(file_paths)
 
     try:
         mission = kleinkram.api.routes.get_mission(client, query=query)
@@ -282,8 +288,7 @@ def upload(
 
     assert mission is not None, "unreachable"
 
-    filename_map = get_filename_map(file_paths)
-    return kleinkram.api.file_transfer.upload_files(
+    result = kleinkram.api.file_transfer.upload_files(
         client,
         filename_map,
         mission.id,
@@ -291,6 +296,149 @@ def upload(
         on_file_start_cb=on_file_start_cb,
         on_file_progress_cb=on_file_progress_cb,
         on_message_cb=on_message_cb,
+    )
+    try:
+        _check_existing_files(
+            client, mission_id=mission.id, filename_map=filename_map, result=result, on_message_cb=on_message_cb
+        )
+    except KeyboardInterrupt:
+        # the uploads are done: keep their result, like a Ctrl+C during the transfer
+        raise transfer_interrupted(result) from None
+    return result
+
+
+def _check_existing_files(
+    client: AuthenticatedClient,
+    *,
+    mission_id: UUID,
+    filename_map: Mapping[str, Path],
+    result: kleinkram.api.file_transfer.UploadResult,
+    on_message_cb: Optional[OnMessageCb] = None,
+) -> None:
+    """\
+    the server refuses a file whose name is taken in the mission without
+    looking at the content; compare the refused files with the files in the
+    mission and record the ones that differ in `result.conflicts`, so a
+    changed local file is not reported as "already uploaded"
+    """
+    if not result.existing:
+        return
+
+    names = {path: name for name, path in filename_map.items()}
+    file_query = FileQuery(mission_query=MissionQuery(ids=[mission_id]))
+    try:
+        remote_files = {f.name: f for f in kleinkram.api.routes.get_files(client, file_query=file_query)}
+    except Exception as e:  # the uploads are done, never lose their result over this check
+        # report them as not compared, also when nobody listens to messages
+        result.unchecked.extend(result.existing)
+        if on_message_cb is not None:
+            on_message_cb(f"could not compare skipped files with the mission: {e}", True)
+        return
+
+    for path in result.existing:
+        try:
+            action = _planned_action(path, remote_files.get(names[path]))
+        except OSError as e:  # e.g. the local file vanished or became unreadable while hashing
+            result.unchecked.append(path)
+            if on_message_cb is not None:
+                on_message_cb(f"could not compare {path} with the mission: {e}", True)
+            continue
+
+        if action == UploadAction.SKIP_DIFFERENT:
+            result.conflicts.append(path)
+            if on_message_cb is not None:
+                on_message_cb(f"NOT uploaded {path}: a different file named {names[path]} is in the mission", True)
+        elif action in (UploadAction.SKIP_UNCHECKED, UploadAction.UPLOAD):
+            # UPLOAD: the file that blocked the name is gone (deleted or its
+            # upload canceled) since the server refused ours; nothing uploads
+            # it now, so it is not in the mission and must not pass silently
+            result.unchecked.append(path)
+
+
+def _check_required_metadata(required_metadata_types: Optional[List[str]], metadata: Mapping[str, Any]) -> None:
+    if required_metadata_types and not set(required_metadata_types).issubset(metadata.keys()):
+        raise kleinkram.errors.InvalidMissionMetadata(
+            f"Mission metadata `{required_metadata_types}` is required but missing from metadata: {metadata}"
+        )
+
+
+def _planned_action(path: Path, remote_file: Optional[kleinkram.models.File]) -> UploadAction:
+    """\
+    mirrors the server: a name that exists in the mission (unless the earlier
+    upload was canceled) is refused without looking at the content; the
+    content is compared only to tell the user whether that is fine
+    """
+    if remote_file is None or remote_file.state == FileState.CANCELED:
+        return UploadAction.UPLOAD
+    if remote_file.state != FileState.OK or not remote_file.hash:
+        return UploadAction.SKIP_UNCHECKED
+    if remote_file.size != path.stat().st_size:
+        return UploadAction.SKIP_DIFFERENT
+    if remote_file.hash != b64_md5(path):
+        return UploadAction.SKIP_DIFFERENT
+    return UploadAction.SKIP_SAME
+
+
+def plan_upload(
+    *,
+    client: AuthenticatedClient,
+    query: MissionQuery,
+    file_paths: Sequence[Path],
+    create: bool = False,
+    fix_filenames: bool = False,
+    metadata: Optional[Dict[str, str]] = None,
+) -> UploadPlan:
+    """\
+    what `upload` with the same arguments would do, without changing anything
+
+    runs the same local checks and raises the same errors as `upload` (bad
+    files, clashing names, missing mission without `create`, invalid
+    mission name or metadata), but only reads from the server
+    """
+    check_file_paths(file_paths, check_filename=not fix_filenames)
+    filename_map = get_filename_map(file_paths)
+
+    try:
+        mission = kleinkram.api.routes.get_mission(client, query=query)
+    except MissionNotFound:
+        if not create:
+            raise
+        project = kleinkram.api.routes.get_project(client, query=query.project_query, exact_match=True)
+        mission_name = check_mission_query_is_creatable(query)
+        _validate_mission_name(client, project.id, mission_name)
+        _check_required_metadata(project.required_metadata_types, metadata or {})
+        _get_metadata_map(client, metadata or {})
+        return UploadPlan(
+            project_name=project.name,
+            mission_name=mission_name,
+            mission_id=None,
+            files=[
+                PlannedUpload(path=path, name=name, size=path.stat().st_size, action=UploadAction.UPLOAD)
+                for name, path in filename_map.items()
+            ],
+        )
+
+    file_query = FileQuery(mission_query=MissionQuery(ids=[mission.id]))
+    remote_files = {f.name: f for f in kleinkram.api.routes.get_files(client, file_query=file_query)}
+
+    planned = []
+    for name, path in filename_map.items():
+        remote_file = remote_files.get(name)
+        planned.append(
+            PlannedUpload(
+                path=path,
+                name=name,
+                size=path.stat().st_size,
+                action=_planned_action(path, remote_file),
+                remote_state=remote_file.state if remote_file is not None else None,
+            )
+        )
+
+    return UploadPlan(
+        project_name=mission.project_name,
+        mission_name=mission.name,
+        mission_id=mission.id,
+        files=planned,
     )
 
 
@@ -313,14 +461,17 @@ def verify(
         )
         check_file_hash = not skip_hash
 
-    # check that file paths are for valid files and have valid suffixes
-    check_file_paths(file_paths)
+    # check that file paths are for valid files and have valid suffixes; the
+    # naming rule for new files is not checked, verify only looks files up
+    check_file_paths(file_paths, check_filename=False)
+    # raises on name clashes before any request is made
+    get_filename_map(file_paths)
 
     # check that the mission exists
     _ = kleinkram.api.routes.get_mission(client, query)
 
     remote_files = {f.name: f for f in kleinkram.api.routes.get_files(client, file_query=FileQuery(mission_query=query))}
-    filename_map = get_filename_map(file_paths)
+    filename_map = get_verify_filename_map(file_paths, remote_files)
 
     # verify files
     file_status: Dict[Path, FileVerificationStatus] = {}
@@ -501,8 +652,13 @@ def update_trigger(
     if mission_uuid is None:
         mission_uuid = trigger.mission_uuid
 
-    if trigger_name is not None:
-        _validate_trigger_name(client, trigger_name, mission_uuid, trigger_uuid)
+    # like the server: an unchanged name is kept even if it predates the naming rules,
+    # but it must still be unique in the mission the trigger ends up in
+    new_name = trigger.name if trigger_name is None else trigger_name
+    if new_name != trigger.name:
+        _validate_trigger_name(client, new_name, mission_uuid, trigger_uuid)
+    elif mission_uuid != trigger.mission_uuid:
+        _raise_if_trigger_name_taken(client, new_name, mission_uuid, trigger_uuid)
 
     if template_uuid is not None:
         try:
@@ -704,7 +860,6 @@ def launch_execution(
 
 
 MAX_SCRIPT_BYTES = 1024 * 1024
-SCRIPT_FILENAME_PATTERN = re.compile(r"^[\w.-]{1,96}\.py$")
 
 
 def run_script(
@@ -738,7 +893,7 @@ def _read_script(script_path: Path) -> str:
     if script_path.suffix != ".py":
         raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is not a Python file (expected a `.py` suffix).")
 
-    if not SCRIPT_FILENAME_PATTERN.match(script_path.name):
+    if not SCRIPT_FILENAME_PATTERN.fullmatch(script_path.name):
         raise kleinkram.errors.ExecutionValidationError(
             f"`{script_path.name}` is not a usable script name; use letters, digits, `.`, `-` and `_` only."
         )
@@ -794,11 +949,7 @@ def create_mission(
         metadata = {}
 
     _validate_mission_name(client, project_id, mission_name)
-
-    if required_metadata_types and not set(required_metadata_types).issubset(metadata.keys()):
-        raise kleinkram.errors.InvalidMissionMetadata(
-            f"Mission metadata `{required_metadata_types}` is required but missing from metadata: {metadata}"
-        )
+    _check_required_metadata(required_metadata_types, metadata)
 
     metadata_map = _get_metadata_map(client, metadata)
     mission_id = kleinkram.api.routes._create_mission(
@@ -955,50 +1106,6 @@ def create_trigger(
     )
 
 
-def suggest_name(name: str) -> Optional[str]:
-    """\
-    turns an invalid name into a valid one, e.g. `My Project` into `My-Project`,
-    returns None if no valid name can be derived
-    """
-    # drop accents: ü -> u
-    suggestion = "".join(c for c in unicodedata.normalize("NFKD", name) if not unicodedata.combining(c))
-    suggestion = re.sub(rf"[^{_NAME_ALLOWED_CHARACTERS}]+", "-", suggestion)
-    suggestion = re.sub(r"-{2,}", "-", suggestion)
-    suggestion = re.sub(r"^[.-]+", "", suggestion)
-    suggestion = re.sub(r"-+$", "", suggestion)[:NAME_MAX_LENGTH]
-
-    if NAME_REGEX.fullmatch(suggestion) and not _UUID_REGEX.fullmatch(suggestion):
-        return suggestion
-    return None
-
-
-def get_name_validation_error(name: str, label: str = "Name") -> Optional[str]:
-    """\
-    returns a human-readable error for an invalid name or None if it is valid,
-    `label` is used as the subject of the message, e.g. "Project name"
-    """
-    if not name:
-        return f"{label} is required"
-    if len(name) < NAME_MIN_LENGTH:
-        return f"{label} must be at least {NAME_MIN_LENGTH} characters long"
-    if len(name) > NAME_MAX_LENGTH:
-        return f"{label} must be at most {NAME_MAX_LENGTH} characters long"
-    if _UUID_REGEX.fullmatch(name):
-        return f"{label} must not be a UUID"
-    if NAME_REGEX.fullmatch(name):
-        return None
-
-    invalid_characters = list(dict.fromkeys(_NAME_INVALID_CHARACTER_REGEX.findall(name)))
-    if invalid_characters:
-        found = ", ".join("space" if c == " " else f"'{c}'" for c in invalid_characters)
-        problem = f"{label} may only contain letters, digits, '.', '-' and '_' (found {found})"
-    else:
-        problem = f"{label} must not start with '.'"
-
-    suggestion = suggest_name(name)
-    return f'{problem}. Try "{suggestion}".' if suggestion else f"{problem}."
-
-
 def _mission_name_is_available(client: AuthenticatedClient, mission_name: str, project_id: UUID) -> bool:
     mission_query = MissionQuery(patterns=[mission_name], project_query=ProjectQuery(ids=[project_id]))
     try:
@@ -1127,6 +1234,12 @@ def _validate_trigger_name(
     if error:
         raise kleinkram.errors.TriggerValidationError(error)
 
+    _raise_if_trigger_name_taken(client, trigger_name, mission_uuid, update_trigger_uuid)
+
+
+def _raise_if_trigger_name_taken(
+    client: AuthenticatedClient, trigger_name: str, mission_uuid: UUID, update_trigger_uuid: Optional[UUID] = None
+) -> None:
     if not _trigger_name_is_available(client, trigger_name, mission_uuid, update_trigger_uuid):
         raise kleinkram.errors.TriggerValidationError(
             f"Trigger with name: `{trigger_name}` already exists in mission: "

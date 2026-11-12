@@ -4,15 +4,23 @@ from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
 from typing import List
+from typing import Sequence
 
 import typer
 
 from kleinkram.config import get_shared_state
 from kleinkram.errors import DatatypeNotSupported
 from kleinkram.errors import FileNameNotSupported
+from kleinkram.naming import get_file_name_validation_error
 from kleinkram.utils import EXPERIMENTAL_FILE_TYPES
 from kleinkram.utils import SUPPORT_FILE_TYPES
-from kleinkram.utils import check_filename_is_sanatized
+
+
+def supported_suffixes(*, experimental_datatypes: bool) -> Sequence[str]:
+    """file suffixes the validator accepts with the given flags"""
+    if experimental_datatypes:
+        return [*SUPPORT_FILE_TYPES, *EXPERIMENTAL_FILE_TYPES]
+    return SUPPORT_FILE_TYPES
 
 
 @dataclass
@@ -22,6 +30,9 @@ class FileValidator:
     skip: bool
     experimental_datatypes: bool
     fix_filenames: bool = False
+    # `klein verify` only looks files up, so the naming rule for new files does
+    # not apply: a file uploaded under an older rule must still be verifiable
+    check_filename: bool = True
 
     # Stores (file, reason) for skipped files
     skipped_files: List[tuple[Path, str]] = field(default_factory=list)
@@ -78,12 +89,12 @@ class FileValidator:
             raise DatatypeNotSupported(f"Experimental datatype '{file_suffix}' not enabled for file {file}")
 
         # 4. Check filename, unless it gets sanitized on upload anyway
-        if self.fix_filenames:
+        if self.fix_filenames or not self.check_filename:
             return
 
-        is_bad_name = not check_filename_is_sanatized(file.stem)
-        if is_bad_name:
-            raise FileNameNotSupported(f"Badly formed filename for file {file}")
+        error = get_file_name_validation_error(file.name)
+        if error is not None:
+            raise FileNameNotSupported(f"{file}: {error}")
 
     def _raise_with_skip_hint(self, e: Exception) -> None:
         """Re-raises a validation error with a hint to use --skip."""
@@ -91,7 +102,7 @@ class FileValidator:
         hint = "Use --skip to ignore."
 
         if isinstance(e, IsADirectoryError):
-            hint = "Use --skip to ignore directories."
+            hint = "Use --recursive to include the files inside, or --skip to ignore directories."
         elif isinstance(e, DatatypeNotSupported):
             if "Experimental" in base_message:
                 hint = "Use --experimental-datatypes to allow or --skip to ignore."
@@ -103,7 +114,7 @@ class FileValidator:
 
 
 def _report_skipped_files(skipped_files: List[tuple[Path, str]]) -> None:
-    """Prints a formatted report of all skipped files."""
+    """Prints a formatted report of all skipped files to stderr, keeping stdout for script output."""
     if skipped_files:
         debug = get_shared_state().debug
 
@@ -113,17 +124,19 @@ def _report_skipped_files(skipped_files: List[tuple[Path, str]]) -> None:
                 typer.style(
                     f"--- Skipped {len(skipped_files)} path(s) ---",
                     fg=typer.colors.YELLOW,
-                )
+                ),
+                err=True,
             )
             for file, reason in skipped_files:
-                typer.echo(f"Skipped: {file} (Reason: {reason})")
-            typer.echo("---------------------------\n")
+                typer.echo(f"Skipped: {file} (Reason: {reason})", err=True)
+            typer.echo("---------------------------\n", err=True)
         else:
             # Summary report
             typer.echo(
                 typer.style(
                     f"Skipped {len(skipped_files)} path(s) due to errors. Use `klein --debug [...]` for details.",
                     fg=typer.colors.YELLOW,
-                )
+                ),
+                err=True,
             )
-            typer.echo("")
+            typer.echo("", err=True)

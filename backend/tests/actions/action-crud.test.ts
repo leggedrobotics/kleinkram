@@ -1,5 +1,9 @@
-import { AccessGroupRights, ActionState } from '@kleinkram/shared';
-import { database } from '../utils/database-utilities';
+import { AccessGroupRights, ActionState, UserRole } from '@kleinkram/shared';
+import {
+    database,
+    getUserFromDatabase,
+    mockDatabaseUser,
+} from '../utils/database-utilities';
 
 import { createActionUsingPost, getAuthHeaders } from '../utils/api-calls';
 
@@ -10,6 +14,21 @@ import {
     setupDatabaseHooks,
     setupTestEnvironment,
 } from '../utils/test-helpers';
+
+const postVersion = (
+    uuid: string,
+    body: Record<string, unknown>,
+    user: Parameters<typeof getAuthHeaders>[0],
+): Promise<Response> =>
+    fetch(`${DEFAULT_URL}/templates/${uuid}/versions`, {
+        method: 'POST',
+        headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'Content-Type': 'application/json',
+            ...getAuthHeaders(user),
+        },
+        body: JSON.stringify(body),
+    });
 
 describe('Action Management Tests', () => {
     setupDatabaseHooks();
@@ -23,7 +42,7 @@ describe('Action Management Tests', () => {
         // Create Action Template
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Archive Test Action',
+                name: 'Archive-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -70,7 +89,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Run Test Action',
+                name: 'Run-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -111,7 +130,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Cancel Test Action',
+                name: 'Cancel-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -181,7 +200,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Cancel Running Test Action',
+                name: 'Cancel-Running-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -249,7 +268,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Cancel Starting Test Action',
+                name: 'Cancel-Starting-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -317,7 +336,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Cancel Done Test Action',
+                name: 'Cancel-Done-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -384,7 +403,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Delete Cancelled Test Action',
+                name: 'Delete-Cancelled-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -446,7 +465,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Delete Running Test Action',
+                name: 'Delete-Running-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -512,7 +531,7 @@ describe('Action Management Tests', () => {
         };
 
         const versionOnePayload = {
-            name: 'Restore Test Action',
+            name: 'Restore-Test-Action',
             description: 'version one',
             accessRights: AccessGroupRights.READ,
             dockerImage: 'hello-world',
@@ -593,4 +612,155 @@ describe('Action Management Tests', () => {
             0, 0, 0,
         ]);
     }, 30_000);
+
+    describe('Template Ownership', () => {
+        const basePayload = {
+            name: 'Ownership-Test-Action',
+            description: 'owned by the creator',
+            accessRights: AccessGroupRights.READ,
+            dockerImage: 'hello-world',
+            command: 'echo owner',
+            maxRuntime: 10,
+            cpuCores: 1,
+            cpuMemory: 2,
+            gpuMemory: 0,
+        };
+
+        const setupOwnerAndOther = async () => {
+            const owner = await getUserFromDatabase(
+                await mockDatabaseUser(
+                    'template-owner@leggedrobotics.com',
+                    'Template Owner',
+                    UserRole.USER,
+                ),
+            );
+            const other = await getUserFromDatabase(
+                await mockDatabaseUser(
+                    'template-other@leggedrobotics.com',
+                    'Other Creator',
+                    UserRole.USER,
+                ),
+            );
+            const templateUuid = await createActionUsingPost(
+                basePayload,
+                owner,
+            );
+            return { owner, other, templateUuid };
+        };
+
+        test('should reject a new version from a user who did not create the template', async () => {
+            const { other, templateUuid } = await setupOwnerAndOther();
+
+            const response = await postVersion(
+                templateUuid,
+                {
+                    ...basePayload,
+                    uuid: templateUuid,
+                    command: 'echo hijacked',
+                },
+                other,
+            );
+            expect(response.status).toBe(403);
+
+            const versions = await database
+                .getRepository(ActionTemplateEntity)
+                .count({ where: { name: basePayload.name } });
+            expect(versions).toBe(1);
+        }, 30_000);
+
+        test('should let the creator add a new version', async () => {
+            const { owner, templateUuid } = await setupOwnerAndOther();
+
+            const response = await postVersion(
+                templateUuid,
+                { ...basePayload, uuid: templateUuid, command: 'echo v2' },
+                owner,
+            );
+            expect(response.status).toBe(201);
+            const versionTwo = (await response.json()) as {
+                version: string;
+            };
+            expect(Number(versionTwo.version)).toBe(2);
+        }, 30_000);
+
+        test('should allow an admin to add a version to any template', async () => {
+            const { templateUuid } = await setupOwnerAndOther();
+            const admin = await getUserFromDatabase(
+                await mockDatabaseUser(
+                    'template-admin@leggedrobotics.com',
+                    'Template Admin',
+                    UserRole.ADMIN,
+                ),
+            );
+
+            const response = await postVersion(
+                templateUuid,
+                { ...basePayload, uuid: templateUuid, command: 'echo admin' },
+                admin,
+            );
+            expect(response.status).toBe(201);
+        }, 30_000);
+
+        test('should return 404 for a version of a template that does not exist', async () => {
+            const { owner } = await setupOwnerAndOther();
+            const missing = '00000000-0000-4000-8000-000000000000';
+
+            const response = await postVersion(
+                missing,
+                {
+                    ...basePayload,
+                    name: 'Brand-New-Name',
+                    uuid: missing,
+                },
+                owner,
+            );
+            expect(response.status).toBe(404);
+
+            const created = await database
+                .getRepository(ActionTemplateEntity)
+                .count({ where: { name: 'Brand-New-Name' } });
+            expect(created).toBe(0);
+        }, 30_000);
+
+        test('should reject a new version that changes the template name', async () => {
+            const { owner, other, templateUuid } = await setupOwnerAndOther();
+            const otherTemplateUuid = await createActionUsingPost(
+                { ...basePayload, name: 'Other-Users-Action' },
+                other,
+            );
+            expect(otherTemplateUuid).toBeTruthy();
+
+            // The owner of one template tries to append to another one by name
+            const response = await postVersion(
+                templateUuid,
+                {
+                    ...basePayload,
+                    name: 'Other-Users-Action',
+                    uuid: templateUuid,
+                },
+                owner,
+            );
+            expect(response.status).toBe(400);
+
+            const versions = await database
+                .getRepository(ActionTemplateEntity)
+                .count({ where: { name: 'Other-Users-Action' } });
+            expect(versions).toBe(1);
+        }, 30_000);
+
+        test('should reject deleting a template from a user who did not create it', async () => {
+            const { other, templateUuid } = await setupOwnerAndOther();
+
+            const response = await fetch(
+                `${DEFAULT_URL}/templates/${templateUuid}`,
+                { method: 'DELETE', headers: getAuthHeaders(other) },
+            );
+            expect(response.status).toBe(403);
+
+            const stillThere = await database
+                .getRepository(ActionTemplateEntity)
+                .findOne({ where: { uuid: templateUuid } });
+            expect(stillThere).not.toBeNull();
+        }, 30_000);
+    });
 });

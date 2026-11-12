@@ -107,6 +107,20 @@ export default {
     },
 
     /**
+     * Whether the API compresses its responses (gzip or Brotli). Defaults to
+     * `true`; set to `false` when a reverse proxy in front of the API already
+     * compresses responses.
+     *
+     * @returns whether response compression is enabled
+     */
+    get API_COMPRESSION_ENABLED(): boolean {
+        if (asOptionalString('API_COMPRESSION_ENABLED') === undefined) {
+            return true;
+        }
+        return asBoolean('API_COMPRESSION_ENABLED');
+    },
+
+    /**
      * @returns glob describing where typeorm entities are found
      * @example dist/entities/*.entities.js
      */
@@ -130,9 +144,6 @@ export default {
 
     get S3_DATA_BUCKET_NAME(): string {
         return asString('S3_DATA_BUCKET_NAME');
-    },
-    get S3_DB_BUCKET_NAME(): string {
-        return asString('S3_DB_BUCKET_NAME');
     },
     get S3_ENDPOINT(): string {
         return asString('S3_ENDPOINT');

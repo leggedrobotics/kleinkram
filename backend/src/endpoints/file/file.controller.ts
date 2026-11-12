@@ -66,6 +66,8 @@ import { ParameterUuid as ParameterUID } from '../../validation/parameter-decora
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     AdminOnly,
+    CanConfirmFileUpload,
+    CanCreate,
     CanCreateInMissionByBody,
     CanDeleteFile,
     CanDeleteMission,
@@ -267,7 +269,9 @@ export class FileController {
         description: 'Storage information',
         type: StorageOverviewDto,
     })
-    @LoggedIn()
+    // storage usage describes the shared infrastructure: only users who may
+    // create projects (admins and members of an affiliation group) see it
+    @CanCreate()
     async getStorage(): Promise<StorageOverviewDto> {
         return this.fileStorageService.getStorage();
     }
@@ -425,7 +429,7 @@ export class FileController {
     }
 
     @Post('upload/confirm')
-    @LoggedIn()
+    @CanConfirmFileUpload()
     @ApiCreatedResponse({
         type: ConfirmUploadDto,
     })

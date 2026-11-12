@@ -2,19 +2,22 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
+from concurrent.futures import wait
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
 from pathlib import Path
 from time import monotonic
-from time import sleep
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import NamedTuple
 from typing import Optional
+from typing import Set
 from typing import Tuple
 from uuid import UUID
 
@@ -26,14 +29,20 @@ from botocore.exceptions import ClientError
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.mcap_filter import filter_mcap_from_url
 from kleinkram.api.mcap_filter import is_mcap
+from kleinkram.api.retry import Retrier
+from kleinkram.api.retry import RetryPolicy
+from kleinkram.api.retry import describe_error
+from kleinkram.api.retry import is_unsent
+from kleinkram.api.retry import retrying
 from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
 from kleinkram.errors import InsufficientStorageError
+from kleinkram.errors import TransferCancelledError
+from kleinkram.errors import transfer_interrupted
 from kleinkram.models import File
 from kleinkram.models import FileState
 from kleinkram.utils import b64_md5
 from kleinkram.utils import format_traceback
-from kleinkram.utils import retry
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +53,35 @@ UPLOAD_CANCEL = "/files/uploads"
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
 DOWNLOAD_URL = "/files/{}/download"
 
-MAX_UPLOAD_RETRIES = 3
 S3_MAX_RETRIES = 60  # same as frontend
 S3_READ_TIMEOUT = 60 * 5  # 5 minutes
 
-RETRY_BACKOFF_BASE = 2  # exponential backoff base
-MAX_RETRIES = 5
+# Requests to the Kleinkram API that are safe to repeat.
+API_RETRY = RetryPolicy(max_attempts=3)
+# Downloads resume where they stopped.
+DOWNLOAD_RETRY = RetryPolicy(max_attempts=6)
+
+
+# Only unsent requests: the request reserves the file name, so a resend the
+# server already handled gets 409 and is reported as "already uploaded".
+UPLOAD_CREDENTIALS_RETRY = RetryPolicy(max_attempts=5, retry_on=is_unsent)
+
+
+def _is_worth_restarting_upload(e: BaseException) -> bool:
+    """Whether to start an upload again, with fresh credentials, after boto3 gave up.
+
+    boto3 already retries network and server errors itself (`S3_MAX_RETRIES`),
+    so this sees what is left: mostly problems a new attempt with new
+    credentials can fix (they expired during a very long upload, the storage
+    backend restarted). That is why this lists what *not* to restart rather
+    than what to restart: the local file cannot be read, which fails the same
+    way every time.
+    """
+    return not isinstance(e, (FileNotFoundError, PermissionError, IsADirectoryError))
+
+
+# Each restart sits on top of boto3's own retries, so keep the count low.
+UPLOAD_RESTART_RETRY = RetryPolicy(max_attempts=3, retry_on=_is_worth_restarting_upload)
 
 # Callback type aliases
 OnFileStartCb = Callable[[Path, int], None]  # (path, total_bytes)
@@ -66,7 +98,7 @@ class UploadCredentials(NamedTuple):
     bucket: str
 
 
-@retry(max_attempts=3, exceptions=(httpx.TransportError,))
+@retrying(API_RETRY)
 def _confirm_file_upload(client: AuthenticatedClient, file_id: UUID, file_hash: str) -> None:
     data = {
         "uuid": str(file_id),
@@ -77,7 +109,7 @@ def _confirm_file_upload(client: AuthenticatedClient, file_id: UUID, file_hash: 
     resp.raise_for_status()
 
 
-@retry(max_attempts=3, exceptions=(httpx.TransportError,))
+@retrying(API_RETRY)
 def _cancel_file_upload(client: AuthenticatedClient, file_id: UUID, mission_id: UUID) -> None:
     data = {
         "uuids": [str(file_id)],
@@ -99,7 +131,7 @@ FILE_ID_FIELD = "fileUUID"
 BUCKET_FIELD = "bucket"
 
 
-@retry(max_attempts=5, exceptions=(httpx.TransportError,), exclude_exceptions=(FileExistsError, InsufficientStorageError))
+@retrying(UPLOAD_CREDENTIALS_RETRY)
 def _get_upload_creditials(
     client: AuthenticatedClient, internal_filename: str, mission_id: UUID, file_size: int
 ) -> UploadCredentials:
@@ -205,7 +237,6 @@ class UploadState(Enum):
     CANCELED = 3
 
 
-# TODO: i dont want to handle errors at this level
 def upload_file(
     client: AuthenticatedClient,
     *,
@@ -215,17 +246,22 @@ def upload_file(
     s3_endpoint: Optional[str] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    cancel_event: Optional[threading.Event] = None,
 ) -> Tuple[UploadState, int]:
     """
     returns UploadState and bytes uploaded (0 if not uploaded)
-    Retries up to 3 times on failure.
+    Starts again with fresh credentials when boto3 gives up (`UPLOAD_RESTART_RETRY`).
     """
     if s3_endpoint is None:
         s3_endpoint = get_config().endpoint.s3
 
     total_size = path.stat().st_size
 
-    for attempt in range(MAX_UPLOAD_RETRIES):
+    retrier = Retrier(UPLOAD_RESTART_RETRY, cancel_event=cancel_event, name=f"upload of {path.name}")
+    while True:
+        if cancel_event is not None and cancel_event.is_set():
+            return UploadState.CANCELED, 0
+
         if on_file_start_cb is not None:
             on_file_start_cb(path, total_size)
 
@@ -235,11 +271,14 @@ def upload_file(
         except FileExistsError:
             return UploadState.EXISTS, 0
 
-        # build the boto3 callback from our file progress callback
-        if on_file_progress_cb is not None:
+        # build the boto3 callback that also checks for cancellation
+        if on_file_progress_cb is not None or cancel_event is not None:
 
             def boto3_cb(bytes_amount):
-                on_file_progress_cb(path, bytes_amount)
+                if cancel_event is not None and cancel_event.is_set():
+                    raise TransferCancelledError("Transfer cancelled by user")
+                if on_file_progress_cb is not None:
+                    on_file_progress_cb(path, bytes_amount)
 
         else:
             boto3_cb = None
@@ -247,6 +286,16 @@ def upload_file(
         try:
             _s3_upload(path, endpoint=s3_endpoint, credentials=creds, callback=boto3_cb)
         except Exception as e:
+            # Check cancellation first — TransferCancelledError or any other
+            # exception raised while cancel_event is set means user-requested abort.
+            if cancel_event is not None and cancel_event.is_set():
+                logger.info(f"Upload cancelled for {path}")
+                try:
+                    _cancel_file_upload(client, creds.file_id, mission_id)
+                except Exception as cancel_e:
+                    logger.warning(f"Failed to cancel server-side upload for {creds.file_id}: {cancel_e}")
+                return UploadState.CANCELED, 0
+
             if _is_s3_out_of_space_error(e):
                 logger.error("Upload failed: S3 storage is out of space.")
                 try:
@@ -262,16 +311,27 @@ def upload_file(
                 logger.error(f"Failed to cancel upload for {creds.file_id}: {cancel_e}")
                 raise RuntimeError(f"Upload failed and cancellation failed for {creds.file_id}: {cancel_e}") from e
 
-            if attempt < MAX_UPLOAD_RETRIES - 1:  # Retry if not the last attempt
-                logger.warning(f"Retrying upload for {path} (attempt {attempt + 1}), retrying after backoff...")
-                sleep(RETRY_BACKOFF_BASE**attempt)
-                continue
-            else:
-                logger.error(f"Cancelling upload for {path} after {attempt + 1} attempts")
-                raise e from e
+            if not retrier.record_failure(e):
+                logger.error(f"Giving up on upload of {path} after {retrier.attempt} attempt(s)")
+                raise
+            try:
+                retrier.wait(e)
+            except TransferCancelledError:
+                return UploadState.CANCELED, 0
+            continue
 
         else:
-            _confirm_file_upload(client, creds.file_id, b64_md5(path))
+            try:
+                file_hash = b64_md5(path, cancel_event=cancel_event)
+            except TransferCancelledError:
+                # The bytes are in S3 but unconfirmed; drop them like any other cancel.
+                logger.info(f"Upload cancelled for {path} while hashing")
+                try:
+                    _cancel_file_upload(client, creds.file_id, mission_id)
+                except Exception as cancel_e:
+                    logger.warning(f"Failed to cancel server-side upload for {creds.file_id}: {cancel_e}")
+                return UploadState.CANCELED, 0
+            _confirm_file_upload(client, creds.file_id, file_hash)
             return UploadState.UPLOADED, total_size
 
 
@@ -301,6 +361,19 @@ def _get_filename_from_cd(cd: str | None) -> Optional[str]:
     return fname[0].strip().strip('"')
 
 
+def _download_error(e: Exception) -> Exception:
+    """The exception to raise once a download error is final."""
+    if DOWNLOAD_RETRY.retry_on(e):
+        # Worth retrying, so the only reason to stop is that the attempts ran out.
+        return RuntimeError(f"Download failed after {DOWNLOAD_RETRY.max_attempts} attempts: {describe_error(e)}")
+    if not isinstance(e, httpx.HTTPStatusError):
+        return e
+    message = f"Download failed: {describe_error(e)}"
+    if e.response.status_code in (401, 403):
+        return AccessDenied(f"{message} (the download link may have expired or access was revoked)")
+    return RuntimeError(message)
+
+
 def _url_download(
     url: str,
     *,
@@ -309,6 +382,7 @@ def _url_download(
     overwrite: bool = False,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    cancel_event: Optional[threading.Event] = None,
 ) -> None:
     if path.exists():
         if overwrite:
@@ -324,7 +398,7 @@ def _url_download(
     if on_file_start_cb is not None:
         on_file_start_cb(path, size)
 
-    attempt = 0
+    retrier = Retrier(DOWNLOAD_RETRY, cancel_event=cancel_event, name=f"download of {path.name}")
     while downloaded < size:
         try:
             headers = {"Range": f"bytes={downloaded}-"}
@@ -337,7 +411,9 @@ def _url_download(
                 mode = "ab" if downloaded > 0 else "wb"
                 with open(path, mode) as f:
                     for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):
-                        attempt = 0  # reset attempt counter on successful download of non-empty chunk
+                        if cancel_event is not None and cancel_event.is_set():
+                            raise TransferCancelledError("Transfer cancelled by user")
+                        retrier.reset()  # progress was made, so start counting failures again
                         if not chunk:
                             break
                         f.write(chunk)
@@ -345,13 +421,12 @@ def _url_download(
                         if on_file_progress_cb is not None:
                             on_file_progress_cb(path, len(chunk))
             break  # download complete
+        except TransferCancelledError:
+            raise
         except Exception as e:
-            logger.info(f"Error: {e}, retrying...")
-            attempt += 1
-            if attempt > MAX_RETRIES:
-                raise RuntimeError(f"Download failed after {MAX_RETRIES} retries due to {e}") from e
-            logger.warning(f"{e} on attempt {attempt}/{MAX_RETRIES}, retrying after backoff...")
-            sleep(RETRY_BACKOFF_BASE**attempt)
+            if not retrier.record_failure(e):
+                raise _download_error(e) from e
+            retrier.wait(e)
 
 
 @dataclass(frozen=True)
@@ -389,6 +464,7 @@ class DownloadState(Enum):
     DOWNLOADED_PARTIAL = 12
     SKIPPED_NOT_SLICEABLE = 13
     SKIPPED_SLICE_EXISTS = 14
+    CANCELED = 15
 
 
 def download_file(
@@ -402,10 +478,14 @@ def download_file(
     mcap_slice: Optional[McapSlice] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    cancel_event: Optional[threading.Event] = None,
 ) -> Tuple[DownloadState, int]:
     """\
     Returns DownloadState and bytes downloaded (file.size if successful or skipped ok, 0 otherwise)
     """
+    if cancel_event is not None and cancel_event.is_set():
+        return DownloadState.CANCELED, 0
+
     is_corrupted = file.state == FileState.CORRUPTED
 
     if mcap_slice and not is_mcap(path):
@@ -433,6 +513,7 @@ def download_file(
             create_parents=create_parents,
             on_file_start_cb=on_file_start_cb,
             on_file_progress_cb=on_file_progress_cb,
+            cancel_event=cancel_event,
         )
 
     was_overwritten = False
@@ -440,7 +521,10 @@ def download_file(
 
         # compare file size
         if file.size == path.stat().st_size:
-            local_hash = b64_md5(path)
+            try:
+                local_hash = b64_md5(path, cancel_event=cancel_event)
+            except TransferCancelledError:
+                return DownloadState.CANCELED, 0
             if local_hash != file.hash and not overwrite and file.hash is not None:
                 return DownloadState.SKIPPED_INVALID_HASH, 0
 
@@ -461,11 +545,17 @@ def download_file(
     # request a download url
     download_url = _get_file_download(client, file.id)
 
+    # Nothing has been touched yet. Past this point a cancel removes the target,
+    # so with --overwrite a Ctrl+C during the URL request would delete the old copy.
+    if cancel_event is not None and cancel_event.is_set():
+        return DownloadState.CANCELED, 0
+
     # create parent directories
     if create_parents:
         path.parent.mkdir(parents=True, exist_ok=True)
 
     # download the file and check the hash
+    had_prior_bytes = not overwrite and path.exists() and path.stat().st_size > 0
     try:
         _url_download(
             download_url,
@@ -474,11 +564,23 @@ def download_file(
             overwrite=overwrite,
             on_file_start_cb=on_file_start_cb,
             on_file_progress_cb=on_file_progress_cb,
+            cancel_event=cancel_event,
         )
     except Exception as e:
+        # If cancel was requested, treat as cancellation regardless of exception type
+        if cancel_event is not None and cancel_event.is_set():
+            logger.info(f"Download cancelled for {path}")
+            if (not had_prior_bytes or overwrite) and path.exists():
+                try:
+                    path.unlink()
+                    logger.info(f"Removed potentially incomplete file {path}")
+                except OSError as unlink_e:
+                    logger.error(f"Could not remove partial file {path}: {unlink_e}")
+            return DownloadState.CANCELED, 0
+
         logger.error(f"Error during download of {path}: {e}")
-        # Attempt to clean up potentially partial file
-        if path.exists():
+        # Only clean up files we created; preserve prior bytes for resume
+        if (not had_prior_bytes or overwrite) and path.exists():
             try:
                 path.unlink()
                 logger.info(f"Removed potentially incomplete file {path}")
@@ -486,7 +588,13 @@ def download_file(
                 logger.error(f"Could not remove partial file {path}: {unlink_e}")
         raise e  # Re-raise to be caught by handler
 
-    observed_hash = b64_md5(path)
+    try:
+        observed_hash = b64_md5(path, cancel_event=cancel_event)
+    except TransferCancelledError:
+        # The download itself finished, so keep the file: the next run checks
+        # its hash and skips it if it is fine.
+        logger.info(f"Download cancelled for {path} while verifying its hash")
+        return DownloadState.CANCELED, 0
     if file.hash is not None and observed_hash != file.hash:
         logger.warning(f"HASH MISMATCH: {path} expected={file.hash} observed={observed_hash}")
         # Download completed but hash failed
@@ -505,8 +613,32 @@ class UploadResult:
     uploaded: int = 0
     skipped: int = 0
     failed: int = 0
+    canceled: int = 0
     total_bytes: int = 0
     elapsed_seconds: float = 0.0
+    # local files the server refused because their name is taken in the mission
+    existing: List[Path] = field(default_factory=list)
+    # of `existing`: the content differs from the file in the mission, so the
+    # local file was NOT uploaded (filled in by `kleinkram.core.upload`)
+    conflicts: List[Path] = field(default_factory=list)
+    # of `existing`: the content could not be compared, because the file in the
+    # mission is not in state OK yet or the mission's files could not be read
+    # (filled in by `kleinkram.core.upload`)
+    unchecked: List[Path] = field(default_factory=list)
+
+
+# download outcomes where the requested file did NOT end up as asked; `klein
+# download` exits with 1 if any file ends in one of them (failures count too)
+DOWNLOAD_STATES_NOT_DONE = frozenset(
+    {
+        DownloadState.DOWNLOADED_INVALID_HASH,
+        DownloadState.SKIPPED_INVALID_HASH,
+        DownloadState.SKIPPED_FILE_SIZE_MISMATCH,
+        DownloadState.SKIPPED_INVALID_REMOTE_STATE,
+        DownloadState.SKIPPED_CORRUPTED,
+        DownloadState.SKIPPED_SLICE_EXISTS,
+    }
+)
 
 
 @dataclass
@@ -532,15 +664,15 @@ def _download_state_message(state: DownloadState, path: Path, file: File) -> Opt
         ),
         DownloadState.DOWNLOADED_INVALID_HASH: (f"downloaded {path} but failed hash check", True),
         DownloadState.SKIPPED_OK: (f"skipped {path} already downloaded (hash ok)", False),
-        DownloadState.SKIPPED_INVALID_HASH: (f"skipped {path}, exists with hash mismatch (use --overwrite?)", False),
+        DownloadState.SKIPPED_INVALID_HASH: (f"skipped {path}, exists with hash mismatch (use --overwrite?)", True),
         DownloadState.SKIPPED_FILE_SIZE_MISMATCH: (
             f"skipped {path}, exists with file size mismatch (use --overwrite?)",
-            False,
+            True,
         ),
         DownloadState.SKIPPED_INVALID_REMOTE_STATE: (
             f"skipped {path}, remote file has invalid state ({file.state.value})"
             + (f": {file.state_comment}" if file.state_comment else ""),
-            False,
+            True,
         ),
         DownloadState.DOWNLOADED_PARTIAL: (
             f"downloaded a filtered slice of {path}",
@@ -552,20 +684,101 @@ def _download_state_message(state: DownloadState, path: Path, file: File) -> Opt
         ),
         DownloadState.SKIPPED_SLICE_EXISTS: (
             f"skipped {path}, already exists (use --overwrite to replace it with the slice)",
-            False,
+            True,
         ),
         DownloadState.SKIPPED_CORRUPTED: (
             f"skipped {path}, remote file is CORRUPTED"
             + (f": {file.state_comment}" if file.state_comment else "")
             + " (use --allow-corrupt to override)",
-            False,
+            True,
         ),
         DownloadState.SKIPPED_CORRUPTED_LOCAL_OK: (
             f"skipped {path}, already present locally (hash ok) but remote file is CORRUPTED; " "treat as potentially harmful",
             True,
         ),
+        DownloadState.CANCELED: (f"canceled {path} download", False),
     }
     return messages.get(state)
+
+
+def _resolve_upload_future(
+    future: Future[Tuple[UploadState, int]],
+    path: Path,
+    result: UploadResult,
+    cancel_event: threading.Event,
+    recorded: Set[Future],
+    executor: Optional[ThreadPoolExecutor] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    is_cleanup: bool = False,
+) -> None:
+    """Resolves an upload future, updates telemetry, and triggers callbacks.
+
+    The future goes into `recorded` as soon as it is counted, before any
+    callback runs, so a Ctrl+C inside a callback does not count it twice.
+    """
+    if future.cancelled():
+        result.canceled += 1
+        recorded.add(future)
+        if on_overall_progress_cb is not None:
+            on_overall_progress_cb()
+        return
+
+    try:
+        state, size_bytes = future.result()
+    except InsufficientStorageError as e:
+        if on_message_cb is not None:
+            on_message_cb("Upload failed: Insufficient storage space on the server", True)
+        cancel_event.set()
+        if executor is not None:
+            executor.shutdown(wait=False, cancel_futures=True)
+        if not is_cleanup:
+            raise e
+        return
+    except Exception as e:
+        result.failed += 1
+        recorded.add(future)
+        logger.error(format_traceback(e))
+        if on_message_cb is not None:
+            on_message_cb(f"Error uploading {path}: {e}", True)
+        if on_overall_progress_cb is not None:
+            on_overall_progress_cb()
+        return
+
+    result.total_bytes += size_bytes
+    if state == UploadState.UPLOADED:
+        result.uploaded += 1
+        message = f"uploaded {path}"
+    elif state == UploadState.EXISTS:
+        result.skipped += 1
+        result.existing.append(path)
+        message = f"skipped {path} (already uploaded)"
+    else:
+        result.canceled += 1
+        message = f"canceled {path} upload"
+    recorded.add(future)
+
+    if on_message_cb is not None:
+        on_message_cb(message, False)
+
+    if on_overall_progress_cb is not None:
+        on_overall_progress_cb()
+
+
+def _wait_for_cancelled_workers(futures: Dict[Future, object]) -> None:
+    """After Ctrl+C, wait until the running workers have seen the cancel event.
+
+    They stop at their next chunk or callback, cancel unconfirmed uploads and
+    remove partial downloads, so their final state is known before the summary
+    is built. A second Ctrl+C stops waiting.
+    """
+    # Futures that `shutdown(cancel_futures=True)` cancelled never count as
+    # done for `wait()` on older Pythons, so only wait for the running ones.
+    running = [f for f in futures if not f.cancelled()]
+    try:
+        wait(running)
+    except KeyboardInterrupt:
+        logger.info("Interrupted again, not waiting for running transfers")
 
 
 def upload_files(
@@ -583,14 +796,19 @@ def upload_files(
     futures: Dict[Future[Tuple[UploadState, int]], Path] = {}
 
     result = UploadResult()
+    cancel_event = threading.Event()
+    interrupted = False
+    recorded: Set[Future] = set()
 
-    with ThreadPoolExecutor(max_workers=n_workers) as executor:
+    executor = ThreadPoolExecutor(max_workers=n_workers)
+    try:
         for name, path in files.items():
             if not path.is_file():
-                logger.warning(f"Skipping non-existent file: {path}")
+                # it was checked before; it vanished since, so it is not uploaded
+                logger.error(f"File disappeared before upload: {path}")
                 if on_message_cb is not None:
-                    on_message_cb(f"Skipping non-existent file: {path}", False)
-                result.skipped += 1
+                    on_message_cb(f"Error uploading {path}: file does not exist anymore", True)
+                result.failed += 1
                 if on_overall_progress_cb is not None:
                     on_overall_progress_cb()
                 continue
@@ -603,47 +821,64 @@ def upload_files(
                 path=path,
                 on_file_start_cb=on_file_start_cb,
                 on_file_progress_cb=on_file_progress_cb,
+                cancel_event=cancel_event,
             )
             futures[future] = path
 
         for future in as_completed(futures):
-            path = futures[future]
+            _resolve_upload_future(
+                future=future,
+                path=futures[future],
+                result=result,
+                cancel_event=cancel_event,
+                recorded=recorded,
+                executor=executor,
+                on_message_cb=on_message_cb,
+                on_overall_progress_cb=on_overall_progress_cb,
+            )
 
-            try:
-                state, size_bytes = future.result()
-            except InsufficientStorageError as e:
-                if on_message_cb is not None:
-                    on_message_cb("Upload failed: Insufficient storage space on the server", True)
-                executor.shutdown(wait=False, cancel_futures=True)
-                raise e
-            except Exception as e:
-                logger.error(format_traceback(e))
-                if on_message_cb is not None:
-                    on_message_cb(f"Error uploading {path}: {e}", True)
-                result.failed += 1
+    except KeyboardInterrupt:
+        logger.info("Upload interrupted by user, cancelling...")
+        interrupted = True
+        cancel_event.set()
+        executor.shutdown(wait=False, cancel_futures=True)
+        _wait_for_cancelled_workers(futures)
+    except BaseException:
+        # any other error, e.g. from a callback: stop the transfers as Ctrl+C
+        # does, so none of them keeps running after this call has failed
+        cancel_event.set()
+        executor.shutdown(wait=False, cancel_futures=True)
+        _wait_for_cancelled_workers(futures)
+        raise
+    else:
+        executor.shutdown(wait=True)
+
+    if interrupted:
+        for future, path in futures.items():
+            if future in recorded:
+                continue
+            if not future.done():
+                result.canceled += 1
                 if on_overall_progress_cb is not None:
                     on_overall_progress_cb()
                 continue
-
-            result.total_bytes += size_bytes
-
-            if state == UploadState.UPLOADED:
-                result.uploaded += 1
-                if on_message_cb is not None:
-                    on_message_cb(f"uploaded {path}", False)
-            elif state == UploadState.EXISTS:
-                result.skipped += 1
-                if on_message_cb is not None:
-                    on_message_cb(f"skipped {path} (already uploaded)", False)
-            else:
-                result.failed += 1
-                if on_message_cb is not None:
-                    on_message_cb(f"canceled {path} upload", True)
-
-            if on_overall_progress_cb is not None:
-                on_overall_progress_cb()
+            _resolve_upload_future(
+                future=future,
+                path=path,
+                result=result,
+                cancel_event=cancel_event,
+                recorded=recorded,
+                on_message_cb=on_message_cb,
+                on_overall_progress_cb=on_overall_progress_cb,
+                is_cleanup=True,
+            )
 
     result.elapsed_seconds = monotonic() - start
+    if interrupted:
+        if on_message_cb is not None:
+            on_message_cb("Upload interrupted by user", True)
+        # Cleanup is done; hand the Ctrl+C back to the caller.
+        raise transfer_interrupted(result)
     return result
 
 
@@ -656,19 +891,33 @@ def _download_mcap_slice(
     create_parents: bool = False,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    cancel_event: Optional[threading.Event] = None,
 ) -> Tuple[DownloadState, int]:
     """Write a filtered copy of a remote MCAP, fetching only the bytes it needs.
 
     `filter_mcap_from_url` only replaces `path` once the slice is complete, so
-    a failure leaves whatever was there before untouched.
+    a failure or cancellation leaves whatever was there before untouched.
     """
     download_url = _get_file_download(client, file.id)
 
     if create_parents:
         path.parent.mkdir(parents=True, exist_ok=True)
 
-    on_start = None if on_file_start_cb is None else (lambda total: on_file_start_cb(path, total))
-    on_progress = None if on_file_progress_cb is None else (lambda n: on_file_progress_cb(path, n))
+    def check_cancel() -> None:
+        if cancel_event is not None and cancel_event.is_set():
+            raise TransferCancelledError("Transfer cancelled by user")
+
+    def on_start(total: int) -> None:
+        check_cancel()
+        if on_file_start_cb is not None:
+            on_file_start_cb(path, total)
+
+    # Progress is reported per fetched range, so checking here lets Ctrl+C stop
+    # a slice download between requests instead of only once it is complete.
+    def on_progress(n: int) -> None:
+        check_cancel()
+        if on_file_progress_cb is not None:
+            on_file_progress_cb(path, n)
 
     try:
         result = filter_mcap_from_url(
@@ -679,14 +928,73 @@ def _download_mcap_slice(
             end_time=mcap_slice.end_time,
             on_start=on_start,
             on_progress=on_progress,
+            cancel_event=cancel_event,
         )
     except Exception as e:
+        if cancel_event is not None and cancel_event.is_set():
+            logger.info(f"Partial download cancelled for {path}")
+            return DownloadState.CANCELED, 0
         logger.error(f"Error during partial download of {path}: {e}")
         raise
 
     # A slice is a different file from the remote one, so the remote hash and
     # size deliberately are not checked here.
     return DownloadState.DOWNLOADED_PARTIAL, result.bytes_fetched
+
+
+def _resolve_download_future(
+    future: Future[Tuple[DownloadState, int]],
+    path: Path,
+    file: File,
+    result: DownloadResult,
+    recorded: Set[Future],
+    on_message_cb: Optional[OnMessageCb] = None,
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+) -> None:
+    """Resolves a download future, updates telemetry, and triggers callbacks.
+
+    Like `_resolve_upload_future`, it adds the future to `recorded` before
+    any callback runs.
+    """
+    if future.cancelled():
+        result.state_counts[DownloadState.CANCELED] = result.state_counts.get(DownloadState.CANCELED, 0) + 1
+        recorded.add(future)
+        if on_overall_progress_cb is not None:
+            on_overall_progress_cb()
+        return
+
+    try:
+        state, size_bytes = future.result()
+    except Exception as e:
+        result.failed += 1
+        recorded.add(future)
+        logger.error(format_traceback(e))
+        if on_message_cb is not None:
+            on_message_cb(f"Error downloading {path}: {e}", True)
+        if on_overall_progress_cb is not None:
+            on_overall_progress_cb()
+        return
+
+    result.state_counts[state] = result.state_counts.get(state, 0) + 1
+
+    if state in (
+        DownloadState.DOWNLOADED_PARTIAL,
+        DownloadState.DOWNLOADED_OK,
+        DownloadState.DOWNLOADED_CORRUPTED,
+        DownloadState.SKIPPED_OK,
+        DownloadState.OVERWRITTEN_OK,
+        DownloadState.OVERWRITTEN_CORRUPTED,
+    ):
+        result.total_bytes += size_bytes
+    recorded.add(future)
+
+    if on_message_cb is not None:
+        msg = _download_state_message(state, path, file)
+        if msg is not None:
+            on_message_cb(*msg)
+
+    if on_overall_progress_cb is not None:
+        on_overall_progress_cb()
 
 
 def download_files(
@@ -706,8 +1014,12 @@ def download_files(
     start = monotonic()
     futures: Dict[Future[Tuple[DownloadState, int]], Tuple[File, Path]] = {}
     result = DownloadResult()
+    cancel_event = threading.Event()
+    interrupted = False
+    recorded: Set[Future] = set()
 
-    with ThreadPoolExecutor(max_workers=n_workers) as executor:
+    executor = ThreadPoolExecutor(max_workers=n_workers)
+    try:
         for path, file in files.items():
             future = executor.submit(
                 download_file,
@@ -720,43 +1032,61 @@ def download_files(
                 mcap_slice=mcap_slice,
                 on_file_start_cb=on_file_start_cb,
                 on_file_progress_cb=on_file_progress_cb,
+                cancel_event=cancel_event,
             )
             futures[future] = (file, path)
 
         for future in as_completed(futures):
             file, path = futures[future]
+            _resolve_download_future(
+                future=future,
+                path=path,
+                file=file,
+                result=result,
+                recorded=recorded,
+                on_message_cb=on_message_cb,
+                on_overall_progress_cb=on_overall_progress_cb,
+            )
 
-            try:
-                state, size_bytes = future.result()
-            except Exception as e:
-                logger.error(format_traceback(e))
-                if on_message_cb is not None:
-                    on_message_cb(f"Error downloading {path}: {e}", True)
-                result.failed += 1
+    except KeyboardInterrupt:
+        logger.info("Download interrupted by user, cancelling...")
+        interrupted = True
+        cancel_event.set()
+        executor.shutdown(wait=False, cancel_futures=True)
+        _wait_for_cancelled_workers(futures)
+    except BaseException:
+        # any other error, e.g. from a callback: stop the transfers as Ctrl+C
+        # does, so none of them keeps running after this call has failed
+        cancel_event.set()
+        executor.shutdown(wait=False, cancel_futures=True)
+        _wait_for_cancelled_workers(futures)
+        raise
+    else:
+        executor.shutdown(wait=True)
+
+    if interrupted:
+        for future, (file, path) in futures.items():
+            if future in recorded:
+                continue
+            if not future.done():
+                result.state_counts[DownloadState.CANCELED] = result.state_counts.get(DownloadState.CANCELED, 0) + 1
                 if on_overall_progress_cb is not None:
                     on_overall_progress_cb()
                 continue
-
-            result.state_counts[state] = result.state_counts.get(state, 0) + 1
-
-            if state in (
-                DownloadState.DOWNLOADED_PARTIAL,
-                DownloadState.DOWNLOADED_OK,
-                DownloadState.DOWNLOADED_CORRUPTED,
-                DownloadState.SKIPPED_OK,
-                DownloadState.OVERWRITTEN_OK,
-                DownloadState.OVERWRITTEN_CORRUPTED,
-            ):
-                result.total_bytes += size_bytes
-
-            # Generate per-file status messages
-            if on_message_cb is not None:
-                msg = _download_state_message(state, path, file)
-                if msg is not None:
-                    on_message_cb(*msg)
-
-            if on_overall_progress_cb is not None:
-                on_overall_progress_cb()
+            _resolve_download_future(
+                future=future,
+                path=path,
+                file=file,
+                result=result,
+                recorded=recorded,
+                on_message_cb=on_message_cb,
+                on_overall_progress_cb=on_overall_progress_cb,
+            )
 
     result.elapsed_seconds = monotonic() - start
+    if interrupted:
+        if on_message_cb is not None:
+            on_message_cb("Download interrupted by user", True)
+        # Cleanup is done; hand the Ctrl+C back to the caller.
+        raise transfer_interrupted(result)
     return result

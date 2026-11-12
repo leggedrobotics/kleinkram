@@ -42,17 +42,30 @@ immutable image layers. [-> Docker Documentation](https://docs.docker.com/engine
 
 To persist data beyond the lifetime of the action, Kleinkram provides two approaches:
 
-1. **Re-Upload Files to a Mission**: You can re-upload files to any mission within the same project using the
-   `kleinkram upload` command from within your action. You may also use the Python SDK for this purpose. Kleinkram
-   actions have access to all missions within the same project.
+1. **Re-Upload Files to the Mission**: You can re-upload files to the mission the action runs on using the
+   `kleinkram upload` command from within your action. You may also use the Python SDK for this purpose. An action
+   only has access to its own mission, not to other missions of the same project.
 
     ::: warning Access Rights
-    Make sure that the action has the necessary access rights to upload files to the target mission. The action
-    needs at least "Write" access to re-upload files.
+    Make sure that the action has the necessary access rights to upload files to the mission. The action needs at
+    least "Write" access to re-upload files.
     :::
 
 2. You can write files to the special `/out` directory inside the container. All files written to this directory
-   are automatically uploaded as artifacts to the current action execution after the action completes.
+   are automatically uploaded as artifacts to the current action execution after the action completes. See
+   [Artifacts](#artifacts) for how they are packaged.
+
+#### Artifacts
+
+When the action's container has stopped, Kleinkram packs the `/out` directory into a single `<execution-id>.tar.gz`
+archive and stores it with the execution. This happens whether the action succeeded or failed, but not when the
+execution was cancelled. Inside the archive, the files are in an `out/` directory. Download the archive from the
+execution page, with `klein execution download <EXECUTION_ID>` (`--extract` unpacks it), or with
+`kleinkram.download_artifact()`. Artifacts are deleted after 90 days.
+
+If the upload of the artifacts fails, the execution keeps its state, but gets a warning with the code
+`ARTIFACT_UPLOAD_FAILED` and the last line of the uploader's error output. A successful run then shows as done with a
+warning; a failed run stays failed. In both cases `klein execution diagnostics` lists the warning.
 
 #### Temporary Storage During Action Execution
 

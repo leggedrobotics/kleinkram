@@ -253,7 +253,8 @@ def cli(
 
     if max_lines < 0 and max_lines != -1:
         raise typer.BadParameter("`--max-lines` must be -1 or positive")
-    shared_state.max_table_size = max_lines
+    # -1 means unlimited; the tables slice with it, and `rows[:-1]` would drop the last row
+    shared_state.max_table_size = sys.maxsize if max_lines == -1 else max_lines
 
     if shared_state.debug and log_level is None:
         log_level = LogLevel.DEBUG

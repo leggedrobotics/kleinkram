@@ -9,7 +9,9 @@ import {
     ProjectWithRequiredMetadataTypesDto,
     ResentProjectDto,
     SortOrder,
+    UpdateProject,
 } from '@kleinkram/api-dto';
+import { getNameValidationError } from '@kleinkram/validation';
 import {
     BadRequestException,
     ConflictException,
@@ -25,7 +27,10 @@ import {
     Repository,
     SelectQueryBuilder,
 } from 'typeorm';
-import { assertValidPublicAccessRights } from './public-access';
+import {
+    assertGrantableAccessRights,
+    assertValidPublicAccessRights,
+} from './public-access';
 import { UserService } from './user.service';
 
 import {
@@ -680,6 +685,7 @@ export class ProjectService {
         // checked up front: errors of the access group creation below are
         // reported as invalid uuids
         for (const accessGroup of project.accessGroups ?? []) {
+            assertGrantableAccessRights(accessGroup.rights);
             if ('accessGroupUUID' in accessGroup) {
                 assertValidPublicAccessRights(
                     accessGroup.accessGroupUUID,
@@ -779,7 +785,19 @@ export class ProjectService {
         return projectEntityToDto(createdProject);
     }
 
-    async update(uuid: string, project: CreateProject): Promise<ProjectDto> {
+    async update(uuid: string, project: UpdateProject): Promise<ProjectDto> {
+        // names from before the naming rules are kept until they are changed
+        const current = await this.projectRepository.findOneOrFail({
+            where: { uuid },
+        });
+        if (project.name !== current.name) {
+            const nameError = getNameValidationError(
+                project.name,
+                'Project name',
+            );
+            if (nameError) throw new BadRequestException(nameError);
+        }
+
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name), uuid: Not(uuid) },
         });

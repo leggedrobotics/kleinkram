@@ -54,8 +54,9 @@ async function fetchReadmeCandidates(missionUuid: string): Promise<FileDto[]> {
 }
 
 /**
- * Finds the README.md (any casing) at the top of a mission and loads its
- * content for the Mission Info tab.
+ * Finds the README.md (any casing) at the top of a mission. The page uses it
+ * to pick the default tab and to enable the Mission Info tab; the content
+ * itself is loaded by `useReadmeContent` once that tab is on screen.
  */
 export function useMissionReadme(missionUuid: Ref<string | undefined>) {
     const readmeQuery = useQuery({
@@ -70,8 +71,21 @@ export function useMissionReadme(missionUuid: Ref<string | undefined>) {
         enabled: computed(() => !!missionUuid.value),
     });
 
-    const readme = computed(() => readmeQuery.data.value ?? undefined);
+    return {
+        readme: computed(() => readmeQuery.data.value ?? undefined),
+        /** True until we know whether the mission has a readme. */
+        isLookupPending: computed(
+            () => !!missionUuid.value && readmeQuery.isPending.value,
+        ),
+    };
+}
 
+/**
+ * Loads a README's text (at most the text preview cap). Called from the
+ * Mission Info tab, so opening Files or Action Executions directly never
+ * downloads it.
+ */
+export function useReadmeContent(readme: Ref<FileDto | undefined>) {
     const contentQuery = useQuery({
         // The hash changes when the file is replaced, so a new upload is
         // never served from the cache of the old one.
@@ -92,13 +106,8 @@ export function useMissionReadme(missionUuid: Ref<string | undefined>) {
     });
 
     return {
-        readme,
-        /** True until we know whether the mission has a readme. */
-        isLookupPending: computed(
-            () => !!missionUuid.value && readmeQuery.isPending.value,
-        ),
         content: computed(() => contentQuery.data.value),
-        isContentLoading: contentQuery.isLoading,
-        contentError: contentQuery.error,
+        isLoading: contentQuery.isLoading,
+        error: contentQuery.error,
     };
 }

@@ -30,7 +30,7 @@ const submitAction = async (
 ): Promise<string> => {
     const templateUuid = await createActionUsingPost(
         {
-            name: 'State History Test Action',
+            name: 'State-History-Test-Action',
             description: 'desc',
             accessRights: AccessGroupRights.READ,
             dockerImage: 'hello-world',

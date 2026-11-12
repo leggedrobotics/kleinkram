@@ -107,6 +107,9 @@ create_bucket "${S3_SCRIPTS_BUCKET_NAME:-action-scripts}"
 echo "Configuring Bucket TTL..."
 # Apply a 90-day TTL to the action-artifacts bucket so all objects inside inherit it
 echo "fs.configure -locationPrefix=/buckets/${S3_ARTIFACTS_BUCKET_NAME:-action-artifacts}/ -ttl=90d -apply" | /usr/bin/weed shell -master=127.0.0.1:9333 || true
+# Database dumps are written by a backup job of the deployment, not by Kleinkram;
+# keep them for 30 days (see docs/development/application-structure/infrastructure.md)
+echo "fs.configure -locationPrefix=/buckets/${S3_DB_BUCKET_NAME:-dbdumps}/ -ttl=30d -apply" | /usr/bin/weed shell -master=127.0.0.1:9333 || true
 
 echo "SeaweedFS is ready!"
 

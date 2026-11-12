@@ -190,12 +190,7 @@
             style="background: transparent"
         >
             <q-tab-panel name="info" class="q-pa-none">
-                <MissionInfo
-                    :readme="readme"
-                    :content="readmeContent"
-                    :is-content-loading="isReadmeContentLoading"
-                    :content-error="readmeContentError"
-                />
+                <MissionInfo :readme="readme" />
             </q-tab-panel>
 
             <q-tab-panel name="files" class="q-pa-none">
@@ -255,13 +250,8 @@ const openMetadataDrawer = () => {
     isMetadataDrawerOpen.value = true;
 };
 
-const {
-    readme,
-    isLookupPending: isReadmeLookupPending,
-    content: readmeContent,
-    isContentLoading: isReadmeContentLoading,
-    contentError: readmeContentError,
-} = useMissionReadme(missionUuid);
+const { readme, isLookupPending: isReadmeLookupPending } =
+    useMissionReadme(missionUuid);
 
 /**
  * Without a tab in the URL the mission opens on its README, or on the file

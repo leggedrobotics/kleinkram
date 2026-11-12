@@ -18,6 +18,7 @@ import pytest
 from typer.testing import CliRunner
 
 import kleinkram.cli.app
+from kleinkram.api.file_transfer import UploadResult
 from kleinkram.cli._deprecation import REMOVED_IN
 from kleinkram.cli._deprecation import prefer_new
 from kleinkram.cli.app import app
@@ -151,12 +152,12 @@ def test_file_delete_accepts_several_files(runner, monkeypatch):
     monkeypatch.setattr("kleinkram.cli._file.get_file", get_file)
     monkeypatch.setattr("kleinkram.core.delete_files", delete_files)
 
-    new = invoke(runner, ["file", "delete", "a.bag", "b.bag", "-m", "m1", "-p", "p1", "-y"])
+    new = invoke(runner, ["file", "delete", "aaa.bag", "bbb.bag", "-m", "m1", "-p", "p1", "-y"])
     assert new.exit_code == 0, new.output
-    assert [q.patterns for q in queried] == [["a.bag"], ["b.bag"]]
+    assert [q.patterns for q in queried] == [["aaa.bag"], ["bbb.bag"]]
     assert len(delete_files.call_args.kwargs["file_ids"]) == 2
 
-    old = invoke(runner, ["file", "delete", "-f", "a.bag", "-m", "m1", "-p", "p1", "-y"])
+    old = invoke(runner, ["file", "delete", "-f", "aaa.bag", "-m", "m1", "-p", "p1", "-y"])
     assert old.exit_code == 0, old.output
     assert DEPRECATED in old.stderr
     assert queried[2] == queried[0]
@@ -345,9 +346,9 @@ def test_mission_create_ignore_missing_metadata_and_legacy_flag(runner, monkeypa
 
 
 def test_upload_ignore_missing_metadata_and_legacy_flag(runner, monkeypatch, tmp_path):
-    bag = tmp_path / "a.bag"
+    bag = tmp_path / "aaa.bag"
     bag.write_bytes(b"")
-    upload = MagicMock(return_value=SimpleNamespace(uploaded=1, skipped=0, failed=0))
+    upload = MagicMock(return_value=UploadResult(uploaded=1))
     monkeypatch.setattr("kleinkram.cli._upload.AuthenticatedClient", MagicMock)
     monkeypatch.setattr("kleinkram.core.upload", upload)
 

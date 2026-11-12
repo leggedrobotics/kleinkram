@@ -46,6 +46,8 @@ from kleinkram.models import Mission
 from kleinkram.models import Project
 from kleinkram.models import TimeConfig
 from kleinkram.models import TriggerType
+from kleinkram.models import UploadAction
+from kleinkram.models import UploadPlan
 from kleinkram.models import WebhookConfig
 
 FILE_STATE_COLOR = {
@@ -320,9 +322,104 @@ def print_file_verification_status(file_status: Mapping[Path, FileVerificationSt
         table = file_verification_status_table(file_status)
         Console().print(table)
     else:
+        # verified paths on stdout for piping, every problem with its reason on stderr
         for path, status in file_status.items():
-            stream = sys.stdout if status == FileVerificationStatus.UPLOADED else sys.stderr
-            print(path, file=stream, flush=True)
+            if status == FileVerificationStatus.UPLOADED:
+                print(path, file=sys.stdout, flush=True)
+            else:
+                print(f"{status.value}: {path}", file=sys.stderr, flush=True)
+
+
+UPLOAD_ACTION_STYLES = {
+    UploadAction.UPLOAD: "green",
+    UploadAction.SKIP_SAME: "dim",
+    UploadAction.SKIP_DIFFERENT: "bold red",
+    UploadAction.SKIP_UNCHECKED: "yellow",
+}
+
+
+def upload_action_token(action: UploadAction) -> str:
+    """stable, machine readable name of an action, e.g. `skip-different`"""
+    return action.name.lower().replace("_", "-")
+
+
+def upload_plan_table(plan: UploadPlan) -> Table:
+    table = Table("local path", "name in mission", "size", "action", title="dry run")
+    # like the other tables, show at most --max-lines rows; the summary below
+    # the table and the script output (--no-verbose) always cover every file
+    max_table_size = get_shared_state().max_table_size
+    for entry in plan.files[:max_table_size]:
+        action = entry.action.value
+        if entry.action == UploadAction.SKIP_UNCHECKED and entry.remote_state is not None:
+            action = f"{action}, remote state {entry.remote_state.value}"
+        table.add_row(
+            Text(str(entry.path)),  # Text, not str: rich would read `[raw]` in a path as markup
+            Text(entry.name),
+            format_bytes(entry.size),
+            Text(action, style=UPLOAD_ACTION_STYLES[entry.action]),
+        )
+    if len(plan.files) > max_table_size:
+        _add_placeholder_row(table, skipped=len(plan.files) - max_table_size)
+    return table
+
+
+TSV_ESCAPES = str.maketrans({"\\": "\\\\", "\t": "\\t", "\n": "\\n", "\r": "\\r"})
+
+
+def tsv_field(value: object) -> str:
+    """\
+    one field of a tab separated line: backslash, tab, newline and carriage
+    return are escaped as `\\\\`, `\\t`, `\\n` and `\\r`, so every value stays
+    one field on one line (directory names may contain them)
+    """
+    return str(value).translate(TSV_ESCAPES)
+
+
+def print_upload_plan(plan: UploadPlan, *, pprint: bool) -> None:
+    """\
+    prints what `klein upload` would do
+
+    with `pprint` a table for humans, otherwise one tab separated line
+    `<action>\t<local path>\t<name in mission>` per file on stdout for
+    scripts (fields escaped with `tsv_field`); the summary goes to stderr then
+    """
+    mission = f"{plan.project_name}/{plan.mission_name}"
+    to_upload = [e for e in plan.files if e.action == UploadAction.UPLOAD]
+    different = [e for e in plan.files if e.action == UploadAction.SKIP_DIFFERENT]
+    unchecked = [e for e in plan.files if e.action == UploadAction.SKIP_UNCHECKED]
+    n_skipped = len(plan.files) - len(to_upload)
+
+    lines = ["Dry run: nothing was uploaded or created."]
+    lines.append(f"Mission {mission} would be created." if plan.creates_mission else f"Mission {mission} exists.")
+    summary = f"Would upload {len(to_upload)} file(s) ({format_bytes(sum(e.size for e in to_upload))}), skip {n_skipped}."
+
+    warnings = []
+    if different:
+        warnings.append(
+            f"{len(different)} file(s) would be skipped although a different file with the same name is in the "
+            "mission. Rename them, or delete the file in the mission first."
+        )
+    if unchecked:
+        warnings.append(
+            f"{len(unchecked)} file(s) would be skipped because a file with the same name is in the mission, "
+            "but its content could not be compared (it is not in state OK yet)."
+        )
+
+    if pprint:
+        console = Console()
+        for line in lines:
+            console.print(line)
+        console.print(upload_plan_table(plan))
+        console.print(summary)
+        for warning in warnings:
+            console.print(warning, style="bold red")
+        return
+
+    for entry in plan.files:
+        fields = (upload_action_token(entry.action), entry.path, entry.name)
+        print("\t".join(tsv_field(field) for field in fields), flush=True)
+    for line in [*lines, summary, *warnings]:
+        print(line, file=sys.stderr, flush=True)
 
 
 def print_files(files: Sequence[File], *, pprint: bool) -> None:

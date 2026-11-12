@@ -19,7 +19,9 @@ from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.errors import MissionNotFound
+from kleinkram.models import FileState
 from kleinkram.models import FileVerificationStatus
+from kleinkram.models import UploadAction
 from tests.backend_fixtures import DATA_FILES
 
 
@@ -74,6 +76,85 @@ def test_upload_to_existing_mission(empty_mission):
 
     files = list_files(mission_ids=[empty_mission.id])
     assert set([file.name for file in files if file.name.endswith(".bag")]) == set([file.name for file in DATA_FILES])
+
+
+def _wait_until_files_ok(mission_id, timeout: float = 60) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if all(f.state == FileState.OK for f in list_files(mission_ids=[mission_id])):
+            return
+        time.sleep(1)
+    raise TimeoutError("uploaded files did not reach state OK")
+
+
+@pytest.mark.slow
+def test_plan_upload_against_existing_mission(empty_mission, tmp_path):
+    """the dry run compares with what is in the mission and changes nothing"""
+    client = AuthenticatedClient()
+    query = MissionQuery(ids=[empty_mission.id])
+    small, other = DATA_FILES[0], DATA_FILES[1]
+    kleinkram.core.upload(client=client, query=query, file_paths=[small, other])
+    _wait_until_files_ok(empty_mission.id)
+    before = sorted((f.id, f.hash) for f in list_files(mission_ids=[empty_mission.id]))
+
+    # same name as an uploaded file, same size, one byte changed
+    changed = tmp_path / other.name
+    content = bytearray(other.read_bytes())
+    content[-1] ^= 0xFF
+    changed.write_bytes(bytes(content))
+    new = tmp_path / "brand_new.bag"
+    new.write_bytes(small.read_bytes())
+
+    plan = kleinkram.core.plan_upload(client=client, query=query, file_paths=[small, changed, new])
+
+    assert plan.mission_id == empty_mission.id
+    assert {e.name: e.action for e in plan.files} == {
+        small.name: UploadAction.SKIP_SAME,
+        other.name: UploadAction.SKIP_DIFFERENT,
+        "brand_new.bag": UploadAction.UPLOAD,
+    }
+    assert sorted((f.id, f.hash) for f in list_files(mission_ids=[empty_mission.id])) == before
+
+
+@pytest.mark.slow
+def test_upload_reports_changed_files_with_a_taken_name(empty_mission, tmp_path):
+    """the server skips them by name; the result must not pass them off as uploaded"""
+    client = AuthenticatedClient()
+    query = MissionQuery(ids=[empty_mission.id])
+    small, other = DATA_FILES[0], DATA_FILES[1]
+    kleinkram.core.upload(client=client, query=query, file_paths=[small, other])
+    _wait_until_files_ok(empty_mission.id)
+    before = sorted((f.id, f.hash) for f in list_files(mission_ids=[empty_mission.id]))
+
+    changed = tmp_path / other.name
+    content = bytearray(other.read_bytes())
+    content[-1] ^= 0xFF
+    changed.write_bytes(bytes(content))
+
+    result = kleinkram.core.upload(client=client, query=query, file_paths=[small, changed])
+
+    assert (result.uploaded, result.skipped) == (0, 2)
+    assert sorted(result.existing) == sorted([small, changed])
+    assert result.conflicts == [changed]
+    assert result.unchecked == []
+    assert sorted((f.id, f.hash) for f in list_files(mission_ids=[empty_mission.id])) == before
+
+
+@pytest.mark.slow
+def test_plan_upload_does_not_create_the_mission(project):
+    mission_name = token_hex(8)
+    query = MissionQuery(patterns=[mission_name], project_query=ProjectQuery(ids=[project.id]))
+    client = AuthenticatedClient()
+
+    plan = kleinkram.core.plan_upload(client=client, query=query, file_paths=DATA_FILES[:2], create=True)
+
+    assert plan.creates_mission
+    assert (plan.project_name, plan.mission_name) == (project.name, mission_name)
+    assert all(e.action == UploadAction.UPLOAD for e in plan.files)
+    assert list_missions(project_ids=[project.id], mission_names=[mission_name]) == []
+
+    with pytest.raises(MissionNotFound):
+        kleinkram.core.plan_upload(client=client, query=query, file_paths=DATA_FILES[:2])
 
 
 @pytest.mark.slow

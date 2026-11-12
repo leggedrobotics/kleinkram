@@ -8,6 +8,7 @@ import pytest
 
 from kleinkram.errors import FileNameNotSupported
 from kleinkram.errors import FileTypeNotSupported
+from kleinkram.naming import get_file_name_validation_error
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import check_filename_is_sanatized
@@ -77,13 +78,13 @@ def test_check_file_paths_without_filename_check():
 
 
 def test_check_filename_is_sanatized():
-    valid = "t_-est"
-    invalid = "test%"
-    too_long = "a" * 100
-
-    assert check_filename_is_sanatized(valid)
-    assert not check_filename_is_sanatized(invalid)
-    assert not check_filename_is_sanatized(too_long)
+    """the part before the extension, by the shared rule (see `kleinkram.naming`)"""
+    assert check_filename_is_sanatized("t_-est")
+    assert check_filename_is_sanatized("run.2024")
+    assert not check_filename_is_sanatized("test%")
+    assert not check_filename_is_sanatized("a" * 100)
+    assert not check_filename_is_sanatized("ab")
+    assert not check_filename_is_sanatized("-dash")
 
 
 def test_is_valid_uuid4():
@@ -107,10 +108,32 @@ def test_is_valid_uuid4():
         pytest.param(Path(f'{"a" * 100}.txt'), f'{"a" * 40}38bf3e475f.txt', id="too long"),
         pytest.param(Path(f'{"a" * 50}.txt'), f'{"a" * 50}.txt', id="max length"),
         pytest.param(Path("in/a/folder.txt"), "folder.txt", id="in folder"),
+        pytest.param(Path("run.2024-05-14.bag"), "run.2024-05-14.bag", id="dots are kept"),
+        pytest.param(Path("log(1).bag"), "log_1_.bag", id="brackets"),
+        pytest.param(Path("REC.MCAP"), "REC.mcap", id="extension is lowercased"),
+        pytest.param(Path("-dash.bag"), "_dash.bag", id="leading dash"),
+        pytest.param(Path(".hidden.bag"), "_hidden.bag", id="leading dot"),
+        pytest.param(Path("a.bag"), "a_1fef.bag", id="too short is padded with a hash"),
+        pytest.param(
+            Path("3f2ad2c6-6e2a-4c6b-9a1d-9f6f0f3b7f21.bag"),
+            "3f2ad2c6-6e2a-4c6b-9a1d-9f6f0f3b7f21_d81c.bag",
+            id="uuid",
+        ),
     ],
 )
 def test_get_filename(old, new):
     assert get_filename(old) == new
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["a.bag", "ab.MCAP", "-x.bag", ".x.bag", "über müller (1).mcap", "日本.bag", "a" * 80 + ".csv", "...bag", "x y.YAML"],
+)
+def test_get_filename_always_gives_a_valid_name(name):
+    """`--fix-filenames` promises an upload instead of an error for any supported file"""
+    fixed = get_filename(Path(name))
+    assert get_file_name_validation_error(fixed) is None, fixed
+    assert get_filename(Path(name)) == fixed  # deterministic
 
 
 def test_get_filename_map():
@@ -121,6 +144,24 @@ def test_get_filename_map():
 
     unique = [Path("a.txt"), Path("b.txt")]
     assert get_filename_map(unique) == {get_filename(Path(p)): Path(p) for p in unique}
+
+
+@pytest.mark.parametrize(
+    "paths",
+    [
+        # same basename in different directories
+        [Path("run1/data.mcap"), Path("run2/data.mcap")],
+        # different names that sanitize to the same internal name
+        [Path("a b.mcap"), Path("a_b.mcap")],
+    ],
+)
+def test_get_filename_map_raises_on_name_clash(paths):
+    with pytest.raises(ValueError) as exc_info:
+        get_filename_map(paths)
+
+    message = str(exc_info.value)
+    for path in paths:
+        assert str(path) in message
 
 
 def test_b64_md5():

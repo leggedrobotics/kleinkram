@@ -28,7 +28,13 @@ import {
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, In, Repository } from 'typeorm';
+import {
+    EntityManager,
+    FindOptionsWhere,
+    ILike,
+    In,
+    Repository,
+} from 'typeorm';
 import logger from '../logger';
 import { UserService } from './user.service';
 
@@ -45,6 +51,13 @@ const pickName = (
     (typeof snapshot === 'string' && snapshot !== 'Unknown'
         ? snapshot
         : fallback);
+
+/**
+ * SQL condition for a membership that has not expired yet. Expired rows are
+ * only removed by a periodic queue job, so reads must filter them too.
+ */
+const ACTIVE_MEMBERSHIP = (alias: string): string =>
+    `(${alias}.expirationDate IS NULL OR ${alias}.expirationDate > NOW())`;
 
 @Injectable()
 export class AccessQueryService {
@@ -80,6 +93,7 @@ export class AccessQueryService {
                     .leftJoin('groupMembership.accessGroup', 'accessGroup')
                     .where('accessGroup.uuid = :uuid', { uuid })
                     .andWhere('user.uuid = :userUuid', { userUuid })
+                    .andWhere(ACTIVE_MEMBERSHIP('groupMembership'))
                     .getCount()) > 0;
 
             if (!isMember) {
@@ -96,6 +110,9 @@ export class AccessQueryService {
                     .leftJoin('memberships.user', 'user')
                     .where('accessGroup.uuid = :uuid', { uuid })
                     .andWhere('user.uuid = :userUuid', { userUuid })
+                    // without this, an expired membership in the target group
+                    // itself counts as sharing one of its projects
+                    .andWhere(ACTIVE_MEMBERSHIP('memberships'))
                     .getCount();
 
                 if (sharedProjectsCount === 0) {
@@ -117,6 +134,7 @@ export class AccessQueryService {
                     userUuid,
                 })
                 .andWhere('groupMembership.canEditGroup = true')
+                .andWhere(ACTIVE_MEMBERSHIP('groupMembership'))
                 .getCount()) > 0;
 
         let accessGroupQuery = this.accessGroupRepository
@@ -168,19 +186,33 @@ export class AccessQueryService {
         };
     }
 
+    /**
+     * Whether the user has at least `rights` on the project.
+     *
+     * Inside a transaction, pass its `manager`: the check then runs on the
+     * connection the transaction already holds. Taking a second connection
+     * from the pool while holding a lock can stall once the pool is full of
+     * requests waiting for that lock.
+     */
     async hasProjectRights(
         projectUUID: string,
         auth: AuthHeader,
         rights: AccessGroupRights = AccessGroupRights.WRITE,
+        manager?: EntityManager,
     ): Promise<boolean> {
-        const dbuser = await this.userRepository.findOneOrFail({
+        const userRepository =
+            manager?.getRepository(UserEntity) ?? this.userRepository;
+        const projectRepository =
+            manager?.getRepository(ProjectEntity) ?? this.projectRepository;
+
+        const dbuser = await userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
         });
         if (dbuser.role === UserRole.ADMIN) {
             return true;
         }
 
-        return this.projectRepository
+        return projectRepository
             .createQueryBuilder('project')
             .leftJoin(
                 'project_access_view_entity',
@@ -238,40 +270,97 @@ export class AccessQueryService {
         logger.debug(`Search access group with name containing '${search}'`);
         logger.debug(`Found ${count.toString()} access groups`);
 
-        const data: AccessGroupDto[] = accessGroups.map(
-            (accessGroup: AccessGroupEntity): AccessGroupDto => {
-                return {
-                    creator: accessGroup.creator
-                        ? userEntityToDto(accessGroup.creator)
-                        : null,
-                    memberships:
-                        accessGroup.memberships?.map((membership) =>
-                            groupMembershipEntityToDto(membership),
-                        ) ?? [],
-                    createdAt: accessGroup.createdAt,
-                    updatedAt: accessGroup.updatedAt,
-                    uuid: accessGroup.uuid,
-                    name: accessGroup.name,
-                    type: accessGroup.type,
-                    hidden: accessGroup.hidden,
-                    projectAccesses: projectAccessesToProjectDtos(
-                        accessGroup.project_accesses,
-                    ),
-                    emailPattern:
-                        accessGroup.type === AccessGroupType.AFFILIATION
-                            ? this.configService
-                                  .getOrThrow<AccessGroupConfig>('accessConfig')
-                                  .emails.find((emailConfig) =>
-                                      emailConfig.access_groups.includes(
-                                          accessGroup.uuid,
-                                      ),
-                                  )?.email
-                            : undefined,
-                };
-            },
+        const data = accessGroups.map((accessGroup) =>
+            this.toListDto(accessGroup),
         );
 
         return { data, count, skip, take };
+    }
+
+    /**
+     * Lists the access groups the user is an active member of, including
+     * hidden ones such as their own primary group.
+     *
+     * Unlike {@link searchAccessGroup} this needs no create permission, so it
+     * also works for external users. Member emails are never included; they
+     * are only exposed by {@link getAccessGroup} to group editors.
+     */
+    async listMyAccessGroups(
+        userUuid: string,
+        search: string,
+        type: AccessGroupType | undefined,
+        skip: number,
+        take: number,
+    ): Promise<AccessGroupsDto> {
+        let query = this.accessGroupRepository
+            .createQueryBuilder('accessGroup')
+            .innerJoin(
+                'accessGroup.memberships',
+                'ownMembership',
+                `ownMembership.user = :userUuid AND ${ACTIVE_MEMBERSHIP('ownMembership')}`,
+                { userUuid },
+            )
+            .leftJoinAndSelect('accessGroup.memberships', 'memberships')
+            .leftJoinAndSelect('memberships.user', 'user')
+            .leftJoinAndSelect(
+                'accessGroup.project_accesses',
+                'project_accesses',
+            )
+            .leftJoinAndSelect('project_accesses.project', 'project')
+            .leftJoinAndSelect('accessGroup.creator', 'creator')
+            .orderBy('accessGroup.name', 'ASC')
+            .skip(skip)
+            .take(take);
+
+        if (type !== undefined) {
+            query = query.andWhere('accessGroup.type = :type', { type });
+        }
+        if (search !== '') {
+            query = query.andWhere('accessGroup.name ILIKE :search', {
+                search: `%${search}%`,
+            });
+        }
+
+        const [accessGroups, count] = await query.getManyAndCount();
+        return {
+            data: accessGroups.map((accessGroup) =>
+                this.toListDto(accessGroup),
+            ),
+            count,
+            skip,
+            take,
+        };
+    }
+
+    private toListDto(accessGroup: AccessGroupEntity): AccessGroupDto {
+        return {
+            creator: accessGroup.creator
+                ? userEntityToDto(accessGroup.creator)
+                : null,
+            memberships:
+                accessGroup.memberships?.map((membership) =>
+                    groupMembershipEntityToDto(membership),
+                ) ?? [],
+            createdAt: accessGroup.createdAt,
+            updatedAt: accessGroup.updatedAt,
+            uuid: accessGroup.uuid,
+            name: accessGroup.name,
+            type: accessGroup.type,
+            hidden: accessGroup.hidden,
+            projectAccesses: projectAccessesToProjectDtos(
+                accessGroup.project_accesses,
+            ),
+            emailPattern:
+                accessGroup.type === AccessGroupType.AFFILIATION
+                    ? this.configService
+                          .getOrThrow<AccessGroupConfig>('accessConfig')
+                          .emails.find((emailConfig) =>
+                              emailConfig.access_groups.includes(
+                                  accessGroup.uuid,
+                              ),
+                          )?.email
+                    : undefined,
+        };
     }
 
     async getProjectAccesses(

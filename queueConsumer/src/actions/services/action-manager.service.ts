@@ -8,7 +8,6 @@ import {
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import { transitionAction } from '@kleinkram/backend-common/services/action-state-transition';
 import {
-    AccessGroupRights,
     ActionOutcome,
     ActionSeverity,
     ActionState,
@@ -18,6 +17,7 @@ import {
     maxActionSeverity,
     resolveActionOutcome,
     ResourceUsage,
+    rightsRequiredToRunAction,
     StateCauseError,
     stateCauseOfError,
     TERMINAL_ACTION_STATES,
@@ -32,6 +32,7 @@ import si from 'systeminformation';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 import { DisposableAPIKey } from '../helper/disposable-api-key';
+import { maskSecret } from '../helper/redact-environment';
 import { WideLogger } from '../helper/wide-logger';
 import { ActionCancellationService } from './action-cancellation.service';
 import { ActionErrorHintService } from './action-error-hint.service';
@@ -45,6 +46,18 @@ import { LogIngestionService } from './log-ingestion.service';
 export class ActionManagerService implements OnModuleInit {
     private currentInstanceId: string | undefined;
     private initPromise!: Promise<void>;
+
+    /**
+     * Keys handed to action containers that run on this worker right now, so
+     * a shutdown can revoke them before the process exits.
+     */
+    private readonly liveKeys = new Set<DisposableAPIKey>();
+
+    /** Key creations still waiting on the database. */
+    private readonly pendingKeyCreations = new Set<Promise<unknown>>();
+
+    /** Set on SIGTERM; no new keys are created after that. */
+    private shuttingDown = false;
 
     constructor(
         @InjectRepository(ActionEntity)
@@ -66,6 +79,93 @@ export class ActionManagerService implements OnModuleInit {
     async onModuleInit(): Promise<void> {
         this.initPromise = this.registerRunner();
         await this.initPromise;
+        await this.revokeStaleActionKeys();
+    }
+
+    /**
+     * Revokes every action key whose action is no longer running.
+     *
+     * A key is normally revoked in the `finally` of the run that created it.
+     * A worker that dies without reaching it (SIGKILL, OOM, lost node) leaves
+     * the key valid. The janitor later marks such an action as failed, and the
+     * next sweep then revokes its key. Safe to run on every worker at once:
+     * keys of actions that are still running are never touched, wherever they
+     * run.
+     *
+     * Also revokes keys that lost their action (deleted, or replaced by a
+     * newer key when the action was retried). Creating a key and linking it
+     * to its action happen in one transaction, so a fresh key is never seen
+     * without its action.
+     */
+    async revokeStaleActionKeys(): Promise<void> {
+        try {
+            const result = await this.apikeyRepository
+                .createQueryBuilder()
+                .update()
+                .set({ deletedAt: () => 'now()' })
+                .where('"key_type" = :keyType', { keyType: KeyTypes.ACTION })
+                .andWhere('"deletedAt" IS NULL')
+                .andWhere(
+                    `NOT EXISTS (
+                        SELECT 1 FROM "action" "a"
+                        WHERE "a"."keyUuid" = "apikey"."uuid"
+                          AND "a"."deletedAt" IS NULL
+                          AND "a"."state" NOT IN (:...terminalStates)
+                    )`,
+                    { terminalStates: TERMINAL_ACTION_STATES },
+                )
+                .execute();
+            if (result.affected) {
+                logger.info(
+                    `Revoked ${result.affected.toString()} stale action API key(s)`,
+                );
+            }
+        } catch (error) {
+            logger.error(
+                `Failed to revoke stale action API keys: ${String(error)}`,
+            );
+        }
+    }
+
+    /**
+     * Revokes the keys of all actions running on this worker. Called on
+     * SIGTERM: the process exits right after, so the `finally` that would
+     * normally revoke them never runs. The containers are left behind, and the
+     * janitor of the next runner kills them, so the runs are lost anyway.
+     *
+     * Stops new key creation first and waits for creations already underway,
+     * so a key saved while shutting down is revoked too.
+     */
+    async revokeLiveKeys(): Promise<void> {
+        this.shuttingDown = true;
+        await Promise.allSettled(this.pendingKeyCreations);
+        await Promise.allSettled(
+            [...this.liveKeys].map((key) => key[Symbol.asyncDispose]()),
+        );
+    }
+
+    /**
+     * Creates the action's key and tracks it in {@link liveKeys}. The key is
+     * added to the set inside the tracked promise, so once
+     * {@link revokeLiveKeys} has awaited the pending creations, every key is
+     * in the set.
+     */
+    private async createLiveKey(
+        action: ActionEntity,
+    ): Promise<DisposableAPIKey> {
+        if (this.shuttingDown) {
+            throw new Error('Worker is shutting down; not starting the action');
+        }
+        const creation = this.createAPIkey(action).then((key) => {
+            this.liveKeys.add(key);
+            return key;
+        });
+        this.pendingKeyCreations.add(creation);
+        try {
+            return await creation;
+        } finally {
+            this.pendingKeyCreations.delete(creation);
+        }
     }
 
     private async registerRunner(): Promise<void> {
@@ -148,15 +248,20 @@ export class ActionManagerService implements OnModuleInit {
             throw new Error('User is undefined');
         }
 
-        const hasWriteAccess = await this.accessControlService.canAccessMission(
+        // Re-checks what the submit guard already checked, because the creator
+        // may have lost access while the action sat in the queue. Running an
+        // action counts as a write operation on the mission, so Write is the
+        // floor even for a Read-level template; a higher template level raises
+        // it, since the key below must never carry more than its creator holds.
+        const canRunAction = await this.accessControlService.canAccessMission(
             {
                 uuid: action.creator.uuid,
                 role: action.creator.role ?? UserRole.USER,
             },
             action.mission,
-            AccessGroupRights.WRITE,
+            rightsRequiredToRunAction(action.template.accessRights),
         );
-        if (!hasWriteAccess) {
+        if (!canRunAction) {
             throw new StateCauseError({
                 code: ActionStateCause.MISSION_ACCESS_LOST,
             });
@@ -263,7 +368,7 @@ export class ActionManagerService implements OnModuleInit {
             throw new Error('Project is undefined');
         }
 
-        const apikey = await this.createAPIkey(action);
+        const apikey = await this.createLiveKey(action);
         try {
             const {
                 container,
@@ -350,9 +455,8 @@ export class ActionManagerService implements OnModuleInit {
             );
 
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            const sanitize = (string_: string): string => {
-                return string_.replace(apikey.apikey, '***');
-            };
+            const sanitize = (string_: string): string =>
+                maskSecret(string_, apikey.apikey);
 
             let lastStatsUpdate = 0;
             const statsUpdateInterval = 2000;
@@ -553,6 +657,7 @@ export class ActionManagerService implements OnModuleInit {
         } finally {
             this.cancellationService.unregisterContainer(action.uuid);
             await apikey[Symbol.asyncDispose]();
+            this.liveKeys.delete(apikey);
         }
     }
 

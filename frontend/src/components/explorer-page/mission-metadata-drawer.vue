@@ -60,7 +60,10 @@
 
                     <div style="word-break: break-all">
                         <div
-                            v-if="metadata.type.datatype === DataType.LINK"
+                            v-if="
+                                metadata.type.datatype === DataType.LINK &&
+                                safeLinkUrl(metadata.value)
+                            "
                             class="bg-grey-1 rounded-borders q-pa-sm text-body2 cursor-pointer inline-block value-box"
                             @click="() => openLink(metadata)"
                         >
@@ -118,7 +121,7 @@
 <script setup lang="ts">
 import type { MetadataDto } from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
-import { DataType } from '@kleinkram/shared';
+import { DataType, safeLinkUrl } from '@kleinkram/shared';
 import { copyToClipboard, useQuasar } from 'quasar';
 import ModifyMissionMetadataDialog from 'src/dialogs/modify-mission-metadata-dialog.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
@@ -167,15 +170,15 @@ const openMetadataDialog = (): void => {
     });
 };
 
+/**
+ * Opens a LINK value in a new tab. Values are user input, so only `http:` and
+ * `https:` URLs are opened; anything else (e.g. `javascript:`) is ignored.
+ */
 const openLink = (metadata: MetadataDto): void => {
-    if (metadata.type.datatype === DataType.LINK) {
-        const rawValue = metadata.value as
-            string | Date | number | boolean | null | undefined;
-        const url =
-            rawValue !== undefined && rawValue !== null ? String(rawValue) : '';
-        if (url) {
-            window.open(url, '_blank');
-        }
+    if (metadata.type.datatype !== DataType.LINK) return;
+    const url = safeLinkUrl(metadata.value);
+    if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
     }
 };
 

@@ -10,6 +10,9 @@ from typing import Tuple
 
 import httpx
 
+from kleinkram.api.retry import Retrier
+from kleinkram.api.retry import RetryPolicy
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,6 +29,10 @@ DEFAULT_MAX_CACHED_BLOCKS = 32
 DEFAULT_CONCURRENCY = 8
 
 RANGE_READ_TIMEOUT = 60.0
+
+# A selective read issues thousands of requests; one dropped connection should
+# cost one more request, not the whole partial download.
+RANGE_RETRY = RetryPolicy(max_attempts=5)
 
 
 class RangeRequestsUnsupported(RuntimeError):
@@ -51,11 +58,13 @@ class HttpRangeReader:
         client: Optional[httpx.Client] = None,
         block_size: int = DEFAULT_BLOCK_SIZE,
         max_cached_blocks: int = DEFAULT_MAX_CACHED_BLOCKS,
+        cancel_event: Optional[threading.Event] = None,
     ) -> None:
         if block_size <= 0:
             raise ValueError("block_size must be positive")
 
         self._url = url
+        self._cancel_event = cancel_event
         self._block_size = block_size
         self._max_cached_blocks = max_cached_blocks
         self._owns_client = client is None
@@ -85,7 +94,14 @@ class HttpRangeReader:
     def requests(self) -> int:
         return self._requests
 
+    def _retrier(self) -> Retrier:
+        """Requests are independent, so each one gets its own attempt count."""
+        return Retrier(RANGE_RETRY, cancel_event=self._cancel_event, name="range request")
+
     def _probe_size(self) -> int:
+        return self._retrier().call(self._probe_size_once)
+
+    def _probe_size_once(self) -> int:
         """Learn the object size from a one byte range request.
 
         Presigned storage URLs are signed for GET only, so HEAD is rejected. A
@@ -112,6 +128,9 @@ class HttpRangeReader:
         return self._url.split("?")[0]
 
     def _fetch(self, start: int, length: int) -> bytes:
+        return self._retrier().call(self._fetch_once, start, length)
+
+    def _fetch_once(self, start: int, length: int) -> bytes:
         """Fetch [start, start+length) in one request."""
         end = min(start + length, self._size) - 1
         if end < start:

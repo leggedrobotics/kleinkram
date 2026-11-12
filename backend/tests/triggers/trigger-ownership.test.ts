@@ -1,12 +1,10 @@
 import { appVersion } from '@/app-version';
 import { UserEntity } from '@kleinkram/backend-common';
-import { ApiKeyEntity } from '@kleinkram/backend-common/entities/auth/api-key.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import {
     AccessGroupRights,
     AccessGroupType,
-    KeyTypes,
     TriggerType,
 } from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
@@ -17,7 +15,7 @@ import {
     HeaderCreator,
 } from '../utils/api-calls';
 import { database } from '../utils/database-utilities';
-import { setupDatabaseHooks } from '../utils/test-helpers';
+import { createActionApiKey, setupDatabaseHooks } from '../utils/test-helpers';
 
 describe('Trigger Ownership API Tests', () => {
     setupDatabaseHooks();
@@ -60,7 +58,7 @@ describe('Trigger Ownership API Tests', () => {
 
         templateUuid = await createActionUsingPost(
             {
-                name: 'Test Action',
+                name: 'Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -123,22 +121,44 @@ describe('Trigger Ownership API Tests', () => {
         missionUUID: string,
         rights: AccessGroupRights,
     ): Promise<string> {
-        const apiKeyRepo = database.getRepository(ApiKeyEntity);
-        const apiKeyEntity = apiKeyRepo.create({
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            key_type: KeyTypes.ACTION,
-            mission: { uuid: missionUUID },
+        const apiKeyEntity = await createActionApiKey({
+            missionUuid: missionUUID,
+            userUuid: user.uuid,
             rights,
-            user,
         });
-        await apiKeyRepo.save(apiKeyEntity);
         return apiKeyEntity.apikey;
     }
+
+    test('creating a trigger needs Write on the mission, not just Create', async () => {
+        // A trigger runs actions as its creator, and running an action is a
+        // write operation, so Create alone must not be enough.
+        await grantProjectAccess(userB, projectUuid, AccessGroupRights.CREATE);
+
+        const headersBuilder = new HeaderCreator(userB);
+        headersBuilder.addHeader('Content-Type', 'application/json');
+        const payload = {
+            name: 'Create-level-Trigger',
+            description: 'desc',
+            type: TriggerType.WEBHOOK,
+            missionUuid,
+            templateUuid,
+            config: {},
+        };
+
+        const denied = await fetch(`${DEFAULT_URL}/triggers`, {
+            method: 'POST',
+            headers: headersBuilder.getHeaders(),
+            body: JSON.stringify(payload),
+        });
+        // The Write case is covered by the API key test below, which creates
+        // a trigger as userB with Write.
+        expect(denied.status).toBe(403);
+    });
 
     test('User B should NOT be able to update User A trigger', async () => {
         // 1. User A creates a trigger
         const trigger = await createTrigger(userA, {
-            name: 'User A Trigger',
+            name: 'User-A-Trigger',
             description: 'Owned by User A',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -155,7 +175,7 @@ describe('Trigger Ownership API Tests', () => {
             {
                 method: 'PATCH',
                 headers: headersBuilder.getHeaders(),
-                body: JSON.stringify({ name: 'Updated by User B' }),
+                body: JSON.stringify({ name: 'Updated-by-User-B' }),
             },
         );
 
@@ -165,7 +185,7 @@ describe('Trigger Ownership API Tests', () => {
     test('User B should NOT be able to delete User A trigger', async () => {
         // 1. User A creates a trigger
         const trigger = await createTrigger(userA, {
-            name: 'User A Trigger',
+            name: 'User-A-Trigger',
             description: 'Owned by User A',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -189,7 +209,7 @@ describe('Trigger Ownership API Tests', () => {
 
     test('User A should be able to update their own trigger', async () => {
         const trigger = await createTrigger(userA, {
-            name: 'User A Trigger',
+            name: 'User-A-Trigger',
             description: 'Owned by User A',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -205,7 +225,7 @@ describe('Trigger Ownership API Tests', () => {
             {
                 method: 'PATCH',
                 headers: headersBuilder.getHeaders(),
-                body: JSON.stringify({ name: 'Updated by User A' }),
+                body: JSON.stringify({ name: 'Updated-by-User-A' }),
             },
         );
 
@@ -214,7 +234,7 @@ describe('Trigger Ownership API Tests', () => {
 
     test('User A should be able to delete their own trigger', async () => {
         const trigger = await createTrigger(userA, {
-            name: 'User A Trigger',
+            name: 'User-A-Trigger',
             description: 'Owned by User A',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -237,7 +257,7 @@ describe('Trigger Ownership API Tests', () => {
 
     test('User B should NOT be able to read User A trigger', async () => {
         const trigger = await createTrigger(userA, {
-            name: 'User A Trigger',
+            name: 'User-A-Trigger',
             description: 'Owned by User A',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -273,7 +293,7 @@ describe('Trigger Ownership API Tests', () => {
 
     test('Non-creator with mission READ access can read trigger', async () => {
         const trigger = await createTrigger(userA, {
-            name: 'User A Trigger',
+            name: 'User-A-Trigger',
             description: 'Owned by User A',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -299,7 +319,7 @@ describe('Trigger Ownership API Tests', () => {
 
     test('findAll: non-admin without access sees no triggers from inaccessible missions', async () => {
         await createTrigger(userA, {
-            name: 'User A Trigger',
+            name: 'User-A-Trigger',
             description: 'Owned by User A',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -320,7 +340,7 @@ describe('Trigger Ownership API Tests', () => {
 
     test('findAll: non-admin with READ access sees triggers from accessible mission', async () => {
         const trigger = await createTrigger(userA, {
-            name: 'User A Trigger',
+            name: 'User-A-Trigger',
             description: 'Owned by User A',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -344,7 +364,7 @@ describe('Trigger Ownership API Tests', () => {
 
     test('findAll: non-admin with READ access and missionUuid filter sees only that mission triggers', async () => {
         const trigger = await createTrigger(userA, {
-            name: 'User A Trigger',
+            name: 'User-A-Trigger',
             description: 'Owned by User A',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -384,7 +404,7 @@ describe('Trigger Ownership API Tests', () => {
 
     test('findAll: admin sees all triggers', async () => {
         await createTrigger(userA, {
-            name: 'Trigger 1',
+            name: 'Trigger-1',
             description: 'desc',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -392,7 +412,7 @@ describe('Trigger Ownership API Tests', () => {
             config: {},
         });
         await createTrigger(userA, {
-            name: 'Trigger 2',
+            name: 'Trigger-2',
             description: 'desc',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -413,7 +433,7 @@ describe('Trigger Ownership API Tests', () => {
 
     test('API key with mission READ access can read trigger', async () => {
         const trigger = await createTrigger(userA, {
-            name: 'User A Trigger',
+            name: 'User-A-Trigger',
             description: 'Owned by User A',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -458,7 +478,7 @@ describe('Trigger Ownership API Tests', () => {
         );
 
         const triggerInScopedMission = await createTrigger(userA, {
-            name: 'Scoped Mission Trigger',
+            name: 'Scoped-Mission-Trigger',
             description: 'desc',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -466,7 +486,7 @@ describe('Trigger Ownership API Tests', () => {
             config: {},
         });
         await createTrigger(userA, {
-            name: 'Other Mission Trigger',
+            name: 'Other-Mission-Trigger',
             description: 'desc',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid2,
@@ -500,7 +520,7 @@ describe('Trigger Ownership API Tests', () => {
 
     test('API key cannot read a trigger its own owner created in another mission', async () => {
         // userB may create triggers anywhere in the project ...
-        await grantProjectAccess(userB, projectUuid, AccessGroupRights.CREATE);
+        await grantProjectAccess(userB, projectUuid, AccessGroupRights.WRITE);
 
         const missionUuid2 = await createMissionUsingPost(
             {
@@ -514,7 +534,7 @@ describe('Trigger Ownership API Tests', () => {
 
         // ... and creates one in the mission the key is NOT scoped to.
         const triggerInOtherMission = await createTrigger(userB, {
-            name: 'Other Mission Trigger',
+            name: 'Other-Mission-Trigger',
             description: 'Created by the key owner',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid2,
@@ -557,7 +577,7 @@ describe('Trigger Ownership API Tests', () => {
         );
 
         const triggerInOtherMission = await createTrigger(userA, {
-            name: 'Other Mission Trigger',
+            name: 'Other-Mission-Trigger',
             description: 'desc',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid2,
@@ -601,7 +621,7 @@ describe('Trigger Ownership API Tests', () => {
         );
 
         const triggerInScopedMission = await createTrigger(userA, {
-            name: 'Scoped Mission Trigger',
+            name: 'Scoped-Mission-Trigger',
             description: 'desc',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -609,7 +629,7 @@ describe('Trigger Ownership API Tests', () => {
             config: {},
         });
         await createTrigger(userA, {
-            name: 'Other Mission Trigger',
+            name: 'Other-Mission-Trigger',
             description: 'desc',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid2,

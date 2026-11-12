@@ -1,3 +1,4 @@
+import { notExpired } from '@/services/membership-filters';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
@@ -59,6 +60,7 @@ export class AuthGuardService {
                 accessGroup: { uuid },
                 user: { uuid: user.uuid },
                 canEditGroup: true,
+                expirationDate: notExpired(),
             },
         });
     }

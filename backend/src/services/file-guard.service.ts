@@ -105,6 +105,10 @@ export class FileGuardService {
         return this.canKeyAccessFile(apikey, file.uuid, rights);
     }
 
+    /**
+     * An API key belongs to one mission. It only has rights on the files of
+     * that mission, like on everything else (listing, uploads, triggers).
+     */
     async canKeyAccessFile(
         apiKey: ApiKeyEntity,
         fileUUID: string,
@@ -112,18 +116,13 @@ export class FileGuardService {
     ) {
         const file = await this.fileRepository.findOne({
             where: { uuid: fileUUID },
-            relations: {
-                mission: {
-                    project: true,
-                },
-            },
+            relations: { mission: true },
         });
         if (!file) return false;
         if (file.mission === undefined) throw new Error('File has no mission');
 
         return (
-            apiKey.mission.project?.uuid === file.mission.project?.uuid &&
-            apiKey.rights >= rights
+            apiKey.mission.uuid === file.mission.uuid && apiKey.rights >= rights
         );
     }
 

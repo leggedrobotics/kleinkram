@@ -27,11 +27,20 @@ Project and mission names are used as identifiers in the CLI and SDK (for exampl
 
 - 3 to 100 characters long.
 - Only ASCII letters (`a-z`, `A-Z`), digits (`0-9`), dots (`.`), underscores (`_`) and hyphens (`-`). Spaces, slashes and accented characters are not allowed.
-- Must not start with a dot.
+- Must not start with a dot (it would be a hidden directory) or a hyphen (a command line would read it as an option).
 - Must not be a UUID, so a name can never be mistaken for an id.
 - Project names must be unique across the instance. Mission names must be unique within their project.
 
-Use `-` or `_` where you would use a space: `Field Testing 2024` becomes `field-testing-2024`. If a name is invalid, the web interface, the CLI and the API suggest a valid alternative. Access group names follow the same rules.
+Use `-` or `_` where you would use a space: `Field Testing 2024` becomes `field-testing-2024`. If a name is invalid, the web interface, the CLI and the API suggest a valid alternative. Access group, action template and trigger names follow the same rules.
+
+File names follow the same rules for the part before the extension, which is 3 to 50 characters long. The extension
+must be one of the [supported file types](./files/files.md), in lowercase: `run_01.mcap` and `calib.2024-05-14.bag`
+are valid, `a.bag`, `run 1.bag` and `REC.MCAP` are not. The web interface lowercases the extension for you, and
+`klein upload --fix-filenames` turns any name into a valid one.
+
+These rules apply to new names. Existing projects, missions, files, action templates and triggers keep their names, and
+can still be edited without renaming them: a new version of an action template keeps the name of the template. A name
+that is changed must follow the rules.
 
 ### Metadata and Categories
 
@@ -39,7 +48,7 @@ Kleinkram allows you to organize and search your data using metadata on missions
 
 #### Mission Level: Metadata
 
-You can add key-value pairs as metadata to missions. Each key is a **metadata type**, which defines the name and datatype (e.g. string, number, boolean, date, location) of a value; the value set on a mission is its **metadata**. This allows for powerful filtering and organization.
+You can add key-value pairs as metadata to missions. Each key is a **metadata type**, which defines the name and datatype (e.g. string, number, boolean, date, location, link) of a value; the value set on a mission is its **metadata**. This allows for powerful filtering and organization. A value of type link must be an absolute `http://` or `https://` URL; other values are rejected.
 
 - **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" metadata type for every mission).
 - **Usage**: Use this metadata to quickly find all missions performed by a specific robot or in a specific location.

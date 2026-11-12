@@ -7,14 +7,14 @@ on:
             - dev
         paths:
             - 'cli/**'
-            - '.github/workflows/updatePypi.yml'
+            - '.github/workflows/update-pypi.yml'
+            - '.github/scripts/release.py'
 
 jobs:
     update-pypi:
         runs-on: ubuntu-latest
         permissions:
             contents: read
-            actions: write
             id-token: write
         steps:
             - name: Check out repository
@@ -53,14 +53,20 @@ jobs:
                   package: cli/dist/*
                   packages_dir: cli/dist
 
-            - name: Get version from setup.cfg
-              id: get_version
-              run: |
-                  VERSION=$(grep "version =" cli/setup.cfg | cut -d = -f 2 | xargs)
-                  echo "VERSION=$VERSION" >> $GITHUB_ENV
+            # The sample action images install this exact wheel instead of
+            # fetching it back from PyPI, whose index lags behind uploads.
+            - name: Upload wheel for the sample action images
+              uses: actions/upload-artifact@v7
+              with:
+                  name: kleinkram-wheel
+                  path: cli/dist/*.whl
+                  if-no-files-found: error
 
-            - name: Trigger Build Sample Actions
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  gh workflow run build-sample-actions.yml -f kleinkram_version=$VERSION --ref ${{ github.ref }}
+    build-sample-actions:
+        needs: update-pypi
+        permissions:
+            contents: read
+        uses: ./.github/workflows/build-sample-actions.yml
+        with:
+            wheel-artifact: kleinkram-wheel
+        secrets: inherit

@@ -24,6 +24,7 @@ from uuid import UUID
 import kleinkram.api.file_transfer
 import kleinkram.api.routes
 import kleinkram.core
+import kleinkram.naming
 import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.file_transfer import DownloadResult
@@ -179,6 +180,10 @@ def download(
     window still saves bandwidth, because chunks are ordered by log time, but
     `topics` alone usually does not, since a chunk normally holds several
     topics.
+
+    On Ctrl+C, running downloads stop, partial files are removed, and
+    `KeyboardInterrupt` is re-raised. What finished before the interrupt is
+    available via `kleinkram.errors.get_transfer_result(exc)`.
     """
     if isinstance(topics, str):
         # A bare string is a sequence too; without this, "/tf" would become
@@ -416,15 +421,24 @@ def upload(
     on_message_cb: Optional[OnMessageCb] = None,
     client: Optional[AuthenticatedClient] = None,
 ) -> UploadResult:
+    """Upload files to a mission.
+
+    A file whose name is already taken in the mission is skipped. If its
+    content differs from the file in the mission, it is listed in
+    `UploadResult.conflicts`: it was NOT uploaded. Files that could not be
+    compared (the file in the mission is not processed yet, or the mission
+    could not be read) are listed in `UploadResult.unchecked`.
+
+    On Ctrl+C, running uploads stop and are cancelled on the server, and
+    `KeyboardInterrupt` is re-raised. What finished before the interrupt is
+    available via `kleinkram.errors.get_transfer_result(exc)`.
+    """
     parsed_file_paths = [parse_path_like(f) for f in files]
     if not fix_filenames:
         for file in parsed_file_paths:
-            if not kleinkram.utils.check_filename_is_sanatized(file.stem):
-                print(file.name)
-                raise FileNameNotSupported(
-                    f"only `{''.join(kleinkram.utils.INTERNAL_ALLOWED_CHARS)}` are "
-                    f"allowed in filenames and at most 50 chars: {file}"
-                )
+            error = kleinkram.naming.get_file_name_validation_error(file.name)
+            if error is not None:
+                raise FileNameNotSupported(f"{file}: {error} (or pass fix_filenames=True)")
 
     query = _args_to_mission_query(
         mission_names=singleton_list(mission_name),

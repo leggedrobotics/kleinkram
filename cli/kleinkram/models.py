@@ -6,6 +6,7 @@ from dataclasses import field
 from datetime import datetime
 from enum import Enum
 from enum import IntEnum
+from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
@@ -108,6 +109,38 @@ class File:
     topics: List[str] = field(default_factory=list)
     state: FileState = FileState.OK
     state_comment: Optional[str] = None
+
+
+class UploadAction(str, Enum):
+    """what `klein upload` would do with a local file, see `kleinkram.core.plan_upload`"""
+
+    UPLOAD = "upload"
+    # a file with that name exists in the mission; the server refuses the
+    # upload by name alone, so the local file is skipped in every case below
+    SKIP_SAME = "skip, already uploaded"
+    SKIP_DIFFERENT = "skip, name taken by a different file"
+    SKIP_UNCHECKED = "skip, name taken (remote file not checkable)"
+
+
+@dataclass(frozen=True)
+class PlannedUpload:
+    path: Path
+    name: str
+    size: int
+    action: UploadAction
+    remote_state: Optional[FileState] = None
+
+
+@dataclass(frozen=True)
+class UploadPlan:
+    project_name: str
+    mission_name: str
+    mission_id: Optional[UUID]  # None if the mission would be created
+    files: List[PlannedUpload]
+
+    @property
+    def creates_mission(self) -> bool:
+        return self.mission_id is None
 
 
 class ExecutionStatus(str, Enum):

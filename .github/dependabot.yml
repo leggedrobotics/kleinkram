@@ -10,57 +10,10 @@ updates:
               patterns:
                   - '*'
 
-    - package-ecosystem: 'npm'
-      directory: '/frontend'
-      schedule:
-          interval: 'weekly'
-      target-branch: 'dev'
-      ignore:
-          # TS 7.0 has no compiler API (nest-cli, ts-jest, vue-tsc need it), see #2531
-          - dependency-name: 'typescript'
-            versions: ['>=7.0.0']
-      groups:
-          frontend-dependencies:
-              patterns:
-                  - '*'
-
-    - package-ecosystem: 'npm'
-      directory: '/backend'
-      schedule:
-          interval: 'weekly'
-      target-branch: 'dev'
-      ignore:
-          # TS 7.0 has no compiler API (nest-cli, ts-jest, vue-tsc need it), see #2531
-          - dependency-name: 'typescript'
-            versions: ['>=7.0.0']
-      groups:
-          backend-dependencies:
-              patterns:
-                  - '*'
-
-    - package-ecosystem: 'npm'
-      directory: '/queueConsumer'
-      schedule:
-          interval: 'weekly'
-      target-branch: 'dev'
-      ignore:
-          # TS 7.0 has no compiler API (nest-cli, ts-jest, vue-tsc need it), see #2531
-          - dependency-name: 'typescript'
-            versions: ['>=7.0.0']
-      groups:
-          queue-consumer-dependencies:
-              patterns:
-                  - '*'
-
-    - package-ecosystem: 'npm'
-      directory: '/docs'
-      schedule:
-          interval: 'weekly'
-      target-branch: 'dev'
-      groups:
-          docs-dependencies:
-              patterns:
-                  - '*'
+    # No npm entries: Dependabot changes the workspace package.json files but
+    # never the shared root pnpm-lock.yaml, so every npm PR failed
+    # `pnpm install --frozen-lockfile`. npm dependencies are updated by the
+    # weekly .github/workflows/automated-dependency-update.yml instead.
 
     - package-ecosystem: 'github-actions'
       directory: '/'
