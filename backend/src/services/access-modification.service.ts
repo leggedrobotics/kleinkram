@@ -29,6 +29,7 @@ import logger from '../logger';
 import { AccessQueryService } from './access-query.service';
 import { notExpired } from './membership-filters';
 import {
+    assertGrantableAccessRights,
     assertNotPublicAccessGroup,
     assertValidPublicAccessRights,
 } from './public-access';
@@ -93,6 +94,8 @@ export class AccessModificationService {
         rights: AccessGroupRights,
         auth: AuthHeader,
     ): Promise<ProjectEntity> {
+        assertGrantableAccessRights(rights);
+
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: {
@@ -126,9 +129,9 @@ export class AccessModificationService {
             auth,
             rights,
         );
-        if (rights === AccessGroupRights.DELETE && !canUpdate) {
+        if (!canUpdate) {
             throw new ConflictException(
-                'User cannot grant delete rights without having delete rights himself/herself',
+                'User cannot grant higher rights than they have themselves',
             );
         }
 
@@ -144,11 +147,6 @@ export class AccessModificationService {
             })
             .getOne();
         if (existingAccess) {
-            if (existingAccess.rights >= rights && !canUpdate) {
-                throw new ConflictException(
-                    'User cannot decrease rights without having the same rights himself/herself',
-                );
-            }
             existingAccess.rights = rights;
             await this.projectAccessRepository.save(existingAccess);
             return this.projectRepository.findOneOrFail({
@@ -352,6 +350,7 @@ export class AccessModificationService {
         rights: AccessGroupRights,
         auth: AuthHeader,
     ): Promise<ProjectDto> {
+        assertGrantableAccessRights(rights);
         assertValidPublicAccessRights(accessGroupUUID, rights);
 
         const project = await this.projectRepository.findOneOrFail({
@@ -371,17 +370,15 @@ export class AccessModificationService {
             },
         });
 
-        if (rights === AccessGroupRights.DELETE) {
-            const canDelete = await this.accessQueryService.hasProjectRights(
-                projectUUID,
-                auth,
-                AccessGroupRights.DELETE,
+        const canGrant = await this.accessQueryService.hasProjectRights(
+            projectUUID,
+            auth,
+            rights,
+        );
+        if (!canGrant) {
+            throw new ConflictException(
+                'User cannot grant higher rights than they have themselves',
             );
-            if (!canDelete) {
-                throw new ConflictException(
-                    'User cannot grant delete rights without having delete rights himself/herself',
-                );
-            }
         }
 
         const existingAccess = await this.projectAccessRepository
@@ -598,6 +595,7 @@ export class AccessModificationService {
         authHeader: AuthHeader,
     ): Promise<ProjectAccessListDto> {
         for (const access of newProjectAccess) {
+            assertGrantableAccessRights(access.rights);
             assertValidPublicAccessRights(access.uuid, access.rights);
         }
 
