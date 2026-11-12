@@ -32,6 +32,8 @@ import {
     assertGrantableAccessRights,
     assertNotPublicAccessGroup,
     assertValidPublicAccessRights,
+    isPublicAccessGroup,
+    PUBLIC_ACCESS_MANAGE_RIGHTS,
 } from './public-access';
 
 @Injectable()
@@ -138,6 +140,7 @@ export class AccessModificationService {
                 transaction,
                 projectUUID,
                 auth,
+                personalAccessGroup.uuid,
                 rights,
                 existingAccess?.rights,
             );
@@ -373,6 +376,7 @@ export class AccessModificationService {
                     transaction,
                     projectUUID,
                     auth,
+                    accessGroupUUID,
                     rights,
                 );
 
@@ -509,10 +513,29 @@ export class AccessModificationService {
     }
 
     /**
-     * Rejects a change to a project access entry unless the caller holds at
-     * least the rights the entry has before (`existingRights`) and after
-     * (`newRights`) the change. This covers granting, raising, lowering and
-     * removing rights: you can never touch an entry above your own level.
+     * The rights a caller needs to change the entry of `accessGroupUuid`
+     * between the given rights (before and after the change; `undefined`
+     * when the entry does not exist on that side). You can never touch an
+     * entry above your own level, and making a project public or restricted
+     * again takes `PUBLIC_ACCESS_MANAGE_RIGHTS`.
+     */
+    private requiredRightsToChange(
+        accessGroupUuid: string,
+        ...rights: (AccessGroupRights | undefined)[]
+    ): AccessGroupRights {
+        let required = isPublicAccessGroup(accessGroupUuid)
+            ? PUBLIC_ACCESS_MANAGE_RIGHTS
+            : AccessGroupRights.READ;
+        for (const value of rights) {
+            if (value !== undefined && value > required) required = value;
+        }
+        return required;
+    }
+
+    /**
+     * Rejects a change to a project access entry unless the caller holds
+     * `requiredRightsToChange` for it. This covers granting, raising,
+     * lowering and removing rights.
      *
      * The caller's rights come from `hasProjectRights`, which ignores expired
      * memberships and lets global admins through.
@@ -521,6 +544,7 @@ export class AccessModificationService {
         transaction: EntityManager,
         projectUuid: string,
         auth: AuthHeader,
+        accessGroupUuid: string,
         newRights: AccessGroupRights,
         existingRights?: AccessGroupRights,
     ): Promise<void> {
@@ -529,10 +553,11 @@ export class AccessModificationService {
             transaction,
             projectUuid,
             auth,
-            Math.max(
+            this.requiredRightsToChange(
+                accessGroupUuid,
                 newRights,
-                existingRights ?? AccessGroupRights.READ,
-            ) as AccessGroupRights,
+                existingRights,
+            ),
         );
     }
 
@@ -602,11 +627,11 @@ export class AccessModificationService {
         for (const [uuid, rights] of newRights) {
             const before = currentRights.get(uuid);
             if (before === rights) continue;
-            requireAtLeast(rights);
-            if (before !== undefined) requireAtLeast(before);
+            requireAtLeast(this.requiredRightsToChange(uuid, rights, before));
         }
         for (const [uuid, rights] of currentRights) {
-            if (!newRights.has(uuid)) requireAtLeast(rights);
+            if (!newRights.has(uuid))
+                requireAtLeast(this.requiredRightsToChange(uuid, rights));
         }
 
         // nothing changes: the route guard already requires write rights

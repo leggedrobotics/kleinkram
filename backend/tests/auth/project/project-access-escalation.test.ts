@@ -4,7 +4,11 @@ import {
     ProjectAccessEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
-import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    AccessGroupType,
+    PUBLIC_ACCESS_GROUP,
+} from '@kleinkram/shared';
 import {
     createAccessGroupUsingPost,
     createProjectUsingPost,
@@ -21,6 +25,7 @@ import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
  *  - POST /projects/:uuid/users
  *  - POST /access-groups/:uuid/projects/:projectUuid
  *  - POST /projects/:uuid/access
+ * Making a project public or restricted again needs DELETE rights.
  * Rights above DELETE (`_ADMIN`) are covered by
  * `project-rights-escalation.test.ts`.
  */
@@ -63,6 +68,14 @@ const storedRights = async (
         },
     });
     return access?.rights;
+};
+
+const publicEntry: ProjectAccessEntry = {
+    uuid: PUBLIC_ACCESS_GROUP.uuid,
+    name: PUBLIC_ACCESS_GROUP.name,
+    type: AccessGroupType.PUBLIC,
+    memberCount: 0,
+    rights: AccessGroupRights.READ,
 };
 
 const getProjectAccess = async (
@@ -471,6 +484,149 @@ describe('Project Access Rights Escalation', () => {
             expect(await storedRights(projectUuid, writerGroup.uuid)).toBe(
                 AccessGroupRights.READ,
             );
+        });
+    });
+
+    describe('General access (public projects)', () => {
+        test('should reject a writer making the project public', async () => {
+            const { writer, projectUuid } = await setupProject();
+            const access = await getProjectAccess(writer, projectUuid);
+
+            const response = await post(
+                writer,
+                `/projects/${projectUuid}/access`,
+                [...access, publicEntry],
+            );
+
+            expect(response.status).toBe(409);
+            expect(
+                await storedRights(projectUuid, PUBLIC_ACCESS_GROUP.uuid),
+            ).toBeUndefined();
+        });
+
+        test('should reject a writer making the project public through a non-canonical uuid', async () => {
+            const { writer, projectUuid } = await setupProject();
+            const access = await getProjectAccess(writer, projectUuid);
+
+            // PostgreSQL reads the uuid without hyphens as the public group
+            const response = await post(
+                writer,
+                `/projects/${projectUuid}/access`,
+                [
+                    ...access,
+                    {
+                        ...publicEntry,
+                        uuid: PUBLIC_ACCESS_GROUP.uuid.replaceAll('-', ''),
+                    },
+                ],
+            );
+
+            expect(response.status).toBe(400);
+            expect(
+                await storedRights(projectUuid, PUBLIC_ACCESS_GROUP.uuid),
+            ).toBeUndefined();
+        });
+
+        test('should reject a writer adding the public group to the project', async () => {
+            const { writer, projectUuid } = await setupProject();
+
+            const response = await post(
+                writer,
+                `/access-groups/${PUBLIC_ACCESS_GROUP.uuid}/projects/${projectUuid}`,
+                { rights: AccessGroupRights.READ },
+            );
+
+            expect(response.status).toBe(409);
+            expect(
+                await storedRights(projectUuid, PUBLIC_ACCESS_GROUP.uuid),
+            ).toBeUndefined();
+        });
+
+        test('should reject a writer making a public project restricted', async () => {
+            const { owner, writer, projectUuid } = await setupProject();
+            const ownerView = await getProjectAccess(owner, projectUuid);
+            const makePublic = await post(
+                owner,
+                `/projects/${projectUuid}/access`,
+                [...ownerView, publicEntry],
+            );
+            expect(makePublic.status).toBe(201);
+
+            const access = await getProjectAccess(writer, projectUuid);
+            const response = await post(
+                writer,
+                `/projects/${projectUuid}/access`,
+                access.filter(
+                    (entry) => entry.uuid !== PUBLIC_ACCESS_GROUP.uuid,
+                ),
+            );
+
+            expect(response.status).toBe(409);
+            expect(
+                await storedRights(projectUuid, PUBLIC_ACCESS_GROUP.uuid),
+            ).toBe(AccessGroupRights.READ);
+        });
+
+        test('should allow a writer to change other entries of a public project', async () => {
+            const { owner, writer, projectUuid } = await setupProject();
+            const { user: newcomer } = await generateAndFetchDatabaseUser(
+                'external',
+                'user',
+            );
+            const newcomerGroup = await personalGroup(newcomer);
+            const ownerView = await getProjectAccess(owner, projectUuid);
+            const makePublic = await post(
+                owner,
+                `/projects/${projectUuid}/access`,
+                [...ownerView, publicEntry],
+            );
+            expect(makePublic.status).toBe(201);
+
+            const access = await getProjectAccess(writer, projectUuid);
+            const response = await post(
+                writer,
+                `/projects/${projectUuid}/access`,
+                [
+                    ...access,
+                    {
+                        uuid: newcomerGroup.uuid,
+                        name: newcomerGroup.name,
+                        type: newcomerGroup.type,
+                        memberCount: 1,
+                        rights: AccessGroupRights.READ,
+                    },
+                ],
+            );
+
+            expect(response.status).toBe(201);
+            expect(
+                await storedRights(projectUuid, PUBLIC_ACCESS_GROUP.uuid),
+            ).toBe(AccessGroupRights.READ);
+        });
+
+        test('should allow a delete user to make the project public and restricted again', async () => {
+            const { owner, projectUuid } = await setupProject();
+            const access = await getProjectAccess(owner, projectUuid);
+
+            const makePublic = await post(
+                owner,
+                `/projects/${projectUuid}/access`,
+                [...access, publicEntry],
+            );
+            expect(makePublic.status).toBe(201);
+            expect(
+                await storedRights(projectUuid, PUBLIC_ACCESS_GROUP.uuid),
+            ).toBe(AccessGroupRights.READ);
+
+            const makeRestricted = await post(
+                owner,
+                `/projects/${projectUuid}/access`,
+                access,
+            );
+            expect(makeRestricted.status).toBe(201);
+            expect(
+                await storedRights(projectUuid, PUBLIC_ACCESS_GROUP.uuid),
+            ).toBeUndefined();
         });
     });
 });
