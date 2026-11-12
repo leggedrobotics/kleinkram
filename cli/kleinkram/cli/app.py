@@ -66,7 +66,7 @@ Kleinkram CLI
 
 The Kleinkram CLI is a command line interface for Kleinkram.
 For a list of available commands, run `klein --help` or visit \
-https://docs.datasets.leggedrobotics.com/usage/python/setup \
+https://kleinkram.dev/usage/python/setup \
 for more information.
 """
 

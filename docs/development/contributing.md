@@ -83,7 +83,7 @@ If you encounter a bug or have a feature request, please [open an issue on GitHu
 
 For help and support:
 
-1.  Check the [official documentation](https://docs.datasets.leggedrobotics.com/).
+1.  Check the [official documentation](https://kleinkram.dev/).
 2.  If you can't find an answer, [open an issue on GitHub](https://github.com/leggedrobotics/kleinkram/issues).
 
 ## Next Steps
