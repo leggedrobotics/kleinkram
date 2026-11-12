@@ -105,10 +105,15 @@ export class FileGuardService {
         return this.canKeyAccessFile(apikey, file.uuid, rights);
     }
 
+    /**
+     * @param sameMissionOnly only accept a key of the file's own mission,
+     * instead of any key of the file's project
+     */
     async canKeyAccessFile(
         apiKey: ApiKeyEntity,
         fileUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
+        sameMissionOnly = false,
     ) {
         const file = await this.fileRepository.findOne({
             where: { uuid: fileUUID },
@@ -121,10 +126,10 @@ export class FileGuardService {
         if (!file) return false;
         if (file.mission === undefined) throw new Error('File has no mission');
 
-        return (
-            apiKey.mission.project?.uuid === file.mission.project?.uuid &&
-            apiKey.rights >= rights
-        );
+        const scopeMatches = sameMissionOnly
+            ? apiKey.mission.uuid === file.mission.uuid
+            : apiKey.mission.project?.uuid === file.mission.project?.uuid;
+        return scopeMatches && apiKey.rights >= rights;
     }
 
     async canAccessFiles(

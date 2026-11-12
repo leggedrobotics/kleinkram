@@ -19,7 +19,11 @@ export {
 } from './mission.guards';
 
 // File guards
-export { FileAccessGuard, MoveFilesGuard } from './file.guards';
+export {
+    API_KEY_SAME_MISSION_METADATA_KEY,
+    FileAccessGuard,
+    MoveFilesGuard,
+} from './file.guards';
 
 // Queue guards
 export { QueueItemAccessGuard } from './queue.guards';

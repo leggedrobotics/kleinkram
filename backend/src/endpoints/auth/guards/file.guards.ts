@@ -10,6 +10,12 @@ import {
 import { Reflector } from '@nestjs/core';
 import { BaseGuard } from './base.guards';
 
+/**
+ * Handler metadata: API keys only pass when they belong to the file's own
+ * mission, not just to the same project.
+ */
+export const API_KEY_SAME_MISSION_METADATA_KEY = 'apiKeySameMissionOnly';
+
 interface FileBody {
     fileUUIDs?: string[];
     missionUUID?: string;
@@ -43,10 +49,16 @@ export class FileAccessGuard extends BaseGuard {
         }
 
         if (apiKey) {
+            const sameMissionOnly =
+                this.reflector.get<boolean | undefined>(
+                    API_KEY_SAME_MISSION_METADATA_KEY,
+                    context.getHandler(),
+                ) ?? false;
             return this.fileGuardService.canKeyAccessFile(
                 apiKey,
                 fileUUID,
                 requiredRight,
+                sameMissionOnly,
             );
         }
         return this.fileGuardService.canAccessFile(
