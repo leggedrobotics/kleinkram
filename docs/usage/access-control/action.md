@@ -36,11 +36,17 @@ files to it. Its template asks for `Write` access.
 
 The valid operations that can be performed on an action template are:
 
-| **Operation** | **Description**                   | **Access Level** |
-| ------------- | --------------------------------- | ---------------- |
-| view          | View an existing Action Template  | <Any />          |
-| create        | Create a new Action Template      | <Create />       |
-| delete        | Action Template cannot be deleted | -                |
+| **Operation** | **Description**                                        | **Access Level**            |
+| ------------- | ------------------------------------------------------ | --------------------------- |
+| view          | View an existing Action Template                       | <Any />                     |
+| create        | Create a new Action Template                           | <Create />                  |
+| new version   | Save a new version of an Action Template               | <Creator/> or administrator |
+| delete        | Delete (or archive, if it has run) all of its versions | <Creator/> or administrator |
+
+The creator of a template is the person who saved its first version. Saving a later version does not make you an owner,
+so only the original creator (or an administrator) can keep changing or deleting it. To run a changed copy of someone
+else's template, save it as a new template under a new name. A new version always keeps the template's name.
+Platform templates such as `script-runner` cannot be changed or deleted by anyone through the API.
 
 ## Action Trigger
 

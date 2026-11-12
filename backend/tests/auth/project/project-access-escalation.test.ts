@@ -26,6 +26,8 @@ import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
  *  - POST /access-groups/:uuid/projects/:projectUuid
  *  - POST /projects/:uuid/access
  * Making a project public or restricted again needs DELETE rights.
+ * Rights above DELETE (`_ADMIN`) are covered by
+ * `project-rights-escalation.test.ts`.
  */
 
 interface ProjectAccessEntry {
@@ -142,21 +144,6 @@ describe('Project Access Rights Escalation', () => {
     setupDatabaseHooks();
 
     describe('POST /projects/:uuid/users', () => {
-        test('should reject a writer granting themselves _ADMIN rights', async () => {
-            const { writer, projectUuid, writerGroup } = await setupProject();
-
-            const response = await post(
-                writer,
-                `/projects/${projectUuid}/users`,
-                { userUuid: writer.uuid, rights: AccessGroupRights._ADMIN },
-            );
-
-            expect(response.status).toBe(409);
-            expect(await storedRights(projectUuid, writerGroup.uuid)).toBe(
-                AccessGroupRights.WRITE,
-            );
-        });
-
         test('should reject a writer lowering the rights of a delete user', async () => {
             const { writer, coOwner, projectUuid, coOwnerGroup } =
                 await setupProject();
@@ -241,21 +228,6 @@ describe('Project Access Rights Escalation', () => {
     });
 
     describe('POST /access-groups/:uuid/projects/:projectUuid', () => {
-        test('should reject a writer granting their own group _ADMIN rights', async () => {
-            const { writer, projectUuid, writerGroup } = await setupProject();
-
-            const response = await post(
-                writer,
-                `/access-groups/${writerGroup.uuid}/projects/${projectUuid}`,
-                { rights: AccessGroupRights._ADMIN },
-            );
-
-            expect(response.status).toBe(409);
-            expect(await storedRights(projectUuid, writerGroup.uuid)).toBe(
-                AccessGroupRights.WRITE,
-            );
-        });
-
         test('should reject a writer granting delete rights', async () => {
             const { writer, projectUuid, writerGroup } = await setupProject();
 
