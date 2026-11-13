@@ -218,13 +218,11 @@ export class SessionService {
 
         const now = new Date();
         const current = session.generation;
+        const clientRotates = supportsRotation(session.kind, clientVersion);
 
         // a client that turns out to store rotated tokens switches the
         // session to rotation for good; there is no way back
-        if (
-            !session.rotating &&
-            supportsRotation(session.kind, clientVersion)
-        ) {
+        if (!session.rotating && clientRotates) {
             await this.sessionRepository.update(
                 { uuid: session.uuid },
                 { rotating: true },
@@ -233,7 +231,15 @@ export class SessionService {
         }
 
         if (parsed.generation === current) {
-            if (!session.rotating) {
+            // An old CLI (before 0.67) keeps its refresh token and drops a
+            // new one. If it shares `~/.kleinkram.json` with a newer CLI,
+            // rotating for it would leave the file on an old generation and
+            // the next refresh would count as reuse. So it only gets a new
+            // access token. Reuse detection still works: the newer CLI
+            // rotates on its next refresh, after which the old token is
+            // stale. Claiming an old version gains a thief nothing beyond
+            // what the current token already allows.
+            if (!session.rotating || !clientRotates) {
                 await this.touch(session, now);
                 return {
                     session,

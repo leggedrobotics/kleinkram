@@ -296,42 +296,76 @@ describe('User Sessions', () => {
         expect(await me(result.authToken ?? '')).toBe(200);
     });
 
-    test('should not let a caller switch rotation off by sending an old version', async () => {
-        const user = await newUser('session-downgrade@leggedrobotics.com');
-        const tokens = await cliLogin(user);
-
-        const old = await refresh(tokens.refreshToken, '0.66.0');
-        expect(old.refreshToken).toBeDefined();
-        expect(old.refreshToken).not.toBe(tokens.refreshToken);
-
-        await database
-            .getRepository(SessionEntity)
-            .update(
-                { uuid: sessionUuidOf(tokens.authToken) },
-                { rotatedAt: new Date(Date.now() - 5 * 60 * 1000) },
-            );
-        const none = await refresh(old.refreshToken ?? '', '');
-        expect(none.refreshToken).toBeDefined();
-        expect(none.refreshToken).not.toBe(old.refreshToken);
-    });
-
     test('should switch an old CLI session to rotation once a new CLI refreshes it', async () => {
         const user = await newUser('session-upgrade@leggedrobotics.com');
         const tokens = await cliLogin(user, '0.66.0');
 
         const upgraded = await refresh(tokens.refreshToken);
         expect(upgraded.refreshToken).toBeDefined();
+        expect(upgraded.refreshToken).not.toBe(tokens.refreshToken);
 
-        // and it stays rotating, also for requests claiming an old version
+        // and it stays rotating for the new CLI
         await database
             .getRepository(SessionEntity)
             .update(
                 { uuid: sessionUuidOf(tokens.authToken) },
                 { rotatedAt: new Date(Date.now() - 5 * 60 * 1000) },
             );
-        const again = await refresh(upgraded.refreshToken ?? '', '0.66.0');
+        const again = await refresh(upgraded.refreshToken ?? '');
         expect(again.refreshToken).toBeDefined();
         expect(again.refreshToken).not.toBe(upgraded.refreshToken);
+    });
+
+    test('should keep a session alive when an old and a new CLI share one config file', async () => {
+        const user = await newUser('session-mixed@leggedrobotics.com');
+        const first = await cliLogin(user);
+        const sessionUuid = sessionUuidOf(first.authToken);
+        const graceOver = async (): Promise<void> => {
+            await database
+                .getRepository(SessionEntity)
+                .update(
+                    { uuid: sessionUuid },
+                    { rotatedAt: new Date(Date.now() - 5 * 60 * 1000) },
+                );
+        };
+
+        // the new CLI rotates and saves the new token
+        const rotated = await refresh(first.refreshToken);
+        expect(rotated.refreshToken).toBeDefined();
+        const saved = rotated.refreshToken ?? '';
+        await graceOver();
+
+        // the old CLI refreshes with the saved token: it gets an access
+        // token, but no new refresh token it would throw away
+        const old = await refresh(saved, '0.66.0');
+        expect(old.status).toBe(200);
+        expect(old.refreshToken).toBeUndefined();
+        expect(await me(old.authToken ?? '')).toBe(200);
+
+        // later, both CLIs still work with the saved token
+        await graceOver();
+        expect(await refreshStatus(saved, '0.66.0')).toBe(200);
+        const next = await refresh(saved);
+        expect(next.status).toBe(200);
+        expect(next.refreshToken).toBeDefined();
+        expect(next.refreshToken).not.toBe(saved);
+    });
+
+    test('should still end the session when an old version replays a stale token', async () => {
+        const user = await newUser('session-stale-old@leggedrobotics.com');
+        const first = await cliLogin(user);
+
+        const rotated = await refresh(first.refreshToken);
+        expect(rotated.refreshToken).toBeDefined();
+        await database
+            .getRepository(SessionEntity)
+            .update(
+                { uuid: sessionUuidOf(first.authToken) },
+                { rotatedAt: new Date(Date.now() - 5 * 60 * 1000) },
+            );
+
+        expect(await refreshStatus(first.refreshToken, '0.66.0')).toBe(401);
+        expect(await refreshStatus(rotated.refreshToken ?? '')).toBe(401);
     });
 
     test('should keep quick successive refreshes on one generation', async () => {
