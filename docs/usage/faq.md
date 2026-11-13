@@ -29,7 +29,7 @@ Its content does not match its file type, or it cannot be read, e.g. an `.mcap` 
 :::
 
 ::: details How do I log in on a machine without a browser?
-`klein login` switches to a headless login when it finds no browser. See [Headless Login](python/setup.md#headless-login).
+`klein login` prints a short code and the address of the activation page when it finds no browser. Open that page on any other device, such as your laptop or phone, and enter the code. See [Alternative Authentication Methods](python/setup.md#alternative-authentication-methods).
 :::
 
 ::: details How does the access control work?

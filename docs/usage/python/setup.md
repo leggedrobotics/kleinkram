@@ -55,6 +55,19 @@ The terminal icon in the header of the web app shows the install and login comma
 filled in.
 :::
 
+::: tip Summary
+
+| Situation                             | What to do                                                     |
+| ------------------------------------- | -------------------------------------------------------------- |
+| First login on a machine              | `klein login datasets.example.org`                             |
+| Log in again to the active server     | `klein login`                                                  |
+| Remote machine without a browser, SSH | `klein login`; it prints the code instead of opening a browser |
+| Always print the code                 | `klein login --headless`                                       |
+| Script or CI job outside an action    | `klein login datasets.example.org --key "$API_KEY"`            |
+| Inside a Kleinkram action             | Nothing: the action is already authenticated                   |
+
+:::
+
 ### Alternative Authentication Methods
 
 ::: details Without a browser (SSH, robots, servers)
