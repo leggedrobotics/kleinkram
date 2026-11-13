@@ -15,6 +15,7 @@ from kleinkram.api.client import _convert_nested_data_query_params_values
 from kleinkram.api.client import _convert_query_params_to_httpx_format
 from kleinkram.config import Config
 from kleinkram.config import Credentials
+from kleinkram.config import Endpoint
 from kleinkram.config import save_config
 
 CONFIG_FILENAME = ".kleinkram.json"
@@ -29,7 +30,11 @@ def config_path():
 @pytest.fixture
 def empty_config(config_path):
     test_creds = Credentials(api_key="test")
-    config = Config(endpoint_credentials={"local": test_creds}, selected_endpoint="local")
+    config = Config(
+        endpoints={"local": Endpoint("local", "http://localhost:3000", "http://localhost:9000")},
+        endpoint_credentials={"local": test_creds},
+        selected_endpoint="local",
+    )
     save_config(config, config_path)
     return config_path
 

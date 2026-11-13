@@ -162,6 +162,13 @@ const ROUTES = {
         layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
+    CLI_ACTIVATE: routeWithLayout({
+        name: 'CliActivatePage',
+        path: '/cli/activate',
+        component: () => import('pages/cli-activate-page.vue'),
+        layout: () => import('layouts/no-top-nav-layout.vue'),
+    }),
+
     ERROR_404: routeWithLayout({
         name: 'Error404Page',
         path: '/:catchAll(.*)',

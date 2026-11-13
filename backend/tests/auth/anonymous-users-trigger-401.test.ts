@@ -17,7 +17,12 @@ const UNAUTHENTICATED_ENDPOINTS: string[] = [
     '/integrations/',
     '/api/health',
     '/hooks/actions/',
+    '/cli/config',
+    '/cli/device/token',
 ];
+
+// public only for exactly this path, not for the routes below it
+const UNAUTHENTICATED_EXACT_ENDPOINTS = new Set<string>(['/cli/device']);
 
 /**
  *
@@ -35,6 +40,7 @@ describe('Unauthenticated users trigger 401', () => {
     const endpoints = getEndpoints();
     for (const endpoint of endpoints) {
         // skip endpoints that are not protected
+        if (UNAUTHENTICATED_EXACT_ENDPOINTS.has(endpoint.url)) continue;
         if (
             // eslint-disable-next-line @typescript-eslint/naming-convention
             UNAUTHENTICATED_ENDPOINTS.some((url_prefix: string) =>

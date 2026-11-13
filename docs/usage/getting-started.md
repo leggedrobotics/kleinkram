@@ -85,8 +85,10 @@ The primary way to upload data to Kleinkram is using the **Kleinkram CLI**.
 2.  **Authenticate**:
 
     ```bash
-    klein login
+    klein login https://datasets.example.org
     ```
+
+    Use the address of your Kleinkram web app.
 
 3.  **Upload Data**:
     ```bash

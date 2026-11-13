@@ -28,24 +28,19 @@ At this point you can already run the CLI locally:
 klein --help
 ```
 
-Furthermore if you run:
-
-```
-klein endpoint
-```
-
-the CLI should automatically detect that you are running the CLI locally as highlighted in the output of the above command.
-Otherwise you should now set the CLI to use the `local` endpoint by running:
+To use it with your local stack, add the local server and log in as one of the fake users:
 
 ```bash
-klein endpoint local
+klein login http://localhost:3000 --oauth-provider fake-oauth --user 1
 ```
 
-In case you wish to test the local version of the CLI against the `dev` or even `prod` backend you can do so by running:
+To test the local CLI against another server, log in to it with its address and switch between the servers with
+`klein host`:
 
 ```bash
-klein endpoint dev
-klein endpoint prod
+klein login https://datasets.example.org
+klein host                 # list the saved servers
+klein host use localhost:3000
 ```
 
 If you want you can also run the CLI as a module which should be functionally equivalent to the above command:

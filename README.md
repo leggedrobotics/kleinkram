@@ -60,11 +60,10 @@ You can now access the frontend at `http://localhost:8003`.
 
 4. **Configure CLI (Optional)**
 
-If you want to use the CLI with your local instance, you need to set the endpoint to local:
+If you want to use the CLI with your local instance, log in with its address and approve the login in the browser:
 
 ```bash
-klein endpoint local
-klein login
+klein login http://localhost:8003
 ```
 
 <details>

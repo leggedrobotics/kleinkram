@@ -106,6 +106,21 @@ klein --no-verbose upload -p testProject -m testMission -r ./recordings || exit 
 klein --no-verbose verify -p testProject -m testMission -r ./recordings || exit 1
 ```
 
+## Servers and Login
+
+| Command                    | What it does                                                                     |
+| -------------------------- | -------------------------------------------------------------------------------- |
+| `klein login <url>`        | Adds the server behind the web app address `<url>`, makes it active and logs in. |
+| `klein login`              | Logs in to the active server again.                                              |
+| `klein login --headless`   | Prints the login code instead of opening a browser.                              |
+| `klein login --key <key>`  | Stores an API key for the active server (add `<url>` if none is set up yet).     |
+| `klein host`               | Lists the saved servers and marks the active one.                                |
+| `klein host use <name>`    | Makes a saved server the active one.                                             |
+| `klein host remove <name>` | Forgets a server and its login.                                                  |
+| `klein logout [--all]`     | Removes the login of the active server (or of all servers).                      |
+
+See the [Setup Guide](./setup.md#authentication) for how the login works.
+
 ## Core Workflows
 
 ### Listing Resources
@@ -391,6 +406,8 @@ follows:
 | `klein triggers create --name <name>` / `-n`                        | `klein trigger create <name>`                                    |
 | `klein triggers create/update -y <type>`                            | `klein trigger create/update --type <type>`                      |
 | `klein login -p <provider>`                                         | `klein login --oauth-provider <provider>`                        |
+| `klein endpoint`, `klein endpoint <name>`                           | `klein host`, `klein host use <name>`                            |
+| `klein endpoint <name> <api> <s3>`                                  | `klein login <url>`                                              |
 | `klein verify --skip-hash`                                          | `klein verify --no-check-file-hash`                              |
 | `--ignore-missing-tags` on `upload` / `mission create`              | Remove it: it has no effect                                      |
 | `required_tags` in the JSON of `klein --no-verbose project info`    | `required_metadata_types`                                        |

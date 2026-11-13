@@ -109,8 +109,7 @@ npx dotenv-cli -e .env -- pnpm --filter "@kleinkram/backend-common" seed:run
 
 # 3. Authenticate the CLI with fake OAuth
 source cli/.venv/bin/activate
-klein endpoint local
-klein login --oauth-provider fake-oauth --user 1
+klein login http://localhost:3000 --oauth-provider fake-oauth --user 1
 
 # 4. Run the Python E2E/integration tests
 pytest cli/tests/ -v --tb=short

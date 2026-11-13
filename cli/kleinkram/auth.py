@@ -1,17 +1,37 @@
 from __future__ import annotations
 
+import os
+import platform
+import socket
+import sys
 import time
 import urllib.parse
 import webbrowser
 from getpass import getpass
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
+from typing import Callable
 from typing import Optional
 
+import httpx
+from rich.console import Console
+
+from kleinkram._version import __version__
 from kleinkram.config import CONFIG_PATH
+from kleinkram.config import Config
 from kleinkram.config import Credentials
+from kleinkram.config import Endpoint
+from kleinkram.config import add_endpoint
+from kleinkram.config import find_endpoint_by_api
 from kleinkram.config import get_config
 from kleinkram.config import save_config
+from kleinkram.discovery import CLI_VERSION_HEADER
+from kleinkram.discovery import ServerInfo
+from kleinkram.discovery import discover
+from kleinkram.discovery import host_name
+from kleinkram.discovery import is_version_supported
+from kleinkram.errors import NoEndpointConfigured
+from kleinkram.errors import UpdateCLIVersion
 
 DEFAULT_CALLBACK_PORT = 8000
 CLI_CALLBACK_ENDPOINT = "/cli/callback"
@@ -20,27 +40,20 @@ AUTH_TOKEN_FETCH_ERROR = "Failed to fetch authentication tokens."
 
 
 def _has_browser() -> bool:
+    """\
+    whether a graphical browser can be opened on this machine
+
+    `webbrowser` happily picks a text browser (lynx, w3m) over SSH, which would
+    take over the terminal, so a Linux machine without a display counts as
+    headless.
+    """
+    if sys.platform.startswith("linux") and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        return False
     try:
         webbrowser.get()
         return True
     except webbrowser.Error:
         return False
-
-
-def _headless_auth(*, url: str) -> None:
-
-    print(f"please open the following URL manually to authenticate: {url}")
-    print("enter the authentication token provided after logging in:")
-    auth_token = getpass("authentication token: ")
-    refresh_token = getpass("refresh token: ")
-
-    if auth_token and refresh_token:
-        config = get_config()
-        config.credentials = Credentials(auth_token=auth_token, refresh_token=refresh_token)
-        save_config(config)
-        print(f"Authentication complete. Tokens saved to {CONFIG_PATH}.")
-    else:
-        raise ValueError("Please provided tokens.")
 
 
 class OAuthCallbackHandler(BaseHTTPRequestHandler):
@@ -195,36 +208,229 @@ def _direct_oauth_auth(*, endpoint: str, provider: str, user: str) -> None:
         raise RuntimeError(f"OAuth flow failed: {e}")
 
 
+DEVICE_PATH = "/cli/device"
+DEVICE_TOKEN_PATH = "/cli/device/token"
+SLOW_DOWN_STEP = 5
+
+
+class LoginFailed(Exception): ...
+
+
+class DeviceLoginUnsupported(Exception):
+    """the server is older than 0.67 and has no `/cli/device`"""
+
+
+LEGACY_DEFAULT_PROVIDER = "google"
+
+
+def _legacy_headless_auth(*, url: str) -> Credentials:
+    """\
+    login for servers older than 0.67 without a browser on this machine: the
+    server shows the two tokens after login, the user pastes them here
+    """
+    console = _console()
+    console.print("Open this address in a browser on any device and log in:")
+    console.print(f"  [blue]{url}[/blue]")
+    console.print("Then paste the two tokens the page shows.")
+    auth_token = getpass("authentication token: ").strip()
+    refresh_token = getpass("refresh token: ").strip()
+    if not auth_token or not refresh_token:
+        raise LoginFailed("Both tokens are needed to log in.")
+    return Credentials(auth_token=auth_token, refresh_token=refresh_token)
+
+
+def _callback_login(*, api: str, provider: str, user: Optional[str]) -> None:
+    """log in through a local callback port, the browser flow every server version supports"""
+    server, callback_port = _create_callback_server()
+    oauth_url = f"{api}{OAUTH_SLUG}{provider}?state=cli-port-{callback_port}"
+    if user is not None:
+        oauth_url += f"&user={user}"
+    _browser_auth(url=oauth_url, server=server)
+
+
+def _console() -> Console:
+    return Console(file=sys.stderr, highlight=False)
+
+
+def add_server(url: str, *, config: Optional[Config] = None) -> ServerInfo:
+    """\
+    discover the server behind `url`, save it and make it the active host
+
+    A server that is already saved under another name (e.g. `prod` from an older
+    CLI) keeps that name and its login.
+    """
+    config = config or get_config()
+    console = _console()
+    console.print(f"[dim]→ Checking {url} …[/dim]")
+    info = discover(url)
+
+    if not is_version_supported(__version__, info.min_cli_version):
+        console.print(f"[red]This server needs CLI version {info.min_cli_version} or newer, " f"you have {__version__}.[/red]")
+        raise UpdateCLIVersion()
+
+    name = find_endpoint_by_api(config, info.api_url) or host_name(info.frontend_url)
+
+    # a saved server of the same name with another API is a different server:
+    # its login must never be sent to the new address
+    previous = config.endpoints.get(name)
+    if previous is not None and previous.api.rstrip("/") != info.api_url.rstrip("/"):
+        config.endpoint_credentials.pop(name, None)
+        console.print(f"[yellow]  {name} now points to a different API; its saved login was removed.[/yellow]")
+
+    add_endpoint(config, Endpoint(name, info.api_url, info.s3_url))
+
+    console.print(f"  [green]✓[/green] Kleinkram [bold]{name}[/bold]  [dim]server {info.server_version}[/dim]")
+    console.print(f"  [dim]  api  {info.api_url}[/dim]")
+    console.print(f"  [dim]  s3   {info.s3_url}[/dim]")
+    return info
+
+
+def _resolve_server(url: Optional[str], config: Config) -> None:
+    if url is not None:
+        add_server(url, config=config)
+        return
+    if config.has_endpoint:
+        return
+    if sys.stdin.isatty():
+        entered = input("Address of your Kleinkram server (as opened in the browser): ").strip()
+        if entered:
+            add_server(entered, config=config)
+            return
+    raise NoEndpointConfigured()
+
+
+def _device_client(api: str) -> httpx.Client:
+    return httpx.Client(base_url=api, timeout=30.0, headers={CLI_VERSION_HEADER: __version__})
+
+
+def _device_auth(
+    *,
+    api: str,
+    open_browser: bool,
+    sleep: Callable[[float], None] = time.sleep,
+) -> Credentials:
+    """\
+    log in by approving a short code in the web app (RFC 8628 style)
+
+    Works the same on a laptop (the page opens by itself) and over SSH (the
+    user opens the page on any other device).
+    """
+    console = _console()
+    with _device_client(api) as client:
+        response = client.post(
+            DEVICE_PATH,
+            json={
+                "hostname": socket.gethostname()[:255],
+                "platform": f"{platform.system()} {platform.machine()}".strip()[:255],
+                "cliVersion": __version__,
+            },
+        )
+        if response.status_code == 404:
+            raise DeviceLoginUnsupported()
+        response.raise_for_status()
+        authorization = response.json()
+
+        user_code = authorization["userCode"]
+        verification_uri = authorization["verificationUri"]
+        complete_uri = authorization["verificationUriComplete"]
+        interval = float(authorization.get("interval", 5))
+        deadline = time.monotonic() + float(authorization.get("expiresIn", 600))
+
+        opened = open_browser and webbrowser.open(complete_uri)
+        if opened:
+            console.print("\nOpening your browser to approve this login…")
+            console.print(f"[dim]  If nothing opens, visit [/dim][blue]{complete_uri}[/blue]")
+            console.print(f"[dim]  and check that it shows the code [/dim][bold]{user_code}[/bold]")
+        else:
+            console.print("\nOn any device, open:")
+            console.print(f"  [blue]{verification_uri}[/blue]")
+            console.print("and enter the code:\n")
+            console.print(f"        [bold]{user_code}[/bold]\n")
+
+        minutes = max(1, round((deadline - time.monotonic()) / 60))
+        console.print(f"[dim]Waiting for approval (expires in {minutes} min, Ctrl+C to cancel)…[/dim]")
+
+        while time.monotonic() < deadline:
+            sleep(interval)
+            poll = client.post(DEVICE_TOKEN_PATH, json={"deviceCode": authorization["deviceCode"]})
+            poll.raise_for_status()
+            result = poll.json()
+            status = result.get("status")
+
+            if status == "approved":
+                return Credentials(auth_token=result["authToken"], refresh_token=result["refreshToken"])
+            if status == "slow_down":
+                interval += SLOW_DOWN_STEP
+            elif status == "denied":
+                raise LoginFailed("The login was denied in the browser.")
+            elif status == "expired":
+                break
+
+    raise LoginFailed("The login code expired. Run `klein login` again.")
+
+
+def _print_signed_in(config: Config) -> None:
+    from kleinkram.api.client import AuthenticatedClient
+
+    console = _console()
+    try:
+        client = AuthenticatedClient()
+        me = client.get("/users/me")
+        me.raise_for_status()
+        user = me.json()
+        who = f"[bold]{user.get('name', '')}[/bold] ({user.get('email', '')})"
+    except Exception:
+        who = "your account"
+    console.print(f"[green]✓[/green] Signed in as {who} on [bold]{config.selected_endpoint}[/bold]")
+
+
 def login_flow(
     *,
-    oAuthProvider: str,
+    url: Optional[str] = None,
+    oAuthProvider: Optional[str] = None,
     key: Optional[str] = None,
     headless: bool = False,
     user: Optional[str] = None,
 ) -> None:
     config = get_config()
+    _resolve_server(url, config)
+
     # use cli key login
     if key is not None:
         config.credentials = Credentials(api_key=key)
         save_config(config)
+        _console().print(f"[green]✓[/green] Saved API key for [bold]{config.selected_endpoint}[/bold]")
         return
 
-    # If user parameter is provided with fake-oauth, use direct OAuth flow
+    # development: log in as a fake-oauth user without a browser
     if user is not None and oAuthProvider == "fake-oauth":
         _direct_oauth_auth(endpoint=config.endpoint.api, provider=oAuthProvider, user=user)
+        _print_signed_in(config)
         return
 
-    # normal flow: either browser-based or headless OAuth
-    # if headless is False and browser is available, use browser-based flow with callback server
-    if not headless and _has_browser():
-        server, callback_port = _create_callback_server()
-        state = f"cli-port-{callback_port}"
-        oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}{oAuthProvider}?state={state}"
-        if user is not None:
-            oauth_url += f"&user={user}"
-        _browser_auth(url=oauth_url, server=server)
-    else:
-        oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}{oAuthProvider}?state=cli-no-redirect"
-        if user is not None:
-            oauth_url += f"&user={user}"
-        _headless_auth(url=oauth_url)
+    open_browser = not headless and _has_browser()
+
+    # explicitly chosen provider: the flow through a local callback port
+    if oAuthProvider is not None and open_browser:
+        _callback_login(api=config.endpoint.api, provider=oAuthProvider, user=user)
+        _print_signed_in(config)
+        return
+
+    try:
+        credentials = _device_auth(api=config.endpoint.api, open_browser=open_browser)
+    except DeviceLoginUnsupported:
+        # servers older than 0.67: no login codes, use the older flows
+        provider = oAuthProvider or LEGACY_DEFAULT_PROVIDER
+        _console().print(
+            f"[yellow]This server is older than 0.67 and has no login codes; "
+            f"logging in with {provider} instead (choose another with --oauth-provider).[/yellow]"
+        )
+        if open_browser:
+            _callback_login(api=config.endpoint.api, provider=provider, user=user)
+            _print_signed_in(config)
+            return
+        credentials = _legacy_headless_auth(url=f"{config.endpoint.api}{OAUTH_SLUG}{provider}?state=cli-no-redirect")
+
+    config.credentials = credentials
+    save_config(config)
+    _print_signed_in(config)

@@ -20,12 +20,12 @@ Every function is imported from `kleinkram` and accepts an optional `client=` ke
 The SDK uses the login of the CLI. Log in once on the machine:
 
 ```bash
-klein login
+klein login https://datasets.example.org
 ```
 
-The SDK then reads the saved credentials and the selected endpoint from `~/.kleinkram.json`, and refreshes the login
+The SDK then reads the saved credentials and the active server from `~/.kleinkram.json`, and refreshes the login
 when it expires. See [Authentication](./setup.md#authentication) for headless machines and other providers, and
-[Endpoints](./setup.md#endpoints-and-self-hosted-instances) to talk to another Kleinkram instance. Inside a Kleinkram
+[Servers](./setup.md#servers) to talk to another Kleinkram instance. Inside a Kleinkram
 action, the SDK is already authenticated, like the CLI.
 
 If you are not logged in, every call raises `kleinkram.errors.NotAuthenticated`.

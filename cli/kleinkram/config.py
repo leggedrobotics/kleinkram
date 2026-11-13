@@ -12,7 +12,6 @@ import os
 import tempfile
 from dataclasses import dataclass
 from dataclasses import field
-from enum import Enum
 from pathlib import Path
 from typing import Any
 from typing import Dict
@@ -22,20 +21,14 @@ from typing import Optional
 from rich.table import Table
 from rich.text import Text
 
-from kleinkram._version import __local__
 from kleinkram._version import __version__
+from kleinkram.errors import NoEndpointConfigured
 from kleinkram.utils import format_traceback
 
 logger = logging.getLogger(__name__)
 
 CONFIG_PATH = Path().home() / ".kleinkram.json"
 MAX_TABLE_SIZE = 256
-
-
-class Environment(Enum):
-    LOCAL = "local"
-    DEV = "dev"
-    PROD = "prod"
 
 
 class Endpoint(NamedTuple):
@@ -48,31 +41,6 @@ class Credentials(NamedTuple):
     auth_token: Optional[str] = None
     refresh_token: Optional[str] = None
     api_key: Optional[str] = None
-
-
-DEFAULT_LOCAL_API = "http://localhost:3000"
-DEFAULT_LOCAL_S3 = "http://localhost:9000"
-
-DEFAULT_DEV_API = "https://api.datasets.dev.leggedrobotics.com"
-DEFAULT_DEV_S3 = "https://s3.datasets.dev.leggedrobotics.com"
-
-DEFAULT_PROD_API = "https://api.datasets.leggedrobotics.com"
-DEFAULT_PROD_S3 = "https://s3.datasets.leggedrobotics.com"
-
-
-DEFAULT_ENDPOINTS = {
-    "local": Endpoint("local", DEFAULT_LOCAL_API, DEFAULT_LOCAL_S3),
-    "dev": Endpoint("dev", DEFAULT_DEV_API, DEFAULT_DEV_S3),
-    "prod": Endpoint("prod", DEFAULT_PROD_API, DEFAULT_PROD_S3),
-}
-
-
-def get_env() -> Environment:
-    if __local__:
-        return Environment.LOCAL
-    if "dev" in __version__:
-        return Environment.DEV
-    return Environment.PROD
 
 
 ACTION_API_KEY = "KLEINKRAM_API_KEY"
@@ -101,27 +69,28 @@ def _get_api_key_from_action_env_vars() -> Optional[str]:
     return os.getenv(ACTION_API_KEY)
 
 
-def _get_default_selected_endpoint() -> Endpoint:
+def _get_default_selected_endpoint() -> Optional[str]:
+    """\
+    there is no built-in server: a fresh config only knows the server of the
+    action it runs in (if any), everything else is added with `klein login <url>`
+    """
     env_endpoint = _get_endpoint_from_action_env_vars()
     if env_endpoint is not None:
-        return env_endpoint
-    return DEFAULT_ENDPOINTS[get_env().value]
+        return env_endpoint.name
+    return None
 
 
 def _get_default_endpoints() -> Dict[str, Endpoint]:
     env_endpoint = _get_endpoint_from_action_env_vars()
-
-    default_endpoints = DEFAULT_ENDPOINTS.copy()
     if env_endpoint is not None:
-        default_endpoints["action"] = env_endpoint
-    return default_endpoints
+        return {env_endpoint.name: env_endpoint}
+    return {}
 
 
 def _get_default_credentials() -> Dict[str, Credentials]:
-    endpoint = _get_default_selected_endpoint()
-
+    endpoint = _get_endpoint_from_action_env_vars()
     api_key = _get_api_key_from_action_env_vars()
-    if api_key is not None:
+    if endpoint is not None and api_key is not None:
         return {endpoint.name: Credentials(api_key=api_key)}
     return {}
 
@@ -129,24 +98,36 @@ def _get_default_credentials() -> Dict[str, Credentials]:
 @dataclass
 class Config:
     version: str = __version__
-    selected_endpoint: str = field(default_factory=lambda: _get_default_selected_endpoint().name)
+    selected_endpoint: Optional[str] = field(default_factory=_get_default_selected_endpoint)
     endpoints: Dict[str, Endpoint] = field(default_factory=_get_default_endpoints)
     endpoint_credentials: Dict[str, Credentials] = field(default_factory=_get_default_credentials)
 
     @property
+    def has_endpoint(self) -> bool:
+        return self.selected_endpoint is not None and self.selected_endpoint in self.endpoints
+
+    @property
     def endpoint(self) -> Endpoint:
+        if self.selected_endpoint is None or self.selected_endpoint not in self.endpoints:
+            raise NoEndpointConfigured()
         return self.endpoints[self.selected_endpoint]
 
     @endpoint.setter
     def endpoint(self, value: Endpoint) -> None:
+        if self.selected_endpoint is None:
+            raise NoEndpointConfigured()
         self.endpoints[self.selected_endpoint] = value
 
     @property
     def credentials(self) -> Optional[Credentials]:
+        if self.selected_endpoint is None:
+            return None
         return self.endpoint_credentials.get(self.selected_endpoint)
 
     @credentials.setter
     def credentials(self, value: Credentials) -> None:
+        if self.selected_endpoint is None:
+            raise NoEndpointConfigured()
         self.endpoint_credentials[self.selected_endpoint] = value
 
 
@@ -155,14 +136,14 @@ def _config_to_dict(config: Config) -> Dict[str, Any]:
         "version": config.version,
         "endpoints": {key: value._asdict() for key, value in config.endpoints.items()},
         "endpoint_credentials": {key: value._asdict() for key, value in config.endpoint_credentials.items()},
-        "selected_endpoint": config.endpoint.name,
+        "selected_endpoint": config.selected_endpoint,
     }
 
 
 def _config_from_dict(dct: Dict[str, Any]) -> Config:
     return Config(
         dct["version"],
-        dct["selected_endpoint"],
+        dct.get("selected_endpoint"),
         {key: Endpoint(**value) for key, value in dct["endpoints"].items()},
         {key: Credentials(**value) for key, value in dct["endpoint_credentials"].items()},
     )
@@ -238,6 +219,25 @@ def add_endpoint(config: Config, endpoint: Endpoint, path: Path = CONFIG_PATH) -
     save_config(config, path)
 
 
+def remove_endpoint(config: Config, name: str, path: Path = CONFIG_PATH) -> None:
+    if name not in config.endpoints:
+        raise ValueError(f"Host {name} not found.")
+    del config.endpoints[name]
+    config.endpoint_credentials.pop(name, None)
+    if config.selected_endpoint == name:
+        config.selected_endpoint = next(iter(config.endpoints), None)
+    save_config(config, path)
+
+
+def find_endpoint_by_api(config: Config, api: str) -> Optional[str]:
+    """name of a saved endpoint with this API address, so a new login keeps its name"""
+    wanted = api.rstrip("/")
+    for name, endpoint in config.endpoints.items():
+        if endpoint.api.rstrip("/") == wanted:
+            return name
+    return None
+
+
 def check_config_compatibility(path: Path = CONFIG_PATH) -> bool:
     """\
     returns `False` if config file exists but is not compatible with the current version
@@ -250,15 +250,29 @@ def check_config_compatibility(path: Path = CONFIG_PATH) -> bool:
     return config is not None
 
 
-def endpoint_table(config: Config) -> Table:
-    table = Table(title="Available Endpoints")
-    table.add_column("Name", style="cyan")
+def _credentials_label(credentials: Optional[Credentials]) -> str:
+    if credentials is None:
+        return "not logged in"
+    if credentials.api_key is not None:
+        return "API key"
+    return "logged in"
+
+
+def endpoint_table(config: Config, title: str = "Kleinkram Hosts") -> Table:
+    table = Table(title=title)
+    table.add_column("Host", style="cyan")
     table.add_column("API", style="cyan")
     table.add_column("S3", style="cyan")
+    table.add_column("Login")
 
     for name, endpoint in config.endpoints.items():
         display_name = Text(f"* {name}", style="bold yellow") if name == config.selected_endpoint else Text(f"  {name}")
-        table.add_row(display_name, endpoint.api, endpoint.s3)
+        table.add_row(
+            display_name,
+            endpoint.api,
+            endpoint.s3,
+            _credentials_label(config.endpoint_credentials.get(name)),
+        )
     return table
 
 

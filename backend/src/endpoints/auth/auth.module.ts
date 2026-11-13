@@ -70,6 +70,8 @@ import { MissionGuardService } from './mission-guard.service';
     ],
     controllers: [AuthController],
     exports: [
+        // used by the CLI device login to issue tokens
+        AuthService,
         // Re-exported (this module is @Global) so that `AuthModuleOptions` can be
         // resolved wherever a guard derived from passport's `AuthGuard()` mixin is
         // used. @nestjs/core v12 reads the mixin's `@Optional()` constructor marker

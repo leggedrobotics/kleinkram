@@ -109,10 +109,10 @@ jobs:
                   # Remove existing config to avoid compatibility check prompt
                   rm -f ~/.kleinkram.json
 
-                  # Set endpoint to local
-                  klein endpoint local
+                  # Add the local server; the CLI finds the S3 address itself
+                  klein login http://localhost:3000 --oauth-provider fake-oauth --user 1
 
-                  echo "CLI endpoint configured to local"
+                  echo "CLI configured for the local server"
 
             - name: Authenticate with fake OAuth (User 1 - Admin)
               working-directory: ./cli
