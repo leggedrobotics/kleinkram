@@ -117,7 +117,11 @@
                                     </div>
                                     <div class="sessions__secondary">
                                         Last active
-                                        {{ formatDate(props.row.lastUsedAt) }}
+                                        {{
+                                            formatDate(
+                                                new Date(props.row.lastUsedAt),
+                                            )
+                                        }}
                                     </div>
                                 </div>
                             </div>

@@ -113,8 +113,10 @@ const refreshAccessTokenAndRetry: AxiosInterceptorParameters[1] = async (
 
     await refreshSession();
 
-    // we retry the original request
-    return axios(originalRequest);
+    // retry through the instance, so the response gets the same handling
+    // (dates parsed, version read) as any other; the flag above prevents a
+    // second retry
+    return axiosInstance(originalRequest);
 };
 
 const parseResponse: AxiosInterceptorParameters[0] = (response) => {
