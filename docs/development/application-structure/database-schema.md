@@ -396,22 +396,23 @@ so revoking a session takes effect on the next request.
 
 ### Columns
 
-| Column          | Type                           | Constraints  | Description                                      |
-| :-------------- | :----------------------------- | :----------- | :----------------------------------------------- |
-| `uuid`          | `uuid`                         | PK           |                                                  |
-| `user`          | [UserEntity](#userentity-user) | FK, Not Null | Deleted with the user                            |
-| `kind`          | `enum` (`WEB`, `CLI`)          | Not Null     | Decides the lifetime                             |
-| `name`          | `string`                       | Nullable     | Browser or host name                             |
-| `platform`      | `string`                       | Nullable     | Operating system                                 |
-| `clientVersion` | `string`                       | Nullable     | CLI version that started the session             |
-| `createdAt`     | `timestamptz`                  | Not Null     |                                                  |
-| `lastUsedAt`    | `timestamptz`                  | Not Null     | Last refresh; idle limit counts from here        |
-| `expiresAt`     | `timestamptz`                  | Not Null     | Absolute end                                     |
-| `revokedAt`     | `timestamptz`                  | Nullable     | Set on logout, sign-out or detected token reuse  |
-| `revokedReason` | `string`                       | Nullable     | `logout`, `user`, `admin` or `reuse`             |
-| `generation`    | `integer`                      | Not Null     | Number of the current refresh token              |
-| `rotatedAt`     | `timestamptz`                  | Nullable     | Start of the grace period for the previous token |
-| `secret`        | `string`                       | Not Null     | Per-session input to the refresh token HMAC      |
+| Column          | Type                           | Constraints  | Description                                                                      |
+| :-------------- | :----------------------------- | :----------- | :------------------------------------------------------------------------------- |
+| `uuid`          | `uuid`                         | PK           |                                                                                  |
+| `user`          | [UserEntity](#userentity-user) | FK, Not Null | Deleted with the user                                                            |
+| `kind`          | `enum` (`WEB`, `CLI`)          | Not Null     | Decides the lifetime                                                             |
+| `name`          | `string`                       | Nullable     | Browser or host name                                                             |
+| `platform`      | `string`                       | Nullable     | Operating system                                                                 |
+| `clientVersion` | `string`                       | Nullable     | CLI version that started the session                                             |
+| `createdAt`     | `timestamptz`                  | Not Null     |                                                                                  |
+| `lastUsedAt`    | `timestamptz`                  | Not Null     | Last refresh; idle limit counts from here                                        |
+| `expiresAt`     | `timestamptz`                  | Not Null     | Absolute end                                                                     |
+| `revokedAt`     | `timestamptz`                  | Nullable     | Set on logout, sign-out or detected token reuse                                  |
+| `revokedReason` | `string`                       | Nullable     | `logout`, `user`, `admin` or `reuse`                                             |
+| `generation`    | `integer`                      | Not Null     | Number of the current refresh token                                              |
+| `rotatedAt`     | `timestamptz`                  | Nullable     | Start of the grace period for the previous token                                 |
+| `rotating`      | `boolean`                      | Not Null     | Refresh tokens rotate; only ever switched on. CLIs before 0.67 are never rotated |
+| `secret`        | `string`                       | Not Null     | Per-session input to the refresh token HMAC                                      |
 
 ### Indices
 
