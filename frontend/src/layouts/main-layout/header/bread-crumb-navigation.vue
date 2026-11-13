@@ -68,13 +68,20 @@
                 </template>
             </q-breadcrumbs>
         </div>
-        <q-separator v-if="resolvedCrumbs?.length >= 1" />
+        <!--
+            Pages without crumbs (e.g. the dashboard) blend into the header. The
+            dev warning banner sits right below the header though, so keep the
+            separator there: otherwise the content shifts by its height when
+            switching between pages with and without crumbs.
+        -->
+        <q-separator v-if="resolvedCrumbs?.length >= 1 || isDevInstance" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { AccessGroupType } from '@kleinkram/shared';
 import { useQuasar } from 'quasar';
+import { isDevInstance } from 'src/components/banner/dev-instance';
 import { useCrumbs } from 'src/hooks/crumbs';
 import {
     useAccessGroup,
