@@ -1,4 +1,8 @@
-import { MetadataEntity, MetadataTypeEntity } from '@kleinkram/backend-common';
+import {
+    MetadataEntity,
+    MetadataTypeEntity,
+    MissionEntity,
+} from '@kleinkram/backend-common';
 import { AccessGroupRights, DataType } from '@kleinkram/shared';
 import {
     createMetadataTypeUsingPost,
@@ -760,4 +764,141 @@ describe('Verify mission responses include metadata', () => {
         expect(created.metadata).toHaveLength(1);
         expect(created.metadata?.[0]?.value).toBe('canonical_value');
     });
+});
+
+async function setupProjectWithRequiredMetadataType(
+    name: string,
+    type: DataType = DataType.STRING,
+): Promise<{
+    projectUuid: string;
+    metadataTypeUuid: string;
+    headers: HeaderCreator;
+}> {
+    const { user } = await generateAndFetchDatabaseUser('internal', 'user');
+
+    const metadataTypeUuid = await createMetadataTypeUsingPost(
+        { type, name: `${name}_type` },
+        user,
+    );
+
+    const projectUuid = await createProjectUsingPost(
+        {
+            name: `${name}_project`,
+            description: 'Test project',
+            requiredMetadataTypes: [metadataTypeUuid],
+        },
+        user,
+    );
+
+    const headers = new HeaderCreator(user);
+    headers.addHeader('Content-Type', 'application/json');
+
+    return { projectUuid, metadataTypeUuid, headers };
+}
+
+async function postMission(
+    headers: HeaderCreator,
+    body: Record<string, unknown>,
+): Promise<Response> {
+    return fetch(`${DEFAULT_URL}/missions`, {
+        method: 'POST',
+        headers: headers.getHeaders(),
+        body: JSON.stringify(body),
+    });
+}
+
+async function missionExists(name: string): Promise<boolean> {
+    return database.getRepository(MissionEntity).exists({ where: { name } });
+}
+
+// #2474: the required metadata check joined its conditions with `&&` and
+// therefore never rejected a mission.
+describe('Verify required metadata on mission creation', () => {
+    setupDatabaseHooks();
+
+    test('if a mission without its required metadata is rejected', async () => {
+        const { projectUuid, headers } =
+            await setupProjectWithRequiredMetadataType('required_missing');
+
+        const response = await postMission(headers, {
+            name: 'required_missing_mission',
+            projectUUID: projectUuid,
+            metadata: {},
+        });
+
+        expect(response.status).toBe(409);
+        const body = (await response.json()) as { message: string };
+        expect(body.message).toContain('required_missing_type');
+        expect(await missionExists('required_missing_mission')).toBe(false);
+    });
+
+    test.each([
+        ['an empty string', ''],
+        ['a whitespace-only string', ' '.repeat(3)],
+        ['null', null],
+    ])(
+        'if a mission with %s as required metadata is rejected',
+        async (_label, value) => {
+            const { projectUuid, metadataTypeUuid, headers } =
+                await setupProjectWithRequiredMetadataType('required_blank');
+
+            const response = await postMission(headers, {
+                name: 'required_blank_mission',
+                projectUUID: projectUuid,
+                metadata: { [metadataTypeUuid]: value },
+            });
+
+            expect(response.status).toBe(409);
+            expect(await missionExists('required_blank_mission')).toBe(false);
+        },
+    );
+
+    test('if a mission with its required metadata is created', async () => {
+        const { projectUuid, metadataTypeUuid, headers } =
+            await setupProjectWithRequiredMetadataType('required_given');
+
+        const response = await postMission(headers, {
+            name: 'required_given_mission',
+            projectUUID: projectUuid,
+            metadata: { [metadataTypeUuid]: 'value' },
+        });
+
+        expect(response.status).toBeLessThan(300);
+        expect(await missionExists('required_given_mission')).toBe(true);
+    });
+
+    test('if false counts as a provided required metadata value', async () => {
+        const { projectUuid, metadataTypeUuid, headers } =
+            await setupProjectWithRequiredMetadataType(
+                'required_false',
+                DataType.BOOLEAN,
+            );
+
+        const response = await postMission(headers, {
+            name: 'required_false_mission',
+            projectUUID: projectUuid,
+            metadata: { [metadataTypeUuid]: false },
+        });
+
+        expect(response.status).toBeLessThan(300);
+        expect(await missionExists('required_false_mission')).toBe(true);
+    });
+
+    test.each([['ignoreMissingMetadata'], ['ignoreTags']])(
+        'if %s allows creating a mission without its required metadata',
+        async (flag) => {
+            const { projectUuid, headers } =
+                await setupProjectWithRequiredMetadataType('required_ignored');
+
+            const response = await postMission(headers, {
+                name: 'required_ignored_mission',
+                projectUUID: projectUuid,
+                metadata: {},
+                [flag]: true,
+            });
+
+            expect(response.status).toBeLessThan(300);
+            expect(await missionExists('required_ignored_mission')).toBe(true);
+        },
+    );
 });
