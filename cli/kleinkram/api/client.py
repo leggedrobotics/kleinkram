@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import base64
+import json
 import logging
+import time
 from collections import abc
 from pathlib import Path
 from threading import Lock
 from typing import Any
 from typing import List
 from typing import Mapping
+from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
@@ -20,7 +24,7 @@ from kleinkram.config import CONFIG_PATH
 from kleinkram.config import Config
 from kleinkram.config import Credentials
 from kleinkram.config import get_config
-from kleinkram.config import save_config
+from kleinkram.config import update_saved_credentials
 from kleinkram.errors import NoEndpointConfigured
 from kleinkram.errors import NotAuthenticated
 from kleinkram.errors import UpdateCLIVersion
@@ -65,6 +69,22 @@ def _convert_query_params_to_httpx_format(
     return ret
 
 
+def _access_token_expired(token: str, leeway: float = 30.0) -> bool:
+    """\
+    whether a JWT access token is (about to be) expired, read from its `exp`
+    claim without checking the signature (the server does that)
+    """
+    try:
+        payload = token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        exp = json.loads(base64.urlsafe_b64decode(payload)).get("exp")
+    except (IndexError, ValueError):
+        return True
+    if not isinstance(exp, (int, float)):
+        return False
+    return exp <= time.time() + leeway
+
+
 class AuthenticatedClient(httpx.Client):
     _config: Config
     _config_lock: Lock
@@ -74,6 +94,7 @@ class AuthenticatedClient(httpx.Client):
         super().__init__(*args, **kwargs)
 
         self._config = get_config(path=config_path)
+        self._config_path = config_path
         self._config_lock = Lock()
 
         if not self._config.has_endpoint:
@@ -96,24 +117,43 @@ class AuthenticatedClient(httpx.Client):
         if self._config.credentials.api_key is not None:
             raise RuntimeError("cannot refresh token when using cli key auth")
 
-        refresh_token = self._config.credentials.refresh_token
-        if refresh_token is None:
-            raise RuntimeError("no refresh token found")
-        self.cookies.set(COOKIE_REFRESH_TOKEN, refresh_token)
+        name = self._config.selected_endpoint
+        assert name is not None, "unreachable"
+        failed_access_token = self._config.credentials.auth_token
+        in_memory = self._config.credentials
 
-        logger.info("refreshing token...")
-        response = self.post("/auth/refresh-token")
-        response.raise_for_status()
-        new_access_token = response.cookies[COOKIE_AUTH_TOKEN]
-        creds = Credentials(auth_token=new_access_token, refresh_token=refresh_token)
+        def refresh(on_disk: Optional[Credentials]) -> Credentials:
+            current = on_disk or in_memory
+            # another thread or `klein` process refreshed in the meantime:
+            # use its tokens instead of presenting an already rotated one
+            if (
+                current.auth_token is not None
+                and current.auth_token != failed_access_token
+                and not _access_token_expired(current.auth_token)
+            ):
+                logger.info("using tokens refreshed by another process...")
+                return current
+            if current.refresh_token is None:
+                raise NotAuthenticated
 
-        logger.info("saving new tokens...")
+            logger.info("refreshing token...")
+            self.cookies.clear()
+            self.cookies.set(COOKIE_REFRESH_TOKEN, current.refresh_token)
+            response = self.post("/auth/refresh-token")
+            response.raise_for_status()
+            # the server rotates the refresh token: the old one stops working
+            # shortly, so the new one must be saved
+            return Credentials(
+                auth_token=response.cookies[COOKIE_AUTH_TOKEN],
+                refresh_token=response.cookies.get(COOKIE_REFRESH_TOKEN) or current.refresh_token,
+            )
 
         with self._config_lock:
-            self._config.credentials = creds
-            save_config(self._config)
+            new = update_saved_credentials(name, refresh, self._config_path)
 
-        self.cookies.set(COOKIE_AUTH_TOKEN, new_access_token)
+        assert new is not None and new.auth_token is not None, "unreachable"
+        self.cookies.clear()
+        self.cookies.set(COOKIE_AUTH_TOKEN, new.auth_token)
 
     def _send_request_with_kleinkram_headers(self, *args: Any, **kwargs: Any) -> httpx.Response:
         # add the cli version to the headers

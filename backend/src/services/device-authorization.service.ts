@@ -1,4 +1,4 @@
-import { AuthService } from '@/services/auth.service';
+import { SessionService } from '@/services/session.service';
 import {
     CreateDeviceAuthorizationDto,
     DeviceAuthorizationDto,
@@ -9,7 +9,7 @@ import {
 import { redis as redisConfig } from '@kleinkram/backend-common/consts';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
-import { CookieNames } from '@kleinkram/shared';
+import { CookieNames, SessionKind } from '@kleinkram/shared';
 import {
     BadRequestException,
     ConflictException,
@@ -93,8 +93,9 @@ return redis.call('HGETALL', KEYS[1])
  * One poll by the CLI, atomically.
  *
  * - missing: `{'expired'}`
- * - approved: deletes the login and returns `{'approved', userUuid}`, so
- *   the tokens are handed out exactly once
+ * - approved: deletes the login and returns
+ *   `{'approved', userUuid, hostname, platform, cliVersion}`, so the tokens
+ *   are handed out exactly once
  * - denied: deletes the login and returns `{'denied'}`
  * - pending: records the poll time and returns `{'pending'}`, or
  *   `{'slow_down'}` when the CLI polls faster than the interval
@@ -107,10 +108,9 @@ if redis.call('EXISTS', KEYS[1]) == 0 then
 end
 local status = redis.call('HGET', KEYS[1], 'status')
 if status == 'approved' then
-    local userUuid = redis.call('HGET', KEYS[1], 'userUuid')
-    local userCode = redis.call('HGET', KEYS[1], 'userCode')
-    redis.call('DEL', KEYS[1], '${KEY_PREFIX}:user-code:' .. userCode)
-    return {'approved', userUuid}
+    local fields = redis.call('HMGET', KEYS[1], 'userUuid', 'userCode', 'hostname', 'platform', 'cliVersion')
+    redis.call('DEL', KEYS[1], '${KEY_PREFIX}:user-code:' .. fields[2])
+    return {'approved', fields[1], fields[3] or '', fields[4] or '', fields[5] or ''}
 end
 if status == 'denied' then
     local userCode = redis.call('HGET', KEYS[1], 'userCode')
@@ -184,7 +184,7 @@ export class DeviceAuthorizationService implements OnModuleDestroy {
     private readonly redis: Redis;
 
     constructor(
-        private readonly authService: AuthService,
+        private readonly sessionService: SessionService,
         @InjectRepository(UserEntity)
         private readonly userRepository: Repository<UserEntity>,
     ) {
@@ -287,14 +287,21 @@ export class DeviceAuthorizationService implements OnModuleDestroy {
             String((DEVICE_POLL_INTERVAL_SECONDS - 1) * 1000),
         )) as string[];
 
-        const [status, userUuid] = result;
+        const [status, userUuid, hostname, platform, cliVersion] = result;
         if (status === 'approved' && userUuid) {
             const user = await this.userRepository.findOne({
                 where: { uuid: userUuid },
             });
             if (user === null) return { status: 'denied' };
 
-            const tokens = this.authService.login(user);
+            // the CLI gets its own session, named after the machine, which
+            // the user can see and end in the profile
+            const { tokens } = await this.sessionService.create(user, {
+                kind: SessionKind.CLI,
+                name: nonEmpty(hostname),
+                platform: nonEmpty(platform),
+                clientVersion: nonEmpty(cliVersion),
+            });
             return {
                 status: 'approved',
                 authToken: tokens[CookieNames.AUTH_TOKEN],

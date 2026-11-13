@@ -154,6 +154,12 @@ export enum KeyTypes {
     ACTION = 'ACTION',
 }
 
+/** Where a login session was started: the web app or the CLI. */
+export enum SessionKind {
+    WEB = 'WEB',
+    CLI = 'CLI',
+}
+
 export enum CookieNames {
     AUTH_TOKEN = 'authtoken',
     REFRESH_TOKEN = 'refreshtoken',
