@@ -113,7 +113,7 @@ klein --no-verbose verify -p testProject -m testMission -r ./recordings || exit 
 | `klein login <url>`        | Adds the server behind the web app address `<url>`, makes it active and logs in. |
 | `klein login`              | Logs in to the active server again.                                              |
 | `klein login --headless`   | Prints the login code instead of opening a browser.                              |
-| `klein login --key <key>`  | Stores an API key for the active server.                                         |
+| `klein login --key <key>`  | Stores an API key for the active server (add `<url>` if none is set up yet).     |
 | `klein host`               | Lists the saved servers and marks the active one.                                |
 | `klein host use <name>`    | Makes a saved server the active one.                                             |
 | `klein host remove <name>` | Forgets a server and its login.                                                  |

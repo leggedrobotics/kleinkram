@@ -68,9 +68,27 @@ klein login datasets.example.org --headless
 
 :::
 
-::: details API keys
-`klein login --key <API_KEY>` stores an API key for the active server instead of logging in. This is used inside
-actions and scripts.
+::: details API keys for scripts and CI
+`klein login --key <API_KEY>` stores an API key for the active server instead of logging in. In a fresh environment
+(for example a CI job) there is no active server yet, so give the address as well:
+
+```bash
+klein login datasets.example.org --key "$API_KEY"
+```
+
+Instead of `klein login`, a script can also set the server and the key as environment variables:
+
+```bash
+export KLEINKRAM_API_ENDPOINT=https://api.datasets.example.org
+export KLEINKRAM_S3_ENDPOINT=https://s3.datasets.example.org
+export KLEINKRAM_API_KEY=<API_KEY>
+```
+
+All three are needed: the CLI no longer has a built-in server, so `KLEINKRAM_API_KEY` alone is not enough. Like
+inside actions, the variables are only used when there is no saved `~/.kleinkram.json`. `klein login <url>` prints
+both addresses, or open `<api address>/cli/config` in a browser.
+
+Inside an action you need none of this: the action container sets all three variables for you (see below).
 :::
 
 ::: details Authentication inside Actions
