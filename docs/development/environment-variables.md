@@ -23,6 +23,12 @@ These URLs are used for communication between services and for generating links.
 | `DOCS_URL`     | The URL where the documentation site is accessible.   | `http://localhost:4000` |
 | `BACKEND_URL`  | The URL where the backend API is accessible.          | `http://localhost:3000` |
 
+::: warning Use https outside local development
+Except on `localhost`, Kleinkram must be served over https. The login cookies are always marked `Secure`, so
+browsers only send them over https (or to `http://localhost`), and the CLI refuses plain `http://` servers. On a
+plain http address other than `localhost`, logging in does not work.
+:::
+
 ## S3 Configuration (Object Storage)
 
 Configuration for SeaweedFS (or S3-compatible storage), which is used for object storage.
