@@ -7,6 +7,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
+import { isUUID } from 'class-validator';
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { IsNull, Not, Repository } from 'typeorm';
 import logger from '../logger';
@@ -507,7 +508,9 @@ export class SessionService {
             string,
             string,
         ];
-        if (!/^[0-9a-f-]{36}$/.test(sessionUuid)) return undefined;
+        // anything else would reach Postgres and fail there ("invalid input
+        // syntax for type uuid"); a malformed token is simply not ours
+        if (!isUUID(sessionUuid)) return undefined;
         if (!/^\d{1,9}$/.test(generationText)) return undefined;
         return {
             sessionUuid,

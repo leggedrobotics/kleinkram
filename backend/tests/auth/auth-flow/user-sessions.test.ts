@@ -368,6 +368,38 @@ describe('User Sessions', () => {
         expect(await refreshStatus(rotated.refreshToken ?? '')).toBe(401);
     });
 
+    test('should treat a refresh token with a malformed session id as invalid', async () => {
+        for (const sessionId of ['-'.repeat(36), 'a'.repeat(36)]) {
+            const token = `ks1.${sessionId}.0.abc`;
+
+            const refreshed = await fetch(`${DEFAULT_URL}/auth/refresh-token`, {
+                method: 'POST',
+                headers: {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'kleinkram-client-version': CLI_VERSION,
+                    cookie: `refreshtoken=${token}`,
+                },
+            });
+            expect(refreshed.status).toBe(401);
+            expect(
+                refreshed.headers
+                    .getSetCookie()
+                    .some((cookie) => cookie.startsWith('refreshtoken=;')),
+            ).toBe(true);
+
+            const loggedOut = await fetch(`${DEFAULT_URL}/auth/logout`, {
+                method: 'POST',
+                headers: { cookie: `refreshtoken=${token}` },
+            });
+            expect(loggedOut.status).toBe(200);
+            expect(
+                loggedOut.headers
+                    .getSetCookie()
+                    .some((cookie) => cookie.startsWith('refreshtoken=;')),
+            ).toBe(true);
+        }
+    });
+
     test('should keep quick successive refreshes on one generation', async () => {
         const user = await newUser('session-burst@leggedrobotics.com');
         const first = await cliLogin(user);
