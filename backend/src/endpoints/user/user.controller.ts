@@ -9,8 +9,8 @@ import {
     PermissionsDto,
     ResolveUsersDto,
     SessionsDto,
-    SuccessResponseDto,
     SortablePaginatedQueryDto,
+    SuccessResponseDto,
     UserDto,
     UsersDto,
 } from '@kleinkram/api-dto';

@@ -2,11 +2,7 @@ import { AuthFlowException } from '@/types/auth-flow-exception';
 import { AffiliationGroupService } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import {
-    AccessGroupConfig,
-    Providers,
-    UserRole,
-} from '@kleinkram/shared';
+import { AccessGroupConfig, Providers, UserRole } from '@kleinkram/shared';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
