@@ -254,65 +254,134 @@ export class FileLifecycleService implements OnModuleInit {
         });
     }
 
+    /**
+     * Moves files into another mission, which may belong to another project.
+     *
+     * The move is all-or-nothing: if any file does not exist, or if a moved
+     * file would clash with the name of a file in the target mission (or with
+     * another moved file), the request fails and no file is moved.
+     */
     async moveFiles(
         fileUUIDs: string[],
         missionUUID: string,
         actor?: UserEntity,
         action?: ActionEntity,
     ): Promise<void> {
+        const uniqueFileUuids = [...new Set(fileUUIDs)];
+
+        const targetMission = await this.missionRepository.findOne({
+            where: { uuid: missionUUID },
+            relations: { project: true },
+        });
+        if (!targetMission) {
+            throw new NotFoundException('Target mission not found');
+        }
+
+        const files = await this.fileRepository.find({
+            where: { uuid: In(uniqueFileUuids) },
+            relations: { mission: true },
+        });
+        if (files.length !== uniqueFileUuids.length) {
+            const found = new Set(files.map((file) => file.uuid));
+            const missing = uniqueFileUuids.filter((uuid) => !found.has(uuid));
+            throw new NotFoundException(
+                `Files not found: ${missing.join(', ')}`,
+            );
+        }
+
+        // Files that already live in the target mission stay where they are.
+        const filesToMove = files.filter(
+            (file) => file.mission?.uuid !== missionUUID,
+        );
+        if (filesToMove.length === 0) return;
+
+        const filenames = filesToMove.map((file) => file.filename);
+        const duplicatesInRequest = filenames.filter(
+            (filename, index) => filenames.indexOf(filename) !== index,
+        );
+        const existingInTarget = await this.fileRepository.find({
+            select: { uuid: true, filename: true },
+            where: {
+                mission: { uuid: missionUUID },
+                filename: In(filenames),
+            },
+        });
+        const conflicts = [
+            ...new Set([
+                ...duplicatesInRequest,
+                ...existingInTarget.map((file) => file.filename),
+            ]),
+        ];
+        conflicts.sort();
+        if (conflicts.length > 0) {
+            throw new ConflictException(
+                `Mission "${targetMission.name}" already contains a file ` +
+                    `named ${conflicts.join(', ')}. Rename or delete the ` +
+                    'conflicting files first. No file was moved.',
+            );
+        }
+
+        const oldMissionUuids = new Map(
+            filesToMove.map((file) => [file.uuid, file.mission?.uuid]),
+        );
+
+        try {
+            await this.dataSource.transaction(async (manager) => {
+                for (const file of filesToMove) {
+                    file.mission = targetMission;
+                }
+                await manager.save(FileEntity, filesToMove);
+            });
+        } catch (error: unknown) {
+            // A file with the same name was added to the target mission
+            // after the check above.
+            if (
+                error instanceof QueryFailedError &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                error.driverError.code === '23505'
+            ) {
+                throw new ConflictException(
+                    `Mission "${targetMission.name}" already contains a file ` +
+                        'with the same name. No file was moved.',
+                );
+            }
+            throw error;
+        }
+
+        // The files are moved. Audit events, triggers and storage tags are
+        // follow-up work: a failure there must not report the move as failed.
         await Promise.all(
-            fileUUIDs.map(async (uuid) => {
+            filesToMove.map(async (file) => {
                 try {
-                    const file = await this.fileRepository.findOneOrFail({
-                        where: { uuid },
-                        relations: {
-                            mission: true,
-                        },
-                    });
-
-                    const oldMissionUuid = file.mission?.uuid;
-
-                    file.mission = { uuid: missionUUID } as MissionEntity;
-                    await this.fileRepository.save(file);
-
-                    // Log Move Event
                     await this.auditService.log(
                         FileEventType.MOVED,
                         {
-                            fileUuid: uuid,
+                            fileUuid: file.uuid,
                             filename: file.filename,
                             missionUuid: missionUUID,
                             ...(actor ? { actor } : {}),
                             ...(action ? { action } : {}),
                             details: {
-                                fromMission: oldMissionUuid,
+                                fromMission: oldMissionUuids.get(file.uuid),
                                 toMission: missionUUID,
                             },
                         },
                         true,
                     );
                     await this.triggerService.addFileEvent(
-                        uuid,
+                        file.uuid,
                         TriggerEvent.MOVE,
                     );
-
-                    // ... [Existing Tag Update Logic] ...
-                    const newFile = await this.fileRepository.findOneOrFail({
-                        where: { uuid },
-                        relations: {
-                            mission: {
-                                project: true,
-                            },
-                        },
-                    });
                     await this.dataStorage.addTags(file.uuid, {
                         filename: file.filename,
                         missionUuid: missionUUID,
-                        projectUuid: newFile.mission?.project?.uuid ?? '',
+                        projectUuid: targetMission.project?.uuid ?? '',
                     });
                 } catch (error) {
-                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                    logger.error(`Error moving file ${uuid}: ${error}`);
+                    logger.error(
+                        `Moved file ${file.uuid}, but updating its events or ` +
+                            `storage tags failed: ${String(error)}`,
+                    );
                 }
             }),
         );
