@@ -147,7 +147,8 @@ import type { SessionDto } from '@kleinkram/api-dto/types/user/session.dto';
 import { SessionKind } from '@kleinkram/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import type { QTableColumn } from 'quasar';
-import { Notify, useQuasar } from 'quasar';
+import { Dialog, Notify } from 'quasar';
+import SignOutOtherSessionsDialog from 'src/dialogs/sign-out-other-sessions-dialog.vue';
 import { logout } from 'src/services/auth';
 import { formatDate } from 'src/services/date-formating';
 import {
@@ -157,7 +158,6 @@ import {
 } from 'src/services/queries/user';
 import { computed, ref } from 'vue';
 
-const $q = useQuasar();
 const queryClient = useQueryClient();
 
 const { data, isLoading, isError, isFetching, refetch } = useQuery({
@@ -263,16 +263,9 @@ const { mutate: revokeOthers, isPending: isRevokingOthers } = useMutation({
 });
 
 const confirmRevokeOthers = (): void => {
-    $q.dialog({
-        title: 'Sign out all other sessions?',
-        message: `This ends ${String(otherSessions.value.length)} other session(s), including CLI logins. They need to log in again.`,
-        cancel: { flat: true, noCaps: true, label: 'Cancel', color: 'grey-8' },
-        ok: {
-            flat: true,
-            noCaps: true,
-            label: 'Sign out',
-            class: 'bg-button-primary',
-        },
+    Dialog.create({
+        component: SignOutOtherSessionsDialog,
+        componentProps: { count: otherSessions.value.length },
     }).onOk(() => {
         revokeOthers();
     });
