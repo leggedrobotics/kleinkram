@@ -25,9 +25,9 @@ from kleinkram.cli._deprecation import prefer_new
 from kleinkram.cli._deprecation import warn_deprecated
 from kleinkram.cli._download import download_typer
 from kleinkram.cli._endpoint import endpoint_typer
-from kleinkram.cli._host import host_typer
 from kleinkram.cli._executions import execution_typer
 from kleinkram.cli._file import file_typer
+from kleinkram.cli._host import host_typer
 from kleinkram.cli._list import list_typer
 from kleinkram.cli._mission import mission_typer
 from kleinkram.cli._project import project_typer

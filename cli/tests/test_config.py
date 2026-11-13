@@ -16,15 +16,15 @@ from kleinkram.config import Endpoint
 from kleinkram.config import _load_config
 from kleinkram.config import _load_config_if_compatible
 from kleinkram.config import add_endpoint
-from kleinkram.errors import NoEndpointConfigured
 from kleinkram.config import check_config_compatibility
 from kleinkram.config import endpoint_table
 from kleinkram.config import find_endpoint_by_api
 from kleinkram.config import get_config
 from kleinkram.config import get_shared_state
-from kleinkram.config import save_config
 from kleinkram.config import remove_endpoint
+from kleinkram.config import save_config
 from kleinkram.config import select_endpoint
+from kleinkram.errors import NoEndpointConfigured
 
 CONFIG_FILENAME = ".kleinkram.json"
 
