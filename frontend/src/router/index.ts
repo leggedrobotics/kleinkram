@@ -8,6 +8,9 @@ export default defineRouter(() => {
     );
 
     return createRouter({
+        // vue-router 5.5 deprecates this in favour of the experimental
+        // `ScrollRestoration` API; keep the stable option until that ships.
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         scrollBehavior: () => ({ left: 0, top: 0 }),
         routes: routeArray,
 

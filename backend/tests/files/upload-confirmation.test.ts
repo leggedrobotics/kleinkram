@@ -44,7 +44,6 @@ const mockGauge = {
 };
 
 const mockTriggerService = {
-    // eslint-disable-next-line unicorn/no-useless-undefined
     addFileEvent: jest.fn().mockResolvedValue(undefined),
 };
 
