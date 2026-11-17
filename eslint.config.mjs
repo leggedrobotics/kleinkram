@@ -135,6 +135,14 @@ export default tseslint.config(
             // hook run with `--fix`, so this stays off rather than on `warn`.
             '@typescript-eslint/no-unnecessary-type-assertion': 'off',
 
+            // `no-unsafe-enum-assignment` joined the type-checked presets in
+            // typescript-eslint v8.72. It flags ~30 intentional boundary
+            // conversions into enums (URL query strings, numeric access
+            // levels from DTOs, `Math.max` over `AccessGroupRights`). Off so
+            // this dependency bump stays behaviour neutral; replace those
+            // casts with type guards and re-enable it separately.
+            '@typescript-eslint/no-unsafe-enum-assignment': 'off',
+
             // --- Rules introduced by eslint-plugin-unicorn v74 ---
             // The v62 -> v74 jump added ~200 rules to `flat/recommended`. The
             // ones below report ~700 findings in pre-existing code; they are
