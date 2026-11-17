@@ -15,10 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import ENV from 'src/environment';
-
-// TODO: currently, all hosted versions should show this warning
-const isDevInstance = ENV.BACKEND_URL.includes('.dev.leggedrobotics.com');
+import { isDevInstance } from './dev-instance';
 </script>
 
 <style scoped>
