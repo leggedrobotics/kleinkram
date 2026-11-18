@@ -175,6 +175,11 @@
                         label="Action Executions"
                         style="color: #222"
                     />
+                    <q-tab
+                        name="preview"
+                        label="Preview"
+                        style="color: #222"
+                    />
                 </q-tabs>
             </template>
         </title-section>
@@ -200,6 +205,10 @@
             <q-tab-panel name="actions" class="q-pa-none">
                 <MissionActions />
             </q-tab-panel>
+
+            <q-tab-panel name="preview" class="q-pa-none">
+                <MissionPreview />
+            </q-tab-panel>
         </q-tab-panels>
 
         <MissionMetadataDrawer
@@ -220,6 +229,7 @@ import MissionActions from 'components/explorer-page/mission-actions.vue';
 import MissionFiles from 'components/explorer-page/mission-files.vue';
 import MissionInfo from 'components/explorer-page/mission-info.vue';
 import MissionMetadataDrawer from 'components/explorer-page/mission-metadata-drawer.vue';
+import MissionPreview from 'components/explorer-page/mission-preview.vue';
 import TitleSection from 'components/title-section.vue';
 import { copyToClipboard, Notify, useQuasar } from 'quasar';
 import { useMissionReadme } from 'src/composables/use-mission-readme';

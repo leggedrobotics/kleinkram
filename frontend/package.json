@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.1169.0",
+        "@foxglove/embed": "^0.85.0",
         "@foxglove/rosbag": "^0.4.2",
         "@foxglove/rosmsg": "^5.0.5",
         "@foxglove/rosmsg-serialization": "^2.1.3",

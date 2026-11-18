@@ -2,6 +2,7 @@ import environment from '@kleinkram/backend-common/environment';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
+import { Request } from 'express';
 import 'reflect-metadata';
 import { AppModule } from './app.module';
 import { AuthFlowExceptionRedirectFilter } from './routing/filters/auth-flow-exception';
@@ -97,12 +98,25 @@ async function bootstrap(): Promise<void> {
             },
         }),
     );
-    app.enableCors({
-        origin: [environment.FRONTEND_URL, environment.DOCS_URL],
-        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-        preflightContinue: false,
-        credentials: true,
-        optionsSuccessStatus: 204,
+    // The signed Foxglove file links are fetched by the Foxglove web app, so
+    // its preflight requests have to be answered for that route as well.
+    const foxgloveOrigins = [
+        'https://app.foxglove.dev',
+        'https://embed.foxglove.dev',
+    ];
+    app.enableCors((request: Request, callback) => {
+        const isFoxgloveRoute = request.url.startsWith('/integrations/foxglove/');
+        callback(null, {
+            origin: isFoxgloveRoute
+                ? foxgloveOrigins
+                : [environment.FRONTEND_URL, environment.DOCS_URL],
+            methods: isFoxgloveRoute
+                ? 'GET,HEAD'
+                : 'GET,HEAD,PUT,PATCH,POST,DELETE',
+            preflightContinue: false,
+            credentials: !isFoxgloveRoute,
+            optionsSuccessStatus: 204,
+        });
     });
 
     app.useGlobalFilters(new GlobalErrorFilter());
