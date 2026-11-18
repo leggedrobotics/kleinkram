@@ -105,7 +105,9 @@ async function bootstrap(): Promise<void> {
         'https://embed.foxglove.dev',
     ];
     app.enableCors((request: Request, callback) => {
-        const isFoxgloveRoute = request.url.startsWith('/integrations/foxglove/');
+        const isFoxgloveRoute = request.url.startsWith(
+            '/integrations/foxglove/',
+        );
         callback(null, {
             origin: isFoxgloveRoute
                 ? foxgloveOrigins
