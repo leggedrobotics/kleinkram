@@ -118,6 +118,17 @@
                     :files="selectedFiles"
                 />
                 <q-btn
+                    v-if="previewableFiles.length > 0"
+                    flat
+                    dense
+                    padding="6px"
+                    icon="sym_o_monitor_heart"
+                    color="white"
+                    @click="previewCallback"
+                >
+                    Preview
+                </q-btn>
+                <q-btn
                     flat
                     dense
                     padding="6px"
@@ -208,6 +219,7 @@ import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
 import { _downloadFiles } from 'src/services/generic';
 import { deleteFiles } from 'src/services/mutations/file';
 import { computed, inject, onMounted, Ref, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 const uploads = inject<Ref<FileUploadDto[]>>('uploads');
 
@@ -405,6 +417,9 @@ watch(
 );
 
 // --- Selection Logic ---
+const $router = useRouter();
+const $route = useRoute();
+
 const selectedFiles: Ref<FileWithTopicDto[]> = ref([]);
 
 watch(
@@ -487,6 +502,21 @@ const deleteFilesCallback = (): void => {
 
 const deselect = (): void => {
     selectedFiles.value = [];
+};
+
+const previewableFiles = computed(() =>
+    selectedFiles.value.filter(
+        (file) => file.type === FileType.MCAP || file.type === FileType.BAG,
+    ),
+);
+
+const previewCallback = (): void => {
+    void $router.push({
+        params: { ...$route.params, tab: 'preview' },
+        query: {
+            files: previewableFiles.value.map((file) => file.uuid).join(','),
+        },
+    });
 };
 
 const downloadCallback = async (): Promise<void> => {
