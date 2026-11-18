@@ -98,3 +98,45 @@ export class MoveFilesGuard extends BaseGuard {
         );
     }
 }
+
+@Injectable()
+export class CopyFilesGuard extends BaseGuard {
+    constructor(
+        private fileGuardService: FileGuardService,
+        private missionGuardService: MissionGuardService,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, apiKey, request } = await this.getUser(context);
+
+        // `POST /files/copy`: both the copied files and the target mission are only
+        // ever read from the request body.
+        const body = request.body as FileBody;
+        const fileUUIDs = body.fileUUIDs;
+        const missionUUID = body.missionUUID;
+
+        if (!fileUUIDs || fileUUIDs.length === 0 || !missionUUID) {
+            return false; // Deny access if required parameters not provided
+        }
+
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot copy files');
+        }
+        const canReadFiles = await this.fileGuardService.canAccessFiles(
+            user,
+            fileUUIDs,
+            AccessGroupRights.READ,
+        );
+
+        if (!canReadFiles) {
+            return false;
+        }
+        return this.missionGuardService.canAccessMission(
+            user,
+            missionUUID,
+            AccessGroupRights.CREATE,
+        );
+    }
+}
