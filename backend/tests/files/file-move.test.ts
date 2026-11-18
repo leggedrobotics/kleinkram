@@ -1,5 +1,9 @@
-import { FileEntity, UserEntity } from '@kleinkram/backend-common';
-import { FileType, UserRole } from '@kleinkram/shared';
+import {
+    FileEntity,
+    FileEventEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
+import { FileEventType, FileType, UserRole } from '@kleinkram/shared';
 import { DEFAULT_URL } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -150,5 +154,62 @@ describe('Move Files', () => {
         expect(response.status).toBe(409);
         expect(await missionOf(first.uuid)).toBe(sourceMissionUuid);
         expect(await missionOf(second.uuid)).toBe(otherMissionUuid);
+    }, 30_000);
+
+    test('should roll back every file if a later write of the move fails', async () => {
+        const first = await createFile(
+            user,
+            sourceMissionUuid,
+            'rollback_a.bag',
+        );
+        const second = await createFile(
+            user,
+            sourceMissionUuid,
+            'rollback_b.bag',
+        );
+
+        // The name checks pass. Then the second file update inside the
+        // transaction fails like a unique violation would.
+        await database.query(String.raw`
+            CREATE OR REPLACE FUNCTION test_fail_second_move() RETURNS trigger AS $$
+            DECLARE moved int;
+            BEGIN
+                IF NEW.filename LIKE 'rollback\_%' AND NEW."missionUuid" IS DISTINCT FROM OLD."missionUuid" THEN
+                    moved := coalesce(nullif(current_setting('test.moved', true), ''), '0')::int + 1;
+                    PERFORM set_config('test.moved', moved::text, true);
+                    IF moved >= 2 THEN
+                        RAISE unique_violation USING MESSAGE = 'forced failure';
+                    END IF;
+                END IF;
+                RETURN NEW;
+            END $$ LANGUAGE plpgsql;
+            CREATE TRIGGER test_fail_second_move BEFORE UPDATE ON file_entity
+                FOR EACH ROW EXECUTE FUNCTION test_fail_second_move();
+        `);
+
+        try {
+            const response = await moveFiles(
+                user,
+                [first.uuid, second.uuid],
+                targetMissionUuid,
+            );
+
+            expect(response.status).toBe(409);
+        } finally {
+            await database.query(`
+                DROP TRIGGER IF EXISTS test_fail_second_move ON file_entity;
+                DROP FUNCTION IF EXISTS test_fail_second_move();
+            `);
+        }
+
+        expect(await missionOf(first.uuid)).toBe(sourceMissionUuid);
+        expect(await missionOf(second.uuid)).toBe(sourceMissionUuid);
+        const moveEvents = await database.getRepository(FileEventEntity).count({
+            where: [
+                { file: { uuid: first.uuid }, type: FileEventType.MOVED },
+                { file: { uuid: second.uuid }, type: FileEventType.MOVED },
+            ],
+        });
+        expect(moveEvents).toBe(0);
     }, 30_000);
 });
