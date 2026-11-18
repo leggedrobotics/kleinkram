@@ -1,5 +1,9 @@
 <template>
-    <div ref="root" class="mission-preview" :class="{ 'bg-white': isFullscreen }">
+    <div
+        ref="root"
+        class="mission-preview"
+        :class="{ 'bg-white': isFullscreen }"
+    >
         <aside v-show="!isSidebarCollapsed" class="mission-preview__sidebar">
             <q-input
                 v-model="orgSlugInput"
@@ -47,10 +51,10 @@
                 ]"
             >
                 <q-tooltip max-width="280px">
-                    Stream: Foxglove fetches signed links itself and reads
-                    only the ranges it needs. Download first: Kleinkram
-                    downloads the files in this tab and hands them over, so
-                    Foxglove needs no access to the storage.
+                    Stream: Foxglove fetches signed links itself and reads only
+                    the ranges it needs. Download first: Kleinkram downloads the
+                    files in this tab and hands them over, so Foxglove needs no
+                    access to the storage.
                 </q-tooltip>
             </q-btn-toggle>
 
@@ -85,13 +89,13 @@
                     v-ripple
                     clickable
                     dense
-                    @click="toggle(file.uuid)"
+                    @click="() => toggle(file.uuid)"
                 >
                     <q-item-section side>
                         <q-checkbox
                             dense
                             :model-value="selected.includes(file.uuid)"
-                            @update:model-value="toggle(file.uuid)"
+                            @update:model-value="() => toggle(file.uuid)"
                             @click.stop
                         />
                     </q-item-section>
@@ -136,7 +140,7 @@
                             ? 'sym_o_left_panel_open'
                             : 'sym_o_left_panel_close'
                     "
-                    @click="isSidebarCollapsed = !isSidebarCollapsed"
+                    @click="toggleSidebar"
                 >
                     <q-tooltip>Toggle file list</q-tooltip>
                 </q-btn>
@@ -200,9 +204,9 @@ import { FileState, FileType } from '@kleinkram/shared';
 import { useQuery } from '@tanstack/vue-query';
 import FoxgloveEmbed from 'components/foxglove/foxglove-embed.vue';
 import { exportFile, Notify } from 'quasar';
+import ENV from 'src/environment';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
 import { formatSize } from 'src/services/general-formatting';
-import ENV from 'src/environment';
 import {
     downloadFile,
     filesOfMission,
@@ -228,7 +232,7 @@ const missionUuid = useMissionUUID();
 const projectUuid = useProjectUUID();
 
 const root = ref<HTMLElement | null>(null);
-const embed = ref<InstanceType<typeof FoxgloveEmbed> | null>(null);
+const embed = ref<{ getLayout: () => Promise<unknown> } | null>(null);
 
 const orgSlugInput = ref(localStorage.getItem(ORG_SLUG_STORAGE_KEY) ?? '');
 const orgSlug = computed(() => orgSlugInput.value.trim() || undefined);
@@ -293,7 +297,7 @@ const viewerError = ref<string | undefined>();
 const selectedSize = computed(() =>
     candidates.value
         .filter((file) => selected.value.includes(file.uuid))
-        .reduce((sum, file) => sum + Number(file.size), 0),
+        .reduce((sum, file) => sum + file.size, 0),
 );
 const allSelected = computed(
     () =>
@@ -315,7 +319,7 @@ const statusText = computed(() => {
     }
     if (loaded.value.length === 0) return 'Nothing loaded yet';
     const noun = loaded.value.length === 1 ? 'file' : 'files';
-    return `${loaded.value.length} ${noun} handed to Foxglove`;
+    return `${String(loaded.value.length)} ${noun} handed to Foxglove`;
 });
 
 function toggle(uuid: string): void {
@@ -333,7 +337,8 @@ function toggleAll(): void {
 async function fetchAsFile(uuid: string): Promise<File> {
     const url = await downloadFile(uuid, true);
     const response = await fetch(url);
-    if (!response.ok) throw new Error(`Download failed: ${response.status}`);
+    if (!response.ok)
+        throw new Error(`Download failed: ${String(response.status)}`);
     const filename =
         candidates.value.find((file) => file.uuid === uuid)?.filename ?? uuid;
     return new File([await response.blob()], filename);
@@ -345,7 +350,9 @@ async function load(): Promise<void> {
     viewerError.value = undefined;
     try {
         if (transfer.value === 'download') {
-            localFiles.value = await Promise.all(uuids.map(fetchAsFile));
+            localFiles.value = await Promise.all(
+                uuids.map(async (uuid) => fetchAsFile(uuid)),
+            );
             urls.value = [];
         } else {
             urls.value = await Promise.all(
@@ -422,6 +429,10 @@ watch(format, () => {
 });
 
 const isSidebarCollapsed = ref(false);
+
+function toggleSidebar(): void {
+    isSidebarCollapsed.value = !isSidebarCollapsed.value;
+}
 const isFullscreen = ref(false);
 
 function toggleFullscreen(): void {

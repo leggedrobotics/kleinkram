@@ -38,7 +38,7 @@ function dataSource(): DataSource | undefined {
         return {
             type: 'file',
             file: [...files],
-            compare: props.compare === true && files.length > 1,
+            compare: props.compare && files.length > 1,
         };
     }
     if (props.urls.length > 0) {
@@ -73,7 +73,7 @@ function createViewer(): void {
     const iframe = container.value.querySelector('iframe');
     if (iframe) {
         iframe.allow = `${iframe.allow}; loopback-network *; local-network *; local-network-access *`;
-        iframe.src = String(iframe.src);
+        iframe.setAttribute('src', iframe.src);
     }
 
     viewer.addEventListener('ready', () => {
