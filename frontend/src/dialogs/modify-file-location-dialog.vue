@@ -10,7 +10,10 @@
         </template>
 
         <template #content>
-            <div class="column transfer-dialog">
+            <div
+                class="column transfer-dialog"
+                :class="{ 'transfer-dialog--locked': isPending }"
+            >
                 <div>
                     <div class="text-weight-bold q-mb-xs">Action</div>
                     <q-btn-toggle
@@ -290,7 +293,12 @@ import {
     isValidFileName,
     splitFileName,
 } from '@kleinkram/validation/frontend';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import {
+    keepPreviousData,
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from '@tanstack/vue-query';
 import AppSelect from 'components/common/app-select.vue';
 import SelectMissionMetadata from 'components/select-mission-metadata.vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
@@ -310,6 +318,21 @@ interface Resolution {
     name: string;
     /** set by the dialog to resolve a conflict, not by the user */
     auto?: boolean;
+}
+
+interface TransferRequest {
+    mode: Mode;
+    missionUuid: string;
+    /** set when the mission has to be created first */
+    newMission:
+        | {
+              name: string;
+              projectUuid: string;
+              metadata: Record<string, string>;
+          }
+        | undefined;
+    fileUuids: string[];
+    renames: Record<string, string>;
 }
 
 const NEW_MISSION = '__new_mission__';
@@ -369,7 +392,9 @@ const isNewMissionValid = computed(
         !!newMissionName.value &&
         !newMissionNameError.value &&
         (selectedProject.value?.requiredMetadataTypes ?? []).every(
-            (type) => !!metadataValues.value[type.uuid],
+            (type) =>
+                metadataValues.value[type.uuid] !== undefined &&
+                metadataValues.value[type.uuid] !== '',
         ),
 );
 
@@ -436,13 +461,28 @@ const { data: existingNames, isFetching: isChecking } = useQuery({
         checkTarget.value,
         namesToCheck.value,
     ]),
-    queryFn: () =>
-        existingFilenames(checkTarget.value ?? '', namesToCheck.value),
+    queryFn: async () => {
+        const target = checkTarget.value ?? '';
+        return {
+            target,
+            existing: await existingFilenames(target, namesToCheck.value),
+        };
+    },
     enabled: computed(() => !!checkTarget.value),
+    // A new suggestion adds names to check. Until that answer is there, the
+    // last one still holds for the names it covered; dropping it would undo
+    // the suggestion and start the cycle again.
+    placeholderData: keepPreviousData,
 });
 
 const existingSet = computed(
-    () => new Set(checkTarget.value ? (existingNames.value ?? []) : []),
+    () =>
+        new Set(
+            checkTarget.value &&
+                existingNames.value?.target === checkTarget.value
+                ? existingNames.value.existing
+                : [],
+        ),
 );
 
 /** A free name like `name_1.ext` that clashes with nothing. */
@@ -614,18 +654,14 @@ const copyCliCommand = async (): Promise<void> => {
 
 // --- submit ------------------------------------------------------------
 const { mutate: submitMutation, isPending } = useMutation({
-    mutationFn: async () => {
-        let missionUuid = targetMissionUuid.value;
-        if (!missionUuid) throw new Error('No mission selected');
-
-        if (isNewMission.value) {
-            const projectUuid = targetProjectUuid.value;
-            if (!projectUuid) throw new Error('No project selected');
+    mutationFn: async (request: TransferRequest) => {
+        let missionUuid = request.missionUuid;
+        if (request.newMission) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const created: { uuid: string } = await createMission(
-                newMissionName.value,
-                projectUuid,
-                metadataValues.value,
+                request.newMission.name,
+                request.newMission.projectUuid,
+                request.newMission.metadata,
             );
             missionUuid = created.uuid;
             // a failed transfer must not create the mission a second time
@@ -635,21 +671,15 @@ const { mutate: submitMutation, isPending } = useMutation({
             targetMissionUuid.value = missionUuid;
         }
 
-        const fileUuids = includedFiles.value.map((file) => file.uuid);
-        const renames = Object.fromEntries(
-            includedFiles.value
-                .filter((file) => resolutionOf(file).action === 'rename')
-                .map((file) => [file.uuid, finalName(file)]),
-        );
-        await (mode.value === 'move'
-            ? moveFiles(fileUuids, missionUuid, renames)
-            : copyFiles(fileUuids, missionUuid, renames));
+        await (request.mode === 'move'
+            ? moveFiles(request.fileUuids, missionUuid, request.renames)
+            : copyFiles(request.fileUuids, missionUuid, request.renames));
     },
-    onSuccess: async () => {
-        const count = includedFiles.value.length;
+    onSuccess: async (_data, request) => {
+        const count = request.fileUuids.length;
         Notify.create({
             group: false,
-            message: `${mode.value === 'move' ? 'Moved' : 'Copied'} ${String(count)} ${count === 1 ? 'file' : 'files'}`,
+            message: `${request.mode === 'move' ? 'Moved' : 'Copied'} ${String(count)} ${count === 1 ? 'file' : 'files'}`,
             color: 'positive',
             spinner: false,
             position: 'bottom',
@@ -678,8 +708,29 @@ const { mutate: submitMutation, isPending } = useMutation({
     },
 });
 
+// The request is read once, when the button is clicked: creating the
+// mission takes a moment, and a change made meanwhile must not alter it.
 const submit = (): void => {
-    submitMutation();
+    const missionUuid = targetMissionUuid.value;
+    const projectUuid = targetProjectUuid.value;
+    if (!missionUuid || !projectUuid) return;
+    submitMutation({
+        mode: mode.value,
+        missionUuid,
+        newMission: isNewMission.value
+            ? {
+                  name: newMissionName.value,
+                  projectUuid,
+                  metadata: { ...metadataValues.value },
+              }
+            : undefined,
+        fileUuids: includedFiles.value.map((file) => file.uuid),
+        renames: Object.fromEntries(
+            includedFiles.value
+                .filter((file) => resolutionOf(file).action === 'rename')
+                .map((file) => [file.uuid, finalName(file)]),
+        ),
+    });
 };
 </script>
 
@@ -687,6 +738,12 @@ const submit = (): void => {
 .transfer-dialog {
     max-width: 640px;
     gap: 16px;
+}
+
+/* the request uses the values from the moment of the click */
+.transfer-dialog--locked {
+    pointer-events: none;
+    opacity: 0.6;
 }
 
 .new-mission {

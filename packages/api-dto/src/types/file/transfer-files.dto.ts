@@ -1,8 +1,8 @@
+import { IsRecordStringString } from '@kleinkram/validation';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
     ArrayNotEmpty,
     IsArray,
-    IsObject,
     IsOptional,
     IsString,
     IsUUID,
@@ -33,7 +33,7 @@ export class TransferFilesDto {
         additionalProperties: { type: 'string' },
     })
     @IsOptional()
-    @IsObject()
+    @IsRecordStringString()
     renames?: Record<string, string>;
 }
 

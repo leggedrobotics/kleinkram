@@ -239,6 +239,19 @@ describe('Move Files', () => {
         expect(await missionOf(file.uuid)).toBe(sourceMissionUuid);
     }, 30_000);
 
+    test('should return 400 if a rename is not a string', async () => {
+        const file = await createFile(user, sourceMissionUuid, 'a.bag');
+
+        const response = await sendJson(user, 'PATCH', '/files', {
+            fileUUIDs: [file.uuid],
+            missionUUID: targetMissionUuid,
+            renames: { [file.uuid]: null },
+        });
+
+        expect(response.status).toBe(400);
+        expect(await missionOf(file.uuid)).toBe(sourceMissionUuid);
+    }, 30_000);
+
     test('should copy a file with its data and topics and keep the original', async () => {
         const original = await createFile(
             user,
