@@ -63,17 +63,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         // update, through their refresh token) and tokens signed in tests
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (payload.uuid) {
+            let user;
             try {
-                const user = await this.userService.findOneByUUID(
+                user = await this.userService.findOneByUUID(
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                     payload.uuid,
                     { uuid: true, role: true, name: true },
                     {},
                 );
-                return { user };
             } catch {
                 throw InvalidJwtTokenException;
             }
+            if (!(await this.sessionService.userMaySignIn(user.uuid))) {
+                throw new UnauthorizedException('Session ended');
+            }
+            return { user };
         }
         return {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access

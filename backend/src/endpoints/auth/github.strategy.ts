@@ -16,6 +16,9 @@ export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {
             clientSecret: env.GITHUB_CLIENT_SECRET ?? 'dummy',
             callbackURL: `${env.BACKEND_URL}/auth/github/callback`,
             scope: ['user:email', 'user:profile'],
+            // all addresses with their `primary` and `verified` flags,
+            // not only the primary one without flags
+            allRawEmails: true,
         });
     }
 

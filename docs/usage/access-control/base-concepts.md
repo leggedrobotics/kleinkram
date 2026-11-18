@@ -58,6 +58,18 @@ On top of that, affiliation groups can be used to
 - can restrict or allow global access rights (e.g. all users not part of the `RoboticsCorp` affiliation group are not
   allowed create new projects or creation of new access groups)
 
+### Instances Restricted to Internal Users
+
+An instance can be limited to its own organization (`allow_external_users: false` in its access config, see
+[Access Control](../../development/access-control/base-concepts.md#restricting-sign-in-to-internal-users)). On such an
+instance, only users with a **verified** email address on one of the affiliation domains can sign in. Anyone else sees
+the message _"This Kleinkram instance only accepts accounts with a verified email address of an allowed domain"_ on the
+login page, and no account is created for them. This also applies to admins and to users who already have an account:
+if their email is not (or no longer) on an allowed domain, they are signed out and cannot sign in again.
+
+When signing in with GitHub, any verified address of your GitHub account counts, so add and verify your work address on
+GitHub if your primary address is a private one.
+
 ### System Page
 
 Users who may create projects (admins and members of an affiliation group) get a _System_ tab in the top navigation.

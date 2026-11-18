@@ -69,6 +69,21 @@ export function validateAccessConfig(
         );
     }
 
+    if (
+        config.allow_external_users !== undefined &&
+        typeof config.allow_external_users !== 'boolean'
+    ) {
+        throw new TypeError(
+            `Invalid access config: "allow_external_users" must be true or false, got ${JSON.stringify(config.allow_external_users)}`,
+        );
+    }
+
+    if (config.allow_external_users === false && config.emails.length === 0) {
+        throw new TypeError(
+            'Invalid access config: "allow_external_users" is false but "emails" is empty, so nobody could sign in',
+        );
+    }
+
     for (const group of config.access_groups) {
         if (!DEFAULT_GROUP_RIGHTS.includes(group.rights)) {
             throw new TypeError(
@@ -111,3 +126,38 @@ export function validateAccessConfig(
  */
 export const emailMatchesDomain = (email: string, domain: string): boolean =>
     email.toLowerCase().endsWith(`@${domain.toLowerCase()}`);
+
+/**
+ * Whether users whose email is on none of the domains in `emails` can sign
+ * in (`allow_external_users`, default `true`).
+ *
+ * @param config the access group config
+ */
+export const externalUsersAllowed = (config: AccessGroupConfig): boolean =>
+    config.allow_external_users !== false;
+
+/**
+ * Whether the email is on one of the domains listed in `emails`.
+ *
+ * @param config the access group config
+ * @param email the user's email address
+ */
+export const isInternalEmail = (
+    config: AccessGroupConfig,
+    email: string | null | undefined,
+): boolean =>
+    typeof email === 'string' &&
+    config.emails.some((entry) => emailMatchesDomain(email, entry.email));
+
+/**
+ * Whether a user with this email may sign in (and keep a session): always
+ * if `allow_external_users` is not `false`, otherwise only for emails on
+ * one of the domains in `emails`.
+ *
+ * @param config the access group config
+ * @param email the user's email address
+ */
+export const isEmailAllowedToSignIn = (
+    config: AccessGroupConfig,
+    email: string | null | undefined,
+): boolean => externalUsersAllowed(config) || isInternalEmail(config, email);
