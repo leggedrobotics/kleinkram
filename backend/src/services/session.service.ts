@@ -1,9 +1,14 @@
 import { SessionDto } from '@kleinkram/api-dto';
+import {
+    externalUsersAllowed,
+    isInternalEmail,
+} from '@kleinkram/backend-common';
 import { SessionEntity } from '@kleinkram/backend-common/entities/auth/session.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
-import { CookieNames, SessionKind } from '@kleinkram/shared';
+import { AccessGroupConfig, CookieNames, SessionKind } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -166,7 +171,27 @@ export class SessionService {
         @InjectRepository(SessionEntity)
         private readonly sessionRepository: Repository<SessionEntity>,
         private readonly jwtService: JwtService,
+        private readonly configService: ConfigService,
     ) {}
+
+    private get accessConfig(): AccessGroupConfig {
+        return this.configService.getOrThrow<AccessGroupConfig>('accessConfig');
+    }
+
+    /**
+     * Whether the user may still sign in: with `allow_external_users: false`
+     * in the access config, only users with an email on one of its domains.
+     * Checked on refresh, so a user who no longer qualifies (the config
+     * changed) cannot extend a session.
+     */
+    async userMaySignIn(userUuid: string): Promise<boolean> {
+        if (externalUsersAllowed(this.accessConfig)) return true;
+        const user = await this.sessionRepository.manager.findOne(UserEntity, {
+            where: { uuid: userUuid },
+            select: { uuid: true, email: true },
+        });
+        return isInternalEmail(this.accessConfig, user?.email);
+    }
 
     async create(
         user: Pick<UserEntity, 'uuid'>,
@@ -215,6 +240,9 @@ export class SessionService {
         }
         if (!isSessionActive(session)) {
             throw new InvalidSessionError('Session ended');
+        }
+        if (!(await this.userMaySignIn(session.userUuid))) {
+            throw new InvalidSessionError('User may no longer sign in');
         }
 
         const now = new Date();
@@ -363,6 +391,7 @@ export class SessionService {
         payload: AccessTokenPayload,
     ): Promise<SessionEntity | null> {
         if (payload.sid === undefined) return null;
+        const restricted = !externalUsersAllowed(this.accessConfig);
         const session = await this.sessionRepository.findOne({
             where: { uuid: payload.sid, revokedAt: IsNull() },
             relations: { user: true },
@@ -373,10 +402,19 @@ export class SessionService {
                 lastUsedAt: true,
                 expiresAt: true,
                 revokedAt: true,
-                user: { uuid: true, role: true, name: true },
+                // the email only when it has to be checked (see below)
+                user: { uuid: true, role: true, name: true, email: restricted },
             },
         });
         if (session?.userUuid !== payload.uuid) return null;
+        // with `allow_external_users: false`, access tokens of users who no
+        // longer qualify stop working at once, not only at the next refresh
+        if (
+            restricted &&
+            !isInternalEmail(this.accessConfig, session.user?.email)
+        ) {
+            return null;
+        }
         return isSessionActive(session) ? session : null;
     }
 

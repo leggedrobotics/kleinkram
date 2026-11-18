@@ -1,5 +1,10 @@
 import { AuthFlowException } from '@/types/auth-flow-exception';
-import { AffiliationGroupService } from '@kleinkram/backend-common';
+import {
+    AffiliationGroupService,
+    externalUsersAllowed,
+    isEmailAllowedToSignIn,
+    isInternalEmail,
+} from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { AccessGroupConfig, Providers, UserRole } from '@kleinkram/shared';
@@ -23,6 +28,45 @@ async function syncAffiliationAndReturn(
     );
     return user;
 }
+
+/** An email address as an OAuth provider reports it. */
+export interface ProviderEmail {
+    value: string;
+    /** whether the provider confirmed that the user owns the address */
+    verified?: boolean | string;
+    primary?: boolean;
+}
+
+export const EXTERNAL_LOGIN_REFUSED_MESSAGE =
+    'This Kleinkram instance only accepts accounts with a verified email address of an allowed domain. Contact your administrator if you think this is wrong.';
+
+const isVerified = (email: ProviderEmail): boolean =>
+    email.verified === true || email.verified === 'true';
+
+/**
+ * The email address to use for a login.
+ *
+ * Without restriction (`allow_external_users` not `false`) this is the
+ * primary address, or the first one, as the provider sends it. With the
+ * restriction it is a verified address on one of the configured domains,
+ * the primary one if it qualifies; `undefined` if there is none.
+ *
+ * @param config the access group config
+ * @param emails the addresses the provider reported
+ */
+export const selectLoginEmail = (
+    config: AccessGroupConfig,
+    emails: ProviderEmail[],
+): string | undefined => {
+    const byPrimary = [
+        ...emails.filter((email) => email.primary === true),
+        ...emails.filter((email) => email.primary !== true),
+    ];
+    if (externalUsersAllowed(config)) return byPrimary[0]?.value;
+    return byPrimary.find(
+        (email) => isVerified(email) && isInternalEmail(config, email.value),
+    )?.value;
+};
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -55,92 +99,68 @@ export class AuthService implements OnModuleInit {
     async validateAndCreateUserByGitHub(profile: any): Promise<UserEntity> {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { id, emails, displayName, photos } = profile;
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const email = emails[0].value;
-
-        const account = await this.accountRepository.findOne({
+        return this.validateAndCreateUser(Providers.GITHUB, {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            where: { oauthID: id, provider: Providers.GITHUB },
-            relations: {
-                user: true,
-            },
+            oauthID: id,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            emails: emails ?? [],
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            username: displayName,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            picture: photos?.[0]?.value ?? '',
         });
-
-        if (account !== null && account.user === undefined) {
-            logger.error('Account exists but has no linked user!');
-            throw new AuthFlowException(
-                'Account exists but has no linked user!',
-            );
-        }
-
-        if (account?.user !== undefined) {
-            return syncAffiliationAndReturn(
-                this.affiliationGroupService,
-                this.config,
-                account.user,
-                email,
-            );
-        }
-
-        return this.create(
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            id,
-            Providers.GITHUB,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            email,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            displayName,
-
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-            photos[0].value,
-        );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async validateAndCreateUserByFakeOAuth(profile: any): Promise<UserEntity> {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { id, email, displayName, photo } = profile;
-
-        const account = await this.accountRepository.findOne({
+        return this.validateAndCreateUser(Providers.FakeOAuth, {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            where: { oauthID: id, provider: Providers.FakeOAuth },
-            relations: {
-                user: true,
-            },
+            oauthID: id,
+            // the fake provider (development and tests only) has one
+            // address, which counts as verified
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            emails: email ? [{ value: email, verified: true }] : [],
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            username: displayName,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            picture: photo ?? '',
         });
-
-        if (account !== null && account.user === undefined) {
-            logger.error('Account exists but has no linked user!');
-            throw new AuthFlowException(
-                'Account exists but has no linked user!',
-            );
-        }
-
-        if (account?.user !== undefined) {
-            return syncAffiliationAndReturn(
-                this.affiliationGroupService,
-                this.config,
-                account.user,
-                email,
-            );
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        return this.create(id, Providers.FakeOAuth, email, displayName, photo);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async validateAndCreateUserByGoogle(profile: any): Promise<UserEntity> {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { id, emails, displayName, photos } = profile;
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const email = emails[0].value;
-
-        const account = await this.accountRepository.findOne({
+        return this.validateAndCreateUser(Providers.GOOGLE, {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            where: { oauthID: id, provider: Providers.GOOGLE },
+            oauthID: id,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            emails: emails ?? [],
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            username: displayName,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            picture: photos?.[0]?.value ?? '',
+        });
+    }
+
+    /**
+     * Signs in the user of an OAuth account, creating the user on the first
+     * login. With `allow_external_users: false` in the access config, only
+     * users with a verified email on one of the configured domains get in.
+     */
+    private async validateAndCreateUser(
+        provider: Providers,
+        profile: {
+            oauthID: string;
+            emails: ProviderEmail[];
+            username: string;
+            picture: string;
+        },
+    ): Promise<UserEntity> {
+        const account = await this.accountRepository.findOne({
+            where: { oauthID: profile.oauthID, provider },
             relations: {
                 user: true,
             },
@@ -153,7 +173,34 @@ export class AuthService implements OnModuleInit {
             );
         }
 
+        const email = selectLoginEmail(this.config, profile.emails);
+        if (email === undefined) {
+            if (externalUsersAllowed(this.config)) {
+                throw new AuthFlowException(
+                    'The login provider did not share an email address.',
+                );
+            }
+            logger.info(
+                `Refused ${provider} login of account ${profile.oauthID}: no verified email on an allowed domain`,
+            );
+            throw new AuthFlowException(EXTERNAL_LOGIN_REFUSED_MESSAGE);
+        }
+
         if (account?.user !== undefined) {
+            // the email stored for the user must be allowed as well: it is
+            // the one checked when the session is refreshed
+            if (!externalUsersAllowed(this.config)) {
+                const stored = await this.userRepository.findOne({
+                    where: { uuid: account.user.uuid },
+                    select: { uuid: true, email: true },
+                });
+                if (!isInternalEmail(this.config, stored?.email)) {
+                    logger.info(
+                        `Refused ${provider} login of user ${account.user.uuid}: email not on an allowed domain`,
+                    );
+                    throw new AuthFlowException(EXTERNAL_LOGIN_REFUSED_MESSAGE);
+                }
+            }
             return syncAffiliationAndReturn(
                 this.affiliationGroupService,
                 this.config,
@@ -163,16 +210,11 @@ export class AuthService implements OnModuleInit {
         }
 
         return this.create(
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            id,
-            Providers.GOOGLE,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            profile.oauthID,
+            provider,
             email,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            displayName,
-
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-            photos[0].value,
+            profile.username,
+            profile.picture,
         );
     }
 
@@ -233,6 +275,10 @@ export const createNewUser = async (
         picture: string;
     },
 ): Promise<UserEntity> => {
+    if (!isEmailAllowedToSignIn(config, options.email)) {
+        throw new AuthFlowException(EXTERNAL_LOGIN_REFUSED_MESSAGE);
+    }
+
     const existingUser = await userRepository.findOne({
         where: { email: options.email },
         relations: {

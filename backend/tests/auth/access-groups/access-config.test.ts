@@ -1,5 +1,7 @@
 import {
     emailMatchesDomain,
+    externalUsersAllowed,
+    isEmailAllowedToSignIn,
     loadAccessConfig,
 } from '@kleinkram/backend-common';
 import * as fs from 'node:fs';
@@ -118,6 +120,66 @@ describe('Access config loading', () => {
             }),
         );
         expect(() => loadAccessConfig(file)).toThrow(/bare mail domain/);
+    });
+});
+
+describe('Access config allow_external_users', () => {
+    let directory: string;
+
+    const load = (config: object) => {
+        const file = path.join(directory, 'access_config.json');
+        fs.writeFileSync(file, JSON.stringify(config));
+        return loadAccessConfig(file);
+    };
+
+    const config = {
+        emails: [{ email: 'example.com', access_groups: [] }],
+        access_groups: [],
+    };
+
+    beforeAll(() => {
+        directory = fs.mkdtempSync(path.join(os.tmpdir(), 'access-config-'));
+    });
+
+    afterAll(() => {
+        fs.rmSync(directory, { recursive: true, force: true });
+    });
+
+    test('should allow external users if the option is absent', () => {
+        const loaded = load(config);
+        expect(externalUsersAllowed(loaded)).toBe(true);
+        expect(isEmailAllowedToSignIn(loaded, 'eve@gmail.com')).toBe(true);
+    });
+
+    test('should restrict sign-in to the configured domains if set to false', () => {
+        const loaded = load({ ...config, allow_external_users: false });
+        expect(externalUsersAllowed(loaded)).toBe(false);
+        expect(isEmailAllowedToSignIn(loaded, 'alice@example.com')).toBe(true);
+        expect(isEmailAllowedToSignIn(loaded, 'Alice@EXAMPLE.com')).toBe(true);
+        expect(isEmailAllowedToSignIn(loaded, 'eve@gmail.com')).toBe(false);
+        expect(isEmailAllowedToSignIn(loaded, 'eve@sub.example.com')).toBe(
+            false,
+        );
+        expect(isEmailAllowedToSignIn(loaded, undefined)).toBe(false);
+    });
+
+    test.each([['"false"'], [0], [null]])(
+        'should fail if the option is %p instead of a boolean',
+        (value) => {
+            expect(() =>
+                load({ ...config, allow_external_users: value }),
+            ).toThrow(/"allow_external_users" must be true or false/);
+        },
+    );
+
+    test('should fail if the option is false and no domain is configured', () => {
+        expect(() =>
+            load({
+                emails: [],
+                access_groups: [],
+                allow_external_users: false,
+            }),
+        ).toThrow(/nobody could sign in/);
     });
 });
 
