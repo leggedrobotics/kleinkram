@@ -12,6 +12,13 @@
                     layout="column"
                     :required="true"
                 />
+                <div
+                    v-if="isSameMission"
+                    class="q-mt-sm text-caption text-grey-7"
+                >
+                    Select another mission to move the
+                    {{ files.length === 1 ? 'file' : 'files' }} to.
+                </div>
             </div>
         </template>
         <template #actions>
@@ -25,7 +32,7 @@
                 label="Save"
                 class="bg-button-primary"
                 :loading="isPending"
-                :disable="!targetMissionUuid || isPending"
+                :disable="!targetMissionUuid || isSameMission || isPending"
                 @click="saveAction"
             />
         </template>
@@ -35,7 +42,7 @@
 <script setup lang="ts">
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify, useDialogPluginComponent } from 'quasar';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 // API Types
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
@@ -58,6 +65,9 @@ const queryClient = useQueryClient();
 // State: Initialize with the current location of the file(s)
 const targetProjectUuid = ref<string | undefined>(props.mission.project.uuid);
 const targetMissionUuid = ref<string | undefined>(props.mission.uuid);
+const isSameMission = computed(
+    () => targetMissionUuid.value === props.mission.uuid,
+);
 
 const { mutate: moveFilesMutation, isPending } = useMutation({
     mutationFn: () => {
@@ -96,11 +106,11 @@ const { mutate: moveFilesMutation, isPending } = useMutation({
 
         Notify.create({
             group: false,
-            message: `Error moving file: ${message}`,
+            message: `Error moving ${props.files.length === 1 ? 'file' : 'files'}: ${message}`,
             color: 'negative',
             spinner: false,
             position: 'bottom',
-            timeout: 3000,
+            timeout: 10_000,
         });
     },
 });
