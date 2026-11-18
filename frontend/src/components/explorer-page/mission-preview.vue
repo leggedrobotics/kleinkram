@@ -16,7 +16,7 @@
 
             <q-btn-toggle
                 v-if="availableFormats.length > 1"
-                v-model="format"
+                :model-value="format"
                 class="q-mt-md"
                 spread
                 unelevated
@@ -30,6 +30,7 @@
                         value: f,
                     }))
                 "
+                @update:model-value="onFormatChange"
             >
                 <q-tooltip>
                     Foxglove merges files of one format only
@@ -225,7 +226,7 @@ import { useRoute } from 'vue-router';
 type PreviewFormat = FileType.MCAP | FileType.BAG;
 
 const ORG_SLUG_STORAGE_KEY = 'kleinkram.foxglove.orgSlug';
-const MAX_FILES = 100;
+const PAGE_SIZE = 500;
 
 const $route = useRoute();
 const missionUuid = useMissionUUID();
@@ -250,13 +251,20 @@ const layoutKey = computed(() =>
 const { data: files, isLoading: isLoadingFiles } = useQuery({
     queryKey: ['mission-preview-files', missionUuid],
     queryFn: async (): Promise<FileDto[]> => {
-        const response = await filesOfMission(
-            missionUuid.value ?? '',
-            MAX_FILES,
-            0,
-            [FileType.MCAP, FileType.BAG],
-        );
-        return response.data;
+        // All pages, so files picked anywhere on the files tab can be resolved.
+        const result: FileDto[] = [];
+        for (;;) {
+            const response = await filesOfMission(
+                missionUuid.value ?? '',
+                PAGE_SIZE,
+                result.length,
+                [FileType.MCAP, FileType.BAG],
+            );
+            result.push(...response.data);
+            if (response.data.length === 0 || result.length >= response.count) {
+                return result;
+            }
+        }
     },
     enabled: computed(() => !!missionUuid.value),
 });
@@ -334,9 +342,14 @@ function toggleAll(): void {
         : candidates.value.map((file) => file.uuid);
 }
 
-async function fetchAsFile(uuid: string): Promise<File> {
+// Bumped by every load and on unmount, so results of an outdated load are
+// dropped and its downloads cancelled.
+let loadGeneration = 0;
+let loadAbort: AbortController | undefined;
+
+async function fetchAsFile(uuid: string, signal: AbortSignal): Promise<File> {
     const url = await downloadFile(uuid, true);
-    const response = await fetch(url);
+    const response = await fetch(url, { signal });
     if (!response.ok)
         throw new Error(`Download failed: ${String(response.status)}`);
     const filename =
@@ -346,23 +359,33 @@ async function fetchAsFile(uuid: string): Promise<File> {
 
 async function load(): Promise<void> {
     const uuids = selected.value.toSorted();
+    const mode = transfer.value;
+    const generation = ++loadGeneration;
+    loadAbort?.abort();
+    const abort = new AbortController();
+    loadAbort = abort;
+
     isLoadingLinks.value = true;
     viewerError.value = undefined;
     try {
-        if (transfer.value === 'download') {
-            localFiles.value = await Promise.all(
-                uuids.map(async (uuid) => fetchAsFile(uuid)),
+        let nextFiles: File[] = [];
+        let nextUrls: string[] = [];
+        if (mode === 'download') {
+            nextFiles = await Promise.all(
+                uuids.map(async (uuid) => fetchAsFile(uuid, abort.signal)),
             );
-            urls.value = [];
         } else {
-            urls.value = await Promise.all(
+            nextUrls = await Promise.all(
                 uuids.map((uuid) => getFoxgloveLink(uuid)),
             );
-            localFiles.value = [];
         }
-        loadedTransfer.value = transfer.value;
+        if (generation !== loadGeneration) return;
+        localFiles.value = nextFiles;
+        urls.value = nextUrls;
+        loadedTransfer.value = mode;
         loaded.value = uuids;
     } catch (error: unknown) {
+        if (generation !== loadGeneration) return;
         console.error(error);
         Notify.create({
             message: 'Failed to prepare the files for Foxglove',
@@ -370,7 +393,7 @@ async function load(): Promise<void> {
             position: 'bottom',
         });
     } finally {
-        isLoadingLinks.value = false;
+        if (generation === loadGeneration) isLoadingLinks.value = false;
     }
 }
 
@@ -406,11 +429,22 @@ watch(
         const requestedFiles = all.filter((file) => requested.has(file.uuid));
 
         const first = requestedFiles[0];
-        if (first) {
-            format.value = first.type as PreviewFormat;
-            selected.value = requestedFiles
-                .filter((file) => file.type === first.type)
-                .map((file) => file.uuid);
+        if (requested.size > 0) {
+            // Files were picked explicitly: never fall back to other files.
+            if (first) {
+                format.value = first.type as PreviewFormat;
+                selected.value = requestedFiles
+                    .filter((file) => file.type === first.type)
+                    .map((file) => file.uuid);
+            }
+            const skipped = requested.size - selected.value.length;
+            if (skipped > 0) {
+                Notify.create({
+                    message: `${String(skipped)} of the selected files cannot be previewed together (other format, or not in state OK)`,
+                    color: 'warning',
+                    position: 'bottom',
+                });
+            }
         } else {
             format.value =
                 (groups.BAG?.length ?? 0) > (groups.MCAP?.length ?? 0)
@@ -423,10 +457,10 @@ watch(
     { immediate: true },
 );
 
-watch(format, () => {
-    if (!isInitialized) return;
+function onFormatChange(value: PreviewFormat): void {
+    format.value = value;
     selected.value = candidates.value.map((file) => file.uuid);
-});
+}
 
 const isSidebarCollapsed = ref(false);
 
@@ -452,6 +486,8 @@ onMounted(() => {
 });
 onBeforeUnmount(() => {
     document.removeEventListener('fullscreenchange', onFullscreenChange);
+    loadGeneration++;
+    loadAbort?.abort();
 });
 </script>
 

@@ -175,11 +175,7 @@
                         label="Action Executions"
                         style="color: #222"
                     />
-                    <q-tab
-                        name="preview"
-                        label="Preview"
-                        style="color: #222"
-                    />
+                    <q-tab name="preview" label="Preview" style="color: #222" />
                 </q-tabs>
             </template>
         </title-section>
@@ -207,7 +203,8 @@
             </q-tab-panel>
 
             <q-tab-panel name="preview" class="q-pa-none">
-                <MissionPreview />
+                <!-- keyed: moving to another mission starts a fresh preview -->
+                <MissionPreview :key="missionUuid" />
             </q-tab-panel>
         </q-tab-panels>
 

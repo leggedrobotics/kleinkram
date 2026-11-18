@@ -6,10 +6,11 @@ The **Preview** tab of a mission opens its `.mcap` and `.bag` files in an embedd
 ## Open the preview
 
 - Open a mission and select the **Preview** tab. All files of the most common format are selected and loaded.
-- Or select files on the **Files** tab and click **Preview** in the selection bar. Only those files are loaded.
+- Or select files on the **Files** tab and click **Preview** in the selection bar. Only those files are loaded. If they
+  mix formats, only the files of the first format are loaded, and a message says how many were skipped.
 
 Foxglove merges files of one format only. If a mission has both `.mcap` and `.bag` files, switch between them with the
-format toggle above the file list. Only files in state `OK` or `FOUND` are listed, at most 100 per mission.
+format toggle above the file list. Only files in state `OK` or `FOUND` are listed.
 
 ## Settings
 
