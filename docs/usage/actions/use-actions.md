@@ -28,7 +28,7 @@ and confirm the launch.
 ![Launch Kleinkram Actions](../../assets/launch_action.png)
 
 Actions are executed within the context of a specific mission or project. The action will have access to all files
-within that mission. For your convenience, you can also access files of other missions within the same project.
+within that mission. It has no access to files of other missions, not even of missions in the same project.
 
 Actions are queued and executed on hosted action runners within your Kleinkram instance. You can monitor the progress of
 your actions in the "Executions" tab.
@@ -55,6 +55,10 @@ template that only asks for `Read`. A template that asks for more (e.g. `Delete`
 Action Templates are version-controlled. When you create or modify an action template, a new version is created. This
 allows you to track changes over time and revert to previous versions if needed. Each execution of an action is tied to
 a specific version of the template, ensuring consistency and reproducibility.
+
+Only the creator of a template (the person who saved its first version) and administrators can save new versions of it
+or delete it. If you want to change a template someone else made, save your changes as a new template with its own
+name. See [Access Control for Actions](../access-control/action.md#action-template).
 
 ::: tip
 We recommend using version tags while specifying Docker images in your action templates. This ensures that your actions

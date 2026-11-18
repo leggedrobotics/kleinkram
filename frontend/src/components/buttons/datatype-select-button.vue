@@ -16,9 +16,7 @@
                 @click="() => select(value)"
             >
                 <q-item-section>
-                    <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component, vue/no-v-html -->
-                    <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component, vue/no-v-html -->
-                    <q-item-label v-html="datatype" />
+                    <q-item-label>{{ datatype }}</q-item-label>
                 </q-item-section>
                 <q-item-section side>
                     <q-icon

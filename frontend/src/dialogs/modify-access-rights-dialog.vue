@@ -3,7 +3,10 @@
         <template #title>Change Access Rights</template>
 
         <template #content>
-            <access-rights-manager v-model="modifiableAccessRights" />
+            <access-rights-manager
+                v-model="modifiableAccessRights"
+                :general-access-disabled="!canChangeGeneralAccess"
+            />
         </template>
 
         <template #actions>
@@ -29,12 +32,15 @@ import { useDialogPluginComponent, useQuasar } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { useUpdateAccessRightsMutation } from 'src/hooks/mutation-hooks';
 import {
+    canDeleteProject,
+    usePermissionsQuery,
     useProjectAccessRights,
     useProjectQuery,
     useUser,
 } from 'src/hooks/query-hooks';
 import { useEditablePaginatedResponse } from 'src/hooks/utility-hooks';
 import { formatSize } from 'src/services/general-formatting';
+import { computed } from 'vue';
 
 const { projectUuid: projectUuid } = defineProps<{ projectUuid: string }>();
 
@@ -45,6 +51,11 @@ const { data: user } = useUser();
 const { data: project } = useProjectQuery(projectUuid);
 const { data: projectAccess } = useProjectAccessRights(projectUuid);
 const modifiableAccessRights = useEditablePaginatedResponse(projectAccess);
+
+const { data: permissions } = usePermissionsQuery();
+const canChangeGeneralAccess = computed(() =>
+    canDeleteProject(projectUuid, permissions.value),
+);
 
 const { mutate: changeAccessRights } = useUpdateAccessRightsMutation(
     projectUuid,

@@ -1,5 +1,17 @@
+import {
+    ActionEntity,
+    ActionTemplateEntity,
+    ApiKeyEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
-import { UserRole } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    ActionState,
+    KeyTypes,
+    UserRole,
+} from '@kleinkram/shared';
+import { randomUUID } from 'node:crypto';
 import { createMissionUsingPost, createProjectUsingPost } from './api-calls';
 import {
     clearAllData,
@@ -77,4 +89,53 @@ export const createMockWorker = async (identifier = 'test-worker') => {
     });
     await workerRepo.save(worker);
     return worker;
+};
+
+/**
+ * Creates an ACTION API key the way the queue consumer does: bound to an
+ * action that is still running. The API rejects action keys whose action is
+ * missing or finished, so a bare key would not authenticate.
+ */
+export const createActionApiKey = async (options: {
+    missionUuid: string;
+    userUuid: string;
+    rights: AccessGroupRights;
+    state?: ActionState;
+}): Promise<ApiKeyEntity> => {
+    const user = { uuid: options.userUuid } as UserEntity;
+
+    const template = await database.getRepository(ActionTemplateEntity).save(
+        database.getRepository(ActionTemplateEntity).create({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            image_name: 'rslethz/action:test',
+            name: `api-key-template-${randomUUID()}`,
+            creator: user,
+            cpuCores: 1,
+            cpuMemory: 1,
+            gpuMemory: 0,
+            maxRuntime: 1,
+            accessRights: options.rights,
+        }),
+    );
+
+    const action = await database.getRepository(ActionEntity).save(
+        database.getRepository(ActionEntity).create({
+            mission: { uuid: options.missionUuid },
+            creator: user,
+            template,
+            state: options.state ?? ActionState.PROCESSING,
+        }),
+    );
+
+    const apiKeyRepository = database.getRepository(ApiKeyEntity);
+    return apiKeyRepository.save(
+        apiKeyRepository.create({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            key_type: KeyTypes.ACTION,
+            mission: { uuid: options.missionUuid },
+            action,
+            rights: options.rights,
+            user,
+        }),
+    );
 };

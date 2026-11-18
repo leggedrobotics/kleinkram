@@ -24,4 +24,6 @@ export const AddUser = createParamDecorator((_, context: ExecutionContext) => {
 export interface AuthHeader {
     user: UserEntity;
     apiKey?: ApiKeyEntity;
+    /** the login session of the access token, missing for API keys */
+    sessionUuid?: string;
 }

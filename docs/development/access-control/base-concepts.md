@@ -4,8 +4,8 @@ This page describes the basic concepts of the access control in the application.
 
 ## Principle of Group Based Access Control
 
-The access control is based on groups. Each user can be a member of multiple groups. Each group is assigned a single
-`AccessGroupRights`. The `AccessGroupRights` defines the rights of the group.
+The access control is based on groups. Each user can be a member of multiple groups. A group has no rights of its own:
+each access a group is granted on a project or a mission has its own `AccessGroupRights`.
 
 | AccessGroupRights | Value |
 | ----------------- | ----- |
@@ -51,6 +51,13 @@ logged by `AffiliationGroupService`.
     ]
 }
 ```
+
+`rights` is the default access the group gets on newly created projects. Changing it does not update existing projects.
+
+Being a member of any affiliation group is also what lets a user create projects, access groups, metadata types and
+action templates (everything guarded by `@CanCreate()`, see `ProjectGuardService.canCreate`). The group's `rights` do not
+matter here: members of a group with `"rights": 0` can still create projects. Users who are in no affiliation group
+cannot create any of these, unless they are admins.
 
 ## How Access is Checked?
 

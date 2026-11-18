@@ -40,20 +40,21 @@ def _walk_directory(directory: Path, suffixes: Collection[str]) -> List[Path]:
     all files below `directory` with one of `suffixes`, sorted, skipping
     hidden files; hidden directories (`.git`, `.venv`, ...) are not entered
 
-    the suffix match is case-sensitive like the upload itself (`check_file_paths`
-    and the server accept `.mcap`, not `.MCAP`), so a recursive walk never picks
-    a file that would then stop the whole upload
+    the suffix match ignores case, so `REC.MCAP` is picked up as well: the
+    `FileValidator` then decides about it (`--fix-filenames` uploads it as
+    `REC.mcap`, otherwise it is refused with a hint, or listed with `--skip`)
+    instead of it being left out without a word
 
     a directory that cannot be read raises instead of being left out, so a
     recursive upload or verify never silently covers only part of the tree
     """
-    wanted = set(suffixes)
+    wanted = {suffix.lower() for suffix in suffixes}
     found = []
     for root, dirs, files in os.walk(directory, onerror=_raise):
         dirs[:] = [name for name in dirs if not name.startswith(".")]
         for name in files:
             path = Path(root) / name
-            if not name.startswith(".") and path.suffix in wanted and path.is_file():
+            if not name.startswith(".") and path.suffix.lower() in wanted and path.is_file():
                 found.append(path)
     return sorted(found)
 

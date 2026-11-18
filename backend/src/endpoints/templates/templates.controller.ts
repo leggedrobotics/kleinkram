@@ -46,10 +46,11 @@ export class TemplatesController {
     @ApiOperation({ summary: 'Create a new version of an existing template' })
     @ApiCreatedResponse({ type: ActionTemplateDto })
     async createNewTemplateVersion(
+        @ParameterUuid('uuid') uuid: string,
         @Body() dto: UpdateTemplateDto,
         @AddUser() user: AuthHeader,
     ): Promise<ActionTemplateDto> {
-        return this.templateService.createVersion(dto, user);
+        return this.templateService.createVersion(uuid, dto, user);
     }
 
     @Get()
@@ -97,7 +98,10 @@ export class TemplatesController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Archive or delete a template' })
     @OutputDto(null)
-    async removeTemplate(@ParameterUuid('uuid') uuid: string): Promise<void> {
-        await this.templateService.delete(uuid);
+    async removeTemplate(
+        @ParameterUuid('uuid') uuid: string,
+        @AddUser() user: AuthHeader,
+    ): Promise<void> {
+        await this.templateService.delete(uuid, user);
     }
 }

@@ -20,5 +20,8 @@ export class ContainerCleanupService {
         if (runnerId) {
             await this.containerLifecycle.performReconciliation(runnerId);
         }
+        // After the reconciliation, so that actions it just failed lose their
+        // key in the same pass.
+        await this.actionManager.revokeStaleActionKeys();
     }
 }

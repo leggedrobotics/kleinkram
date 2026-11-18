@@ -25,6 +25,11 @@
                         style="color: #222"
                     />
                     <q-tab
+                        name="Sessions"
+                        label="Sessions"
+                        style="color: #222"
+                    />
+                    <q-tab
                         name="Api Tokens"
                         label="API Tokens"
                         style="color: #222"
@@ -52,6 +57,9 @@
             <q-tab-panel name="Admin">
                 <admin-settings />
             </q-tab-panel>
+            <q-tab-panel name="Sessions">
+                <user-profile-sessions />
+            </q-tab-panel>
             <q-tab-panel name="Api Tokens">
                 <user-profile-api-keys />
             </q-tab-panel>
@@ -72,6 +80,7 @@ import AdminSettings from 'components/user-profile/admin-settings.vue';
 import UserProfileApiKeys from 'components/user-profile/user-profile-api-keys.vue';
 import UserProfileBanner from 'components/user-profile/user-profile-banner.vue';
 import UserProfileDetails from 'components/user-profile/user-profile-details.vue';
+import UserProfileSessions from 'components/user-profile/user-profile-sessions.vue';
 import { useQuasar } from 'quasar';
 import { useHandler, useUser } from 'src/hooks/query-hooks';
 import { ref } from 'vue';

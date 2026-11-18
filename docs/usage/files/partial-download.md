@@ -14,11 +14,24 @@ klein download \
   <file>
 ```
 
-Options go before the file names or ids.
+Options can go before or after the file names or ids.
+
+::: tip Summary
+
+- Only `.mcap` files can be sliced. Other files in the selection are skipped
+  when `--topics`, `--start-time` or `--end-time` is given.
+- How much is saved depends on how the file was written: see
+  [What actually saves bandwidth](#what-actually-saves-bandwidth) and
+  [MCAP Chunking and Compression](./compression.md).
+- The slice is a valid MCAP saved under the original file name.
+- To process most of a recording, run an [Action](../actions/use-actions.md)
+  instead of downloading it.
+
+:::
 
 ::: warning MCAP only
-Only `.mcap` can be sliced. `.bag` and `.db3` have no equivalent index that the
-client can use over the network, so they are skipped when any filter is given.
+`.bag` and `.db3` have no equivalent index that the client can use over the
+network, so they are skipped when any filter is given.
 :::
 
 ## Options
@@ -44,7 +57,8 @@ leaves a truncated file behind.
 
 It depends on how the recording's chunks are stored.
 
-**Uncompressed chunks** (what our recorders write): every message can be
+**Uncompressed chunks** (what `ros2 bag record -s mcap` writes without a
+preset): every message can be
 fetched on its own, so both `--topics` and a time window cut the transfer. What
 remains is the index itself — roughly 16 bytes per message in the time range,
 for every topic — and the bytes between wanted messages that are close enough
@@ -56,6 +70,13 @@ saves bandwidth, because chunks are ordered by log time, but `--topics` alone
 usually does not: a chunk normally holds several topics, so one topic appears in
 nearly every chunk. The CLI prints a note when `--topics` is used without a
 time window.
+
+**No chunks** (the `fastwrite` recording preset): there is no chunk index to
+look things up in, so the whole file is read from the start and filtered on
+your machine. Neither filter saves bandwidth.
+
+See [MCAP Chunking and Compression](./compression.md) for how to record or
+convert files so that they can be sliced.
 
 Measured against a 2.15 GB recording with uncompressed chunks (521 774
 messages, 10 topics, 192 s):

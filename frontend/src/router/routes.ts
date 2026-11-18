@@ -162,6 +162,13 @@ const ROUTES = {
         layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
+    CLI_ACTIVATE: routeWithLayout({
+        name: 'CliActivatePage',
+        path: '/cli/activate',
+        component: () => import('pages/cli-activate-page.vue'),
+        layout: () => import('layouts/no-top-nav-layout.vue'),
+    }),
+
     ERROR_404: routeWithLayout({
         name: 'Error404Page',
         path: '/:catchAll(.*)',
@@ -207,6 +214,14 @@ const ROUTES = {
         name: 'AccessGroupDetailPage',
         path: '/access-group/:uuid',
         component: () => import('pages/access-group-details-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
+    }),
+
+    SYSTEM: routeWithLayout({
+        breadcrumbs: [{ displayName: 'System', to: undefined }],
+        name: 'SystemPage',
+        path: '/system',
+        component: () => import('pages/system-page.vue'),
         layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 

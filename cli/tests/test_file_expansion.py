@@ -27,13 +27,13 @@ from kleinkram.utils import SUPPORT_FILE_TYPES
 
 # every supported file below `tree`, in sorted order
 ALL_SUPPORTED = [
-    "run1/deep/x.mcap",
+    "run1/deep/xyz.mcap",
     "run1/meta.yaml",
     "run1/one.mcap",
     "run2/two.bag",
     "top.mcap",
 ]
-ALL_MCAP = ["run1/deep/x.mcap", "run1/one.mcap", "top.mcap"]
+ALL_MCAP = ["run1/deep/xyz.mcap", "run1/one.mcap", "top.mcap"]
 
 
 @pytest.fixture
@@ -44,7 +44,7 @@ def tree(tmp_path: Path) -> Path:
       notes.txt              unsupported suffix
       run1/one.mcap
       run1/meta.yaml
-      run1/deep/x.mcap
+      run1/deep/xyz.mcap
       run2/two.bag
       run2/.hidden.mcap      hidden file
       .git/obj.mcap          inside a hidden directory
@@ -98,12 +98,11 @@ def test_recursive_only_collects_given_suffixes(tree):
     assert rel(files, tree) == ALL_MCAP
 
 
-def test_recursive_suffix_match_is_case_sensitive_like_the_upload(tree):
-    """`check_file_paths` and the server reject `.MCAP`; selecting it would stop the whole batch"""
+def test_recursive_suffix_match_ignores_case(tree):
+    """`UPPER.MCAP` is picked up and left to the `FileValidator`, not dropped without a word"""
     (tree / "UPPER.MCAP").write_bytes(b"x")
     files = expand_file_args([str(tree)], recursive=True, suffixes=[".mcap"])
-    assert "UPPER.MCAP" not in rel(files, tree)
-    assert rel(files, tree) == ALL_MCAP
+    assert rel(files, tree) == sorted([*ALL_MCAP, "UPPER.MCAP"])
 
 
 @pytest.mark.skipif(not hasattr(os, "geteuid") or os.geteuid() == 0, reason="root can read everything")
@@ -137,7 +136,7 @@ def test_recursive_does_not_enter_hidden_directories(tree, monkeypatch):
 
 def test_recursive_relative_directory(chdir_tree):
     files = expand_file_args(["run1"], recursive=True, suffixes=SUPPORT_FILE_TYPES)
-    assert [p.as_posix() for p in files] == ["run1/deep/x.mcap", "run1/meta.yaml", "run1/one.mcap"]
+    assert [p.as_posix() for p in files] == ["run1/deep/xyz.mcap", "run1/meta.yaml", "run1/one.mcap"]
 
 
 def test_recursive_empty_directory_warns(tree, capsys):
@@ -162,7 +161,7 @@ def test_single_star_glob_stays_on_one_level(chdir_tree):
 
 def test_glob_matching_directories_is_walked_with_recursive(chdir_tree):
     files = expand_file_args(["run*"], recursive=True, suffixes=SUPPORT_FILE_TYPES)
-    assert rel(files, chdir_tree) == ["run1/deep/x.mcap", "run1/meta.yaml", "run1/one.mcap", "run2/two.bag"]
+    assert rel(files, chdir_tree) == ["run1/deep/xyz.mcap", "run1/meta.yaml", "run1/one.mcap", "run2/two.bag"]
 
 
 def test_glob_matching_directories_without_recursive_passes_them_on(chdir_tree):
@@ -186,7 +185,7 @@ def test_duplicates_are_removed_in_argument_order(chdir_tree):
         recursive=True,
         suffixes=SUPPORT_FILE_TYPES,
     )
-    assert rel(files, chdir_tree) == ["top.mcap", "run1/deep/x.mcap", "run1/one.mcap", "run1/meta.yaml", "run2/two.bag"]
+    assert rel(files, chdir_tree) == ["top.mcap", "run1/deep/xyz.mcap", "run1/one.mcap", "run1/meta.yaml", "run2/two.bag"]
 
 
 # --------------------------------------------------------------------------
@@ -238,6 +237,22 @@ def test_upload_recursive_directory(runner, fake_upload, chdir_tree, flag):
     result = runner.invoke(app, ["--no-verbose", "upload", "-p", "p", "-m", "m", flag, "."])
     assert result.exit_code == 0, result.output
     assert uploaded(fake_upload, chdir_tree) == ALL_SUPPORTED
+
+
+def test_upload_recursive_uppercase_extension_is_fixed_with_fix_filenames(runner, fake_upload, chdir_tree):
+    (chdir_tree / "UPPER.MCAP").write_bytes(b"x")
+    result = runner.invoke(app, ["--no-verbose", "upload", "-p", "p", "-m", "m", "-r", "--fix-filenames", "."])
+    assert result.exit_code == 0, result.output
+    assert "UPPER.MCAP" in uploaded(fake_upload, chdir_tree)
+
+
+def test_upload_recursive_uppercase_extension_is_refused_without_fix_filenames(runner, fake_upload, chdir_tree):
+    (chdir_tree / "UPPER.MCAP").write_bytes(b"x")
+    result = runner.invoke(app, ["--no-verbose", "upload", "-p", "p", "-m", "m", "-r", "."])
+    assert result.exit_code != 0
+    assert "UPPER.MCAP" in str(result.exception)
+    assert "--fix-filenames" in str(result.exception)
+    fake_upload.assert_not_called()
 
 
 def test_upload_quoted_glob(runner, fake_upload, chdir_tree):
@@ -339,18 +354,20 @@ def test_unquoted_globstar_in_bash_misses_files(tree):
     assert argv == ["run1/one.mcap"]
 
 
-def test_upload_recursive_with_uppercase_suffix_passes_the_real_core_check(runner, offline, monkeypatch, chdir_tree):
+def test_upload_recursive_with_uppercase_suffix_and_fix_filenames_passes_the_real_core_check(
+    runner, offline, monkeypatch, chdir_tree
+):
     """only the server and the transfer are mocked, `kleinkram.core.upload` runs for real"""
     (chdir_tree / "UPPER.MCAP").write_bytes(b"x")
     routes = MagicMock()
     monkeypatch.setattr(kleinkram.core.kleinkram.api, "routes", routes)
     monkeypatch.setattr("kleinkram.cli._upload.AuthenticatedClient", MagicMock)
-    upload_files = MagicMock(return_value=UploadResult(uploaded=len(ALL_SUPPORTED)))
+    upload_files = MagicMock(return_value=UploadResult(uploaded=len(ALL_SUPPORTED) + 1))
     monkeypatch.setattr(kleinkram.api.file_transfer, "upload_files", upload_files)
 
-    result = runner.invoke(app, ["--no-verbose", "upload", "-p", "p", "-m", "m", "-r", "."])
+    result = runner.invoke(app, ["--no-verbose", "upload", "-p", "p", "-m", "m", "-r", "--fix-filenames", "."])
 
     assert result.exit_code == 0, result.output
     (call,) = upload_files.call_args_list
     filename_map = call.args[1]
-    assert sorted(filename_map) == sorted(Path(p).name for p in ALL_SUPPORTED)
+    assert sorted(filename_map) == sorted([*(Path(p).name for p in ALL_SUPPORTED), "UPPER.mcap"])

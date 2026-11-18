@@ -6,10 +6,10 @@ Install the package
 pip install kleinkram
 ```
 
-Run the CLI
+Log in to your Kleinkram server, using the address of its web app
 
 ```bash
-klein
+klein login https://datasets.example.org
 ```
 
 ## Usage
@@ -50,7 +50,7 @@ Instead of downloading files from a specified mission you can download arbitrary
 klein download --dest out *id1* *id2* *id3*
 ```
 
-For more information consult the [documentation](https://docs.datasets.leggedrobotics.com//usage/python/setup).
+For more information consult the [documentation](https://kleinkram.dev/usage/python/setup).
 
 ## Development
 

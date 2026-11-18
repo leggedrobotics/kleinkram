@@ -4,9 +4,14 @@ This document lists the environment variables used to configure the Kleinkram ap
 
 ## Server Configuration
 
-| Variable      | Description                                   | Default |
-| :------------ | :-------------------------------------------- | :------ |
-| `SERVER_PORT` | The port on which the backend server listens. | `3000`  |
+| Variable                  | Description                                                                                                                                                                                   | Default |
+| :------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------ |
+| `SERVER_PORT`             | The port on which the backend server listens.                                                                                                                                                 | `3000`  |
+| `API_COMPRESSION_ENABLED` | Compress API responses larger than 1 KB with Brotli or gzip, depending on the client's `Accept-Encoding`. Set to `false` if a reverse proxy in front of the API already compresses responses. | `true`  |
+
+Compression runs in the API server itself, so every deployment gets it without proxy configuration. Server-sent
+events (`text/event-stream`) are never compressed, and a client can opt out for a single request by sending the
+`x-no-compression` header.
 
 ## Service URLs
 
@@ -17,6 +22,12 @@ These URLs are used for communication between services and for generating links.
 | `FRONTEND_URL` | The URL where the frontend application is accessible. | `http://localhost:8003` |
 | `DOCS_URL`     | The URL where the documentation site is accessible.   | `http://localhost:4000` |
 | `BACKEND_URL`  | The URL where the backend API is accessible.          | `http://localhost:3000` |
+
+::: warning Use https outside local development
+Except on `localhost`, Kleinkram must be served over https. The login cookies are always marked `Secure`, so
+browsers only send them over https (or to `http://localhost`), and the CLI refuses plain `http://` servers. On a
+plain http address other than `localhost`, logging in does not work.
+:::
 
 ## S3 Configuration (Object Storage)
 

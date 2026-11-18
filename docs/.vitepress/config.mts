@@ -9,7 +9,7 @@ export default withMermaid({
 
     title: 'Kleinkram',
     description: 'A structured bag and mcap dataset storage.',
-    titleTemplate: ':title - Custom Suffix',
+    titleTemplate: ':title - Kleinkram',
 
 
     mermaidPlugin: {
@@ -102,6 +102,10 @@ export default withMermaid({
                         {
                             text: 'Partial Download',
                             link: '/usage/files/partial-download',
+                        },
+                        {
+                            text: 'MCAP Chunking & Compression',
+                            link: '/usage/files/compression',
                         },
                         {
                             text: 'Access Control',
@@ -258,14 +262,14 @@ export default withMermaid({
 
         editLink: {
             pattern:
-                'https://github.com/leggedrobotics/GrandTourDatasets/edit/master/docs/:path',
+                'https://github.com/leggedrobotics/kleinkram/edit/dev/docs/:path',
             text: 'Edit this page on GitHub',
         },
 
         socialLinks: [
             {
                 icon: 'github',
-                link: 'https://github.com/leggedrobotics/GrandTourDatasets',
+                link: 'https://github.com/leggedrobotics/kleinkram',
             },
         ],
 

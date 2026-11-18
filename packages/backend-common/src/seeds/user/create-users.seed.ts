@@ -50,7 +50,7 @@ export default class CreateUsers implements Seeder {
         let config: AccessGroupConfig | undefined;
         try {
             config = loadAccessConfig();
-            await affiliationGroupService.createAccessGroups(config);
+            await affiliationGroupService.upsertAccessGroups(config);
         } catch (error: unknown) {
             console.warn('Seeding without access config:', error);
         }

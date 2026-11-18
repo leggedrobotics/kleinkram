@@ -219,10 +219,10 @@ The application can be configured using environment variables. For a complete li
 
 For development purposes, Kleinkram includes a `fake-oauth` provider. This allows you to log in without setting up a real OAuth application with Google or GitHub.
 
-To use it with the CLI:
+To use it with the CLI, add the local server first (once) and log in:
 
 ```bash
-klein login --oauth-provider fake-oauth
+klein login http://localhost:3000 --oauth-provider fake-oauth
 ```
 
 This provider is only available when the application is running in development mode (i.e., when the API endpoint is set to a local instance).

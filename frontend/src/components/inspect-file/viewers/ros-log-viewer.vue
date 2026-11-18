@@ -206,8 +206,7 @@
                                 v-for="(part, at) in highlight(item.data.msg)"
                                 :key="at"
                                 :class="{ 'log-line__match': part.match }"
-                                >{{ part.text }}</span
-                            ><span
+                                >{{ part.text }}</span><span
                                 v-if="showSource && origin(item.data)"
                                 class="log-line__source"
                                 :title="originPath(item.data)"

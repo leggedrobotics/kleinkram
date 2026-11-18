@@ -19,6 +19,7 @@ import {
     PidsLimit,
     SecurityOpt,
 } from '../helper/container-configs';
+import { redactEnvironment } from '../helper/redact-environment';
 import { ImageResolutionService } from './image-resolution.service';
 
 export interface ContainerLimits {
@@ -184,7 +185,10 @@ export class DockerDaemon {
         };
 
         logger.debug(
-            `Starting container with options: ${JSON.stringify(runOptions)}`,
+            `Starting container with options: ${JSON.stringify({
+                ...runOptions,
+                environment: redactEnvironment(runOptions.environment),
+            })}`,
         );
 
         if (runOptions.docker_image === undefined) {

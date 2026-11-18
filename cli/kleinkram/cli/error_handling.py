@@ -124,11 +124,11 @@ def handle_request_error(exc: httpx.RequestError) -> int:
         title = "Connection Failed"
         msg = (
             f"Unable to connect to the Kleinkram backend server at:\n"
-            f"  [bold cyan]{endpoint_url}[/bold cyan] (Endpoint name: '{selected_endpoint}')\n\n"
+            f"  [bold cyan]{endpoint_url}[/bold cyan] (host: '{selected_endpoint}')\n\n"
             f"Please verify that:\n"
             f"  1. The server is online and you have a stable network connection.\n"
             f"  2. You are connected to the correct VPN/network if required.\n"
-            f"  3. Your endpoint configuration is correct (run [bold]klein endpoint show[/bold] to inspect)."
+            f"  3. The server address is correct (run [bold]klein host[/bold] to inspect)."
         )
         quiet_msg = f"Error: Connection failed to {endpoint_url}"
 

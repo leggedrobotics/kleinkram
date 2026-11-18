@@ -53,11 +53,14 @@ This is however not recommended for local development.
 
 5. **Configure CLI (Optional)**
 
-If you want to use the CLI with your local instance, you need to set the endpoint to local:
+If you want to use the CLI with your local instance, add it with its address:
 
 ```bash
-klein endpoint local
+klein login http://localhost:8003
 ```
+
+You approve the login in the browser at `http://localhost:8003/cli/activate`. To skip the browser, log in as a fake
+user directly: `klein login http://localhost:3000 --oauth-provider fake-oauth --user 1`.
 
 ::: details Start Developing
 For a deeper dive into the project structure and development workflow, see the [Application Structure](./application-structure.md) documentation.

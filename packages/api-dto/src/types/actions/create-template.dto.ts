@@ -1,5 +1,5 @@
 import { AccessGroupRights } from '@kleinkram/shared';
-import { IsDockerImage } from '@kleinkram/validation';
+import { IsDockerImage, IsValidName } from '@kleinkram/validation';
 import {
     IsEnum,
     IsNotEmpty,
@@ -8,11 +8,11 @@ import {
     IsString,
 } from 'class-validator';
 
-export class CreateTemplateDto {
-    @IsString()
-    @IsNotEmpty()
-    name!: string;
-
+/**
+ * Everything a template version consists of, except its name. The name is
+ * checked differently when creating a template and when adding a version.
+ */
+export class TemplateFieldsDto {
     @IsString()
     @IsNotEmpty()
     description!: string;
@@ -44,4 +44,12 @@ export class CreateTemplateDto {
 
     @IsEnum(AccessGroupRights)
     accessRights!: AccessGroupRights;
+}
+
+export class CreateTemplateDto extends TemplateFieldsDto {
+    // a new name follows the naming rules (`name.validation.ts`)
+    @IsString()
+    @IsNotEmpty()
+    @IsValidName('Template name')
+    name!: string;
 }

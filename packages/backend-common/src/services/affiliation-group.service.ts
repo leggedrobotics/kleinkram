@@ -23,47 +23,13 @@ export class AffiliationGroupService {
     ) {}
 
     /**
-     * Create access groups from the access group config.
+     * Create the affiliation groups of the access group config. Groups that
+     * already exist are renamed to match the config, and soft-deleted
+     * groups are restored. Memberships are not touched.
      *
      * @param config
      */
-    async createAccessGroups(config: AccessGroupConfig): Promise<void> {
-        // Read access_config/*.json and create access groups
-        await Promise.all(
-            config.access_groups.map(async (group) => {
-                const databaseGroup = await this.accessGroupRepository.findOne({
-                    where: { uuid: group.uuid },
-                    withDeleted: true,
-                });
-                if (!databaseGroup) {
-                    const newGroup = this.accessGroupRepository.create({
-                        name: group.name,
-                        uuid: group.uuid,
-                        type: AccessGroupType.AFFILIATION,
-                        creator: {},
-                    });
-                    return this.accessGroupRepository.save(newGroup);
-                }
-                return;
-            }),
-        );
-    }
-
-    /**
-     * Sync affiliation groups and memberships with the access group config.
-     * Creates missing groups, updates names, soft-deletes stale groups,
-     * and reconciles user memberships based on email patterns.
-     *
-     * @param config
-     * @param userRepository
-     */
-    async syncAccessGroups(
-        config: AccessGroupConfig,
-        userRepository: Repository<UserEntity>,
-    ): Promise<void> {
-        const configUuids = new Set(config.access_groups.map((g) => g.uuid));
-
-        // 1. Upsert groups from config
+    async upsertAccessGroups(config: AccessGroupConfig): Promise<void> {
         await Promise.all(
             config.access_groups.map(async (group) => {
                 const existing = await this.accessGroupRepository.findOne({
@@ -91,6 +57,24 @@ export class AffiliationGroupService {
                 return this.accessGroupRepository.save(existing);
             }),
         );
+    }
+
+    /**
+     * Sync affiliation groups and memberships with the access group config.
+     * Creates missing groups, updates names, soft-deletes stale groups,
+     * and reconciles user memberships based on email patterns.
+     *
+     * @param config
+     * @param userRepository
+     */
+    async syncAccessGroups(
+        config: AccessGroupConfig,
+        userRepository: Repository<UserEntity>,
+    ): Promise<void> {
+        const configUuids = new Set(config.access_groups.map((g) => g.uuid));
+
+        // 1. Upsert groups from config
+        await this.upsertAccessGroups(config);
 
         // 2. Soft-delete stale affiliation groups not in config
         const allAffiliationGroups = await this.accessGroupRepository.find({

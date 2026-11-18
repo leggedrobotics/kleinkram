@@ -39,6 +39,8 @@ export * from '@api-dto/available-providers.dto';
 export * from '@api-dto/cancel-file-upload.dto';
 export * from '@api-dto/cancel-processing-response.dto';
 export * from '@api-dto/category.dto';
+export * from '@api-dto/cli/cli-config.dto';
+export * from '@api-dto/cli/device-authorization.dto';
 export * from '@api-dto/confirm-upload.dto';
 export * from '@api-dto/create-access-group.dto';
 export * from '@api-dto/create-mission.dto';
@@ -99,6 +101,7 @@ export * from '@api-dto/user/api-key-metadata.dto';
 export * from '@api-dto/user/api-keys.dto';
 export * from '@api-dto/user/current-api-user.dto';
 export * from '@api-dto/user/resolve-users.dto';
+export * from '@api-dto/user/session.dto';
 export * from '@api-dto/user/user.dto';
 
 export * from '@api-dto/message.dto';

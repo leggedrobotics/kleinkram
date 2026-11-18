@@ -54,7 +54,7 @@
                             v-model="localTemplate.name"
                             outlined
                             dense
-                            placeholder="e.g. Lidar Validation"
+                            placeholder="e.g. lidar-validation"
                             :readonly="isEditing"
                             :hint="
                                 isEditing
@@ -64,6 +64,13 @@
                             lazy-rules
                             :rules="[
                                 (val) => !!val || 'Name is required',
+                                (val) =>
+                                    isEditing ||
+                                    (getNameValidationError(
+                                        val,
+                                        'Action name',
+                                    ) ??
+                                        true),
                                 () =>
                                     isNameAvailable ||
                                     'This name is already taken',
@@ -221,6 +228,7 @@ import type { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-
 import type { UpdateTemplateDto } from '@kleinkram/api-dto/types/actions/update-template.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import {
+    getNameValidationError,
     isImageInDockerNamespace,
     isValidDockerImageName,
     normalizeDockerNamespace,

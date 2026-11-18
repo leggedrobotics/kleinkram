@@ -20,6 +20,7 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import _claim_admin
 from kleinkram.api.routes import _get_api_version
 from kleinkram.auth import login_flow
+from kleinkram.auth import logout_on_server
 from kleinkram.cli._action import action_typer
 from kleinkram.cli._deprecation import prefer_new
 from kleinkram.cli._deprecation import warn_deprecated
@@ -27,6 +28,7 @@ from kleinkram.cli._download import download_typer
 from kleinkram.cli._endpoint import endpoint_typer
 from kleinkram.cli._executions import execution_typer
 from kleinkram.cli._file import file_typer
+from kleinkram.cli._host import host_typer
 from kleinkram.cli._list import list_typer
 from kleinkram.cli._mission import mission_typer
 from kleinkram.cli._project import project_typer
@@ -42,6 +44,7 @@ from kleinkram.config import check_config_compatibility
 from kleinkram.config import get_config
 from kleinkram.config import get_shared_state
 from kleinkram.config import save_config
+from kleinkram.config import update_saved_credentials
 from kleinkram.errors import InvalidCLIVersion
 from kleinkram.utils import format_traceback
 from kleinkram.utils import get_supported_api_version
@@ -65,8 +68,9 @@ CLI_HELP = """\
 Kleinkram CLI
 
 The Kleinkram CLI is a command line interface for Kleinkram.
+Start with `klein login <url>`, using the address of your Kleinkram web app.
 For a list of available commands, run `klein --help` or visit \
-https://docs.datasets.leggedrobotics.com/usage/python/setup \
+https://kleinkram.dev/usage/python/setup \
 for more information.
 """
 
@@ -125,7 +129,8 @@ app = ErrorHandledTyper(
 
 register_error_handlers(app)
 
-app.add_typer(endpoint_typer, name="endpoint", rich_help_panel=CommandTypes.AUTH)
+app.add_typer(host_typer, name="host", rich_help_panel=CommandTypes.AUTH)
+app.add_typer(endpoint_typer, name="endpoint", hidden=True)
 
 app.add_typer(download_typer, name="download", rich_help_panel=CommandTypes.CORE)
 app.add_typer(upload_typer, name="upload", rich_help_panel=CommandTypes.CORE)
@@ -141,15 +146,32 @@ app.add_typer(execution_typer, name="execution", rich_help_panel=CommandTypes.AC
 app.add_typer(trigger_typer, name="trigger", rich_help_panel=CommandTypes.ACTION)
 
 
-@app.command(rich_help_panel=CommandTypes.AUTH)
+LOGIN_HELP = """\
+Log in to a Kleinkram server.
+
+Pass the address of the web app (as opened in the browser) the first time,
+e.g. `klein login datasets.example.org`. Later, `klein login` logs in to the
+active server again.
+
+You approve the login in the browser. Without a browser (e.g. over SSH) the
+CLI prints a short code to enter on any other device.
+"""
+
+
+@app.command(rich_help_panel=CommandTypes.AUTH, help=LOGIN_HELP)
 def login(
+    url: Optional[str] = typer.Argument(
+        None,
+        help="Address of the Kleinkram web app or API. Defaults to the active server.",
+        show_default=False,
+    ),
     oAuthProvider: Optional[str] = typer.Option(
         None,
         "--oauth-provider",
-        help="OAuth provider to use for login. Supported providers: google, github, fake-oauth. (default: auto)",
+        help="Log in with this provider through a local callback instead of a login code " "(google, github, fake-oauth).",
     ),
-    key: Optional[str] = typer.Option(None, help="CLI key"),
-    headless: bool = typer.Option(False),
+    key: Optional[str] = typer.Option(None, help="Log in with an API key instead."),
+    headless: bool = typer.Option(False, help="Do not open a browser, print the login code instead."),
     user: Optional[str] = typer.Option(
         None,
         "--user",
@@ -159,38 +181,32 @@ def login(
     oauth_provider_flag: Optional[str] = typer.Option(None, "-p", hidden=True),
 ) -> None:
     oAuthProvider = prefer_new(oAuthProvider, oauth_provider_flag, old="-p for --oauth-provider", new="--oauth-provider")
-    if oAuthProvider is None:
-        oAuthProvider = "auto"
-
-    # logic to resolve the "auto" default
     if oAuthProvider == "auto":
-        config = get_config()
-        if config.selected_endpoint == "local":
-            oAuthProvider = "fake-oauth"
-        else:
-            oAuthProvider = "google"
+        oAuthProvider = None
 
     # validate oAuthProvider
-    if oAuthProvider not in ["google", "github", "fake-oauth"]:
+    if oAuthProvider is not None and oAuthProvider not in ["google", "github", "fake-oauth"]:
         raise typer.BadParameter(
             f"Unsupported OAuth provider '{oAuthProvider}'. Supported providers: google, github, fake-oauth."
         )
 
     # validate that user parameter is only used with fake-oauth
     if user is not None and oAuthProvider != "fake-oauth":
-        raise typer.BadParameter("--user parameter can only be used with fake-oauth provider")
+        raise typer.BadParameter("--user parameter can only be used with --oauth-provider fake-oauth")
 
-    login_flow(oAuthProvider=oAuthProvider, key=key, headless=headless, user=user)
+    login_flow(url=url, oAuthProvider=oAuthProvider, key=key, headless=headless, user=user)
 
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
-def logout(all: bool = typer.Option(False, help="logout on all enpoints")) -> None:
+def logout(all: bool = typer.Option(False, help="log out of all servers")) -> None:
+    """Log out: ends the login on the server and removes it from this machine."""
     config = get_config()
-    if all:
-        config.endpoint_credentials.clear()
-    else:
-        config.endpoint_credentials.pop(config.selected_endpoint, None)
-    save_config(config)
+    names = list(config.endpoint_credentials) if all else [config.selected_endpoint]
+    for name in names:
+        if name is None:
+            continue
+        logout_on_server(config, name)
+        update_saved_credentials(name, lambda _: None)
 
 
 @app.command(hidden=True)
@@ -207,6 +223,8 @@ def _version_callback(value: bool) -> None:
 
 
 def check_version_compatibility() -> None:
+    if not get_config().has_endpoint:
+        return  # nothing to compare against before the first `klein login <url>`
     cli_version = get_supported_api_version()
     api_version = _get_api_version()
     api_vers_str = ".".join(map(str, api_version))

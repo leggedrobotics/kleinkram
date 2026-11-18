@@ -1,10 +1,20 @@
 import { OutputDto } from '@/decorators';
-import { AuthService } from '@/services/auth.service';
+import {
+    ACCESS_TOKEN_LIFETIME,
+    AccessTokenPayload,
+    describeBrowser,
+    InvalidSessionError,
+    isLegacyRefreshToken,
+    isSessionRefreshToken,
+    LegacyTokenPayload,
+    SessionService,
+} from '@/services/session.service';
 import { UserService } from '@/services/user.service';
 import { AvailableProvidersDto } from '@kleinkram/api-dto';
+import { SessionEntity } from '@kleinkram/backend-common/entities/auth/session.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
-import { CookieNames, Providers } from '@kleinkram/shared';
+import { CookieNames, Providers, SessionKind } from '@kleinkram/shared';
 import {
     Controller,
     Get,
@@ -23,7 +33,7 @@ import { UserOnly } from './roles.decorator';
 @Controller('auth')
 export class AuthController {
     constructor(
-        private authService: AuthService,
+        private readonly sessionService: SessionService,
         private readonly jwtService: JwtService,
         private userService: UserService,
     ) {}
@@ -62,45 +72,55 @@ export class AuthController {
     @Get('github/callback')
     @UseGuards(AuthGuard('github'))
     @OutputDto(null)
-    // eslint-disable-next-line @typescript-eslint/require-await
     async githubAuthCallback(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         @Req() request: any,
         @Res() response: Response,
     ): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        this.handleAuthRedirect(request, response);
+        await this.handleAuthRedirect(request, response);
     }
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     @OutputDto(null)
-    googleAuthRedirect(
+    async googleAuthRedirect(
         @Req() request: Request,
         @Res() response: Response,
-    ): void {
-        this.handleAuthRedirect(request, response);
+    ): Promise<void> {
+        await this.handleAuthRedirect(request, response);
     }
 
     @Get('fake-oauth/callback')
     @UseGuards(AuthGuard(Providers.FakeOAuth))
     @OutputDto(null)
-    fakeOAuthAuthRedirect(
+    async fakeOAuthAuthRedirect(
         @Req() request: Request,
         @Res() response: Response,
-    ): void {
+    ): Promise<void> {
         if (!env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT)
             throw new MethodNotAllowedException();
-        this.handleAuthRedirect(request, response);
+        await this.handleAuthRedirect(request, response);
     }
 
-    private handleAuthRedirect(
+    private async handleAuthRedirect(
         @Req() request: Request,
         @Res() response: Response,
-    ): void {
-        const user = request.user;
-        const token = this.authService.login(user as UserEntity);
+    ): Promise<void> {
+        const user = request.user as UserEntity;
         const state = request.query.state;
+        // logins started by the CLI pass a `cli…` state (local callback
+        // port, token page, fake-oauth test login)
+        const isCli = typeof state === 'string' && state.startsWith('cli');
+        const { tokens: token, session } = await this.sessionService.create(
+            user,
+            isCli
+                ? { kind: SessionKind.CLI, name: 'klein (browser login)' }
+                : {
+                      kind: SessionKind.WEB,
+                      ...describeBrowser(request.headers['user-agent']),
+                  },
+        );
 
         if (state === 'cli') {
             response.redirect(
@@ -165,21 +185,8 @@ export class AuthController {
             return;
         }
 
-        response.cookie(CookieNames.AUTH_TOKEN, token[CookieNames.AUTH_TOKEN], {
-            httpOnly: false,
-            secure: env.DEV,
-            sameSite: 'strict',
-        });
-        response.cookie(
-            CookieNames.REFRESH_TOKEN,
-            token[CookieNames.REFRESH_TOKEN],
-            {
-                httpOnly: true,
-                secure: env.DEV,
-                sameSite: 'strict',
-                maxAge: 30 * 24 * 60 * 60 * 1000,
-            },
-        );
+        setAuthCookie(response, token[CookieNames.AUTH_TOKEN]);
+        setRefreshCookie(response, token[CookieNames.REFRESH_TOKEN], session);
         response.redirect(`${env.FRONTEND_URL}/landing`);
     }
 
@@ -194,26 +201,63 @@ export class AuthController {
     @Post('refresh-token')
     @OutputDto(null)
     async refreshToken(@Req() request: Request, @Res() response: Response) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const refreshToken = request.cookies[CookieNames.REFRESH_TOKEN];
-        if (!refreshToken) {
+        const refreshToken: unknown =
+            request.cookies[CookieNames.REFRESH_TOKEN];
+        if (typeof refreshToken !== 'string' || refreshToken === '') {
             return response
                 .status(401)
                 .json({ message: 'Refresh token not found' });
         }
 
+        if (isSessionRefreshToken(refreshToken)) {
+            const clientVersion = request.headers['kleinkram-client-version'];
+            try {
+                const result = await this.sessionService.refresh(
+                    refreshToken,
+                    typeof clientVersion === 'string'
+                        ? clientVersion
+                        : undefined,
+                );
+                setAuthCookie(response, result.tokens[CookieNames.AUTH_TOKEN]);
+                if (result.rotated) {
+                    setRefreshCookie(
+                        response,
+                        result.tokens[CookieNames.REFRESH_TOKEN],
+                        result.session,
+                    );
+                }
+                return response
+                    .status(200)
+                    .json({ message: 'Token refreshed' });
+            } catch (error) {
+                if (!(error instanceof InvalidSessionError)) throw error;
+                clearAuthCookies(response);
+                return response
+                    .status(401)
+                    .json({ message: 'Session ended, please log in again' });
+            }
+        }
+
+        // refresh tokens from before sessions existed: they keep working
+        // until they expire (7 days), without becoming revocable
         try {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument
-            const payload = this.jwtService.verify(refreshToken);
+            const payload =
+                this.jwtService.verify<LegacyTokenPayload>(refreshToken);
 
-            // @ts-ignore
+            // only real refresh tokens from before sessions: not access
+            // tokens of a session (they would shed the session check), and
+            // not 30 minute access tokens (each would mint the next one)
+            if (!isLegacyRefreshToken(payload)) {
+                return response
+                    .status(401)
+                    .json({ message: 'Invalid refresh token' });
+            }
 
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-            const user = await this.userService.findOneByUUID(payload.uuid, {
-                uuid: true,
-                email: true,
-                role: true,
-            });
+            const user = await this.userService.findOneByUUID(
+                payload.uuid,
+                { uuid: true, email: true, role: true },
+                {},
+            );
 
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             if (!user) {
@@ -224,32 +268,96 @@ export class AuthController {
 
             const newAuthToken = this.jwtService.sign(
                 { uuid: user.uuid },
-                { expiresIn: '30m' },
+                { expiresIn: ACCESS_TOKEN_LIFETIME },
             );
-            response.cookie(CookieNames.AUTH_TOKEN, newAuthToken, {
-                httpOnly: false,
-                secure: env.DEV,
-                sameSite: 'strict',
-            });
+            setAuthCookie(response, newAuthToken);
             return response.status(200).json({ message: 'Token refreshed' });
         } catch {
             throw InvalidJwtTokenException;
         }
     }
 
+    /**
+     * Ends the current session on the server (not only in this browser or
+     * CLI) and clears the cookies.
+     */
     @Post('logout')
     @OutputDto(null)
-    logout(@Res() response: Response): void {
-        response.cookie(CookieNames.AUTH_TOKEN, '', {
-            httpOnly: false,
-            expires: new Date(0),
-            secure: true,
-        });
-        response.cookie(CookieNames.REFRESH_TOKEN, '', {
-            httpOnly: true,
-            expires: new Date(0),
-            secure: true,
-        });
+    async logout(
+        @Req() request: Request,
+        @Res() response: Response,
+    ): Promise<void> {
+        const refreshToken: unknown =
+            request.cookies[CookieNames.REFRESH_TOKEN];
+
+        const accessToken: unknown = request.cookies[CookieNames.AUTH_TOKEN];
+
+        let revoked = false;
+        if (
+            typeof refreshToken === 'string' &&
+            isSessionRefreshToken(refreshToken)
+        ) {
+            revoked =
+                await this.sessionService.revokeByRefreshToken(refreshToken);
+        }
+        if (!revoked && typeof accessToken === 'string') {
+            try {
+                const payload = this.jwtService.verify<AccessTokenPayload>(
+                    accessToken,
+                    { ignoreExpiration: true },
+                );
+                if (payload.sid !== undefined) {
+                    await this.sessionService.revoke(
+                        payload.sid,
+                        'logout',
+                        payload.uuid,
+                    );
+                }
+            } catch {
+                // not a token of ours, nothing to end
+            }
+        }
+
+        clearAuthCookies(response);
         response.status(200).json({ message: 'Logged out' });
     }
+}
+
+const COOKIE_BASE = {
+    // browsers accept secure cookies on http://localhost, so this also
+    // works in local development
+    secure: true,
+    sameSite: 'strict' as const,
+};
+
+function setAuthCookie(response: Response, token: string): void {
+    response.cookie(CookieNames.AUTH_TOKEN, token, {
+        ...COOKIE_BASE,
+        httpOnly: false,
+    });
+}
+
+function setRefreshCookie(
+    response: Response,
+    token: string,
+    session: SessionEntity,
+): void {
+    response.cookie(CookieNames.REFRESH_TOKEN, token, {
+        ...COOKIE_BASE,
+        httpOnly: true,
+        expires: session.expiresAt,
+    });
+}
+
+function clearAuthCookies(response: Response): void {
+    response.cookie(CookieNames.AUTH_TOKEN, '', {
+        ...COOKIE_BASE,
+        httpOnly: false,
+        expires: new Date(0),
+    });
+    response.cookie(CookieNames.REFRESH_TOKEN, '', {
+        ...COOKIE_BASE,
+        httpOnly: true,
+        expires: new Date(0),
+    });
 }

@@ -95,7 +95,7 @@ describe('Trigger System API Tests', () => {
 
         templateUuid = await createActionUsingPost(
             {
-                name: 'Test Action',
+                name: 'Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -204,7 +204,7 @@ describe('Trigger System API Tests', () => {
     test('should trigger action via webhook', async () => {
         // 1. Create Webhook Trigger
         const trigger = await createTrigger({
-            name: 'Webhook Trigger',
+            name: 'Webhook-Trigger',
             description: 'Triggers via webhook',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -258,7 +258,7 @@ describe('Trigger System API Tests', () => {
     describe('File Event Triggers', () => {
         test('should match *.bag pattern for test.bag', async () => {
             await createTrigger({
-                name: 'Bag Trigger',
+                name: 'Bag-Trigger',
                 description: 'Matches *.bag files',
                 type: TriggerType.FILE,
                 missionUuid: missionUuid,
@@ -281,7 +281,7 @@ describe('Trigger System API Tests', () => {
 
         test('should NOT match *.bag pattern for test.yml', async () => {
             await createTrigger({
-                name: 'Bag Trigger',
+                name: 'Bag-Trigger',
                 description: 'Matches *.bag files',
                 type: TriggerType.FILE,
                 missionUuid: missionUuid,
@@ -304,7 +304,7 @@ describe('Trigger System API Tests', () => {
 
         test('should match some_*.bag pattern for some_test.bag', async () => {
             await createTrigger({
-                name: 'Some Bag Trigger',
+                name: 'Some-Bag-Trigger',
                 description: 'Matches some_*.bag files',
                 type: TriggerType.FILE,
                 missionUuid: missionUuid,
@@ -327,7 +327,7 @@ describe('Trigger System API Tests', () => {
 
         test('should match * pattern for any file', async () => {
             await createTrigger({
-                name: 'All Files Trigger',
+                name: 'All-Files-Trigger',
                 description: 'Matches all files',
                 type: TriggerType.FILE,
                 missionUuid: missionUuid,
@@ -350,7 +350,7 @@ describe('Trigger System API Tests', () => {
 
         test('should match specific filename test.yml', async () => {
             await createTrigger({
-                name: 'Specific File Trigger',
+                name: 'Specific-File-Trigger',
                 description: 'Matches test.yml only',
                 type: TriggerType.FILE,
                 missionUuid: missionUuid,
@@ -373,7 +373,7 @@ describe('Trigger System API Tests', () => {
 
         test('should match 2026-*.yaml pattern for 2026-data.yaml', async () => {
             await createTrigger({
-                name: 'Year Prefix Trigger',
+                name: 'Year-Prefix-Trigger',
                 description: 'Matches 2026-*.yaml files',
                 type: TriggerType.FILE,
                 missionUuid: missionUuid,
@@ -396,7 +396,7 @@ describe('Trigger System API Tests', () => {
 
         test('should match *_processed.db3 pattern for sensor_processed.db3', async () => {
             await createTrigger({
-                name: 'Processed DB3 Trigger',
+                name: 'Processed-DB3-Trigger',
                 description: 'Matches *_processed.db3 files',
                 type: TriggerType.FILE,
                 missionUuid: missionUuid,
@@ -419,7 +419,7 @@ describe('Trigger System API Tests', () => {
 
         test('should match mission-10-?.mcap pattern using single-character wildcard', async () => {
             await createTrigger({
-                name: 'Single Char Wildcard Trigger',
+                name: 'Single-Char-Wildcard-Trigger',
                 description: 'Matches mission-10-?.mcap',
                 type: TriggerType.FILE,
                 missionUuid: missionUuid,
@@ -449,7 +449,7 @@ describe('Trigger System API Tests', () => {
     describe('Creator Association', () => {
         it('should associate the trigger with the correct creator', async () => {
             const trigger = await createTrigger({
-                name: 'Creator Test Trigger',
+                name: 'Creator-Test-Trigger',
                 description: 'Verifies creator association',
                 templateUuid: templateUuid,
                 missionUuid: missionUuid,

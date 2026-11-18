@@ -15,6 +15,7 @@ import { AccessModule } from './endpoints/access/access.module';
 import { ActionModule } from './endpoints/action/action.module';
 import { AuthModule } from './endpoints/auth/auth.module';
 import { CategoryModule } from './endpoints/category/category.module';
+import { CliModule } from './endpoints/cli/cli.module';
 import { FileModule } from './endpoints/file/file.module';
 import { HealthModule } from './endpoints/health/health.module';
 import { FoxgloveModule } from './endpoints/integrations/foxglove.module';
@@ -86,6 +87,7 @@ import { VersionCheckerMiddlewareService } from './routing/middlewares/version-c
         MetadataModule,
         WorkerModule,
         CategoryModule,
+        CliModule,
         ScheduleModule.forRoot(),
         StorageModule,
     ],
@@ -112,6 +114,7 @@ export class AppModule implements NestModule {
                 '/integrations/{*path}', // excludes integration endpoints
                 '/hooks/{*path}', // excludes hook endpoints
                 '/api/health', // excludes health check
+                '/cli/config', // lets any CLI version discover the instance
                 '/', // excludes root for convenience
                 '/favicon.ico', // excludes favicon for browser requests
             )

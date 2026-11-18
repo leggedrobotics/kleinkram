@@ -1,4 +1,4 @@
-import { AccessGroupConfig } from '@kleinkram/shared';
+import { AccessGroupConfig, AccessGroupRights } from '@kleinkram/shared';
 import * as fs from 'node:fs';
 import env from './environment';
 
@@ -12,6 +12,14 @@ import env from './environment';
  * @param configPath path to the config file, defaults to ACCESS_CONFIG_PATH
  * @returns the validated access group config
  */
+/** Rights an affiliation group can get by default on new projects. */
+const DEFAULT_GROUP_RIGHTS: readonly unknown[] = [
+    AccessGroupRights.READ,
+    AccessGroupRights.CREATE,
+    AccessGroupRights.WRITE,
+    AccessGroupRights.DELETE,
+];
+
 export const loadAccessConfig = (
     configPath: string | undefined = env.ACCESS_CONFIG_PATH,
 ): AccessGroupConfig => {
@@ -59,6 +67,14 @@ export function validateAccessConfig(
         throw new TypeError(
             'Invalid access config: "emails" and "access_groups" must be arrays',
         );
+    }
+
+    for (const group of config.access_groups) {
+        if (!DEFAULT_GROUP_RIGHTS.includes(group.rights)) {
+            throw new TypeError(
+                `Invalid access config: "rights" of group "${group.uuid}" must be one of ${DEFAULT_GROUP_RIGHTS.join(', ')}, got ${JSON.stringify(group.rights)}`,
+            );
+        }
     }
 
     const groupUuids = new Set(config.access_groups.map((g) => g.uuid));

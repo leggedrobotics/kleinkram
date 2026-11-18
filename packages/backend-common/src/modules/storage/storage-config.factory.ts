@@ -23,6 +23,35 @@ export interface S3ClientContainer {
     internal: S3Client;
 }
 
+/**
+ * The S3 address clients outside the cluster use (browser, CLI).
+ *
+ * `S3_ENDPOINT` may be a bare host name; the protocol (and in development
+ * the port 9000) is filled in.
+ */
+export const resolveExternalS3Endpoint = (): string => {
+    let externalEndpoint = environment.S3_ENDPOINT;
+    if (
+        !externalEndpoint.startsWith('http://') &&
+        !externalEndpoint.startsWith('https://')
+    ) {
+        const externalProtocol = environment.DEV ? 'http' : 'https';
+        externalEndpoint = `${externalProtocol}://${environment.S3_ENDPOINT}`;
+    }
+
+    try {
+        const url = new URL(externalEndpoint);
+        if (environment.DEV && !url.port) {
+            url.port = '9000';
+        }
+        // Remove trailing slash to be safe
+        externalEndpoint = url.toString().replace(/\/$/, '');
+    } catch {
+        // ignore if invalid URL, S3Client will throw later
+    }
+    return externalEndpoint;
+};
+
 export const S3ClientFactory = {
     provide: 'S3_CLIENTS',
     useFactory: (): S3ClientContainer => {
@@ -31,25 +60,7 @@ export const S3ClientFactory = {
             secretAccessKey: environment.S3_SECRET_KEY,
         };
 
-        let externalEndpoint = environment.S3_ENDPOINT;
-        if (
-            !externalEndpoint.startsWith('http://') &&
-            !externalEndpoint.startsWith('https://')
-        ) {
-            const externalProtocol = environment.DEV ? 'http' : 'https';
-            externalEndpoint = `${externalProtocol}://${environment.S3_ENDPOINT}`;
-        }
-
-        try {
-            const url = new URL(externalEndpoint);
-            if (environment.DEV && !url.port) {
-                url.port = '9000';
-            }
-            // Remove trailing slash to be safe
-            externalEndpoint = url.toString().replace(/\/$/, '');
-        } catch {
-            // ignore if invalid URL, S3Client will throw later
-        }
+        const externalEndpoint = resolveExternalS3Endpoint();
 
         let internalEndpoint =
             environment.S3_ENDPOINT_INTERNAL ?? 'seaweedfs:9000';

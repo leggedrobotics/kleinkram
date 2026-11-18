@@ -21,13 +21,11 @@
                             :label="`Rename '${file.originalName}'`"
                             :error="
                                 !!file.error ||
-                                !isValidNamePart(file.newNamePart)
+                                !!nameError(file.newNamePart + file.extension)
                             "
                             :error-message="
                                 file.error ||
-                                (isValidNamePart(file.newNamePart)
-                                    ? ''
-                                    : 'Invalid characters in filename')
+                                nameError(file.newNamePart + file.extension)
                             "
                             dense
                             outlined
@@ -67,12 +65,16 @@
 
 <script lang="ts">
 import {
-    FILENAME_MAX_LENGTH,
-    isValidFileNamePart,
+    FILE_EXTENSIONS,
+    getFileNameValidationError,
     splitFileName,
 } from '@kleinkram/validation/frontend';
 import { useDialogPluginComponent } from 'quasar';
 import { computed, defineComponent, PropType, ref } from 'vue';
+
+// the rules of `packages/validation/src/filename.validation.ts`, as on the server
+const nameError = (filename: string): string =>
+    getFileNameValidationError(filename) ?? '';
 
 export interface InvalidFile {
     filename: string;
@@ -95,25 +97,25 @@ export default defineComponent({
         const localFiles = ref(
             props.invalidFiles.map((f) => {
                 const { name, extension } = splitFileName(f.filename);
+                // the server only accepts lowercase extensions
+                const lowerExtension = extension.toLowerCase();
                 return {
                     originalName: f.filename,
                     newNamePart: name,
-                    extension,
+                    extension: FILE_EXTENSIONS.includes(lowerExtension)
+                        ? lowerExtension
+                        : extension,
                     serverError: f.error,
                     error: '',
                 };
             }),
         );
 
-        const isValid = computed(() => {
-            return localFiles.value.every(
-                (f) =>
-                    f.newNamePart.trim().length > 0 &&
-                    isValidFileNamePart(f.newNamePart) &&
-                    f.newNamePart.length + f.extension.length <=
-                        FILENAME_MAX_LENGTH,
-            );
-        });
+        const isValid = computed(() =>
+            localFiles.value.every(
+                (f) => nameError(f.newNamePart + f.extension) === '',
+            ),
+        );
 
         const onOKClick = () => {
             const renameMap: Record<string, string> = {};
@@ -129,7 +131,7 @@ export default defineComponent({
             onDialogOK,
             onDialogCancel,
             localFiles,
-            isValidNamePart: isValidFileNamePart,
+            nameError,
             isValid,
             onOKClick,
         };

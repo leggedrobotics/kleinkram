@@ -1,106 +1,92 @@
 <template>
-    <div class="login-page flex flex-center bg-grey-2">
-        <div class="login-frame">
-            <div class="login-frame-cell login-frame-cell--top-left" />
-            <div class="login-frame-cell login-frame-cell--top-center" />
-            <div class="login-frame-cell login-frame-cell--top-right" />
+    <auth-frame>
+        <div style="width: 100%">
+            <img src="/logoRSL.png" class="login-logo" />
 
-            <div class="login-frame-cell login-frame-cell--middle-left" />
-            <div class="login-card">
-                <div style="width: 100%">
-                    <img src="/logoRSL.png" class="login-logo" />
+            <h1 class="login-title">Login to Kleinkram</h1>
 
-                    <h1 class="login-title">Login to Kleinkram</h1>
-
-                    <!-- Loading state -->
-                    <div
-                        v-if="isLoadingProviders"
-                        class="q-mb-md"
-                        style="display: flex; justify-content: center"
-                    >
-                        <q-spinner color="primary" size="48px" />
-                    </div>
-
-                    <!-- Backend unavailable warning -->
-                    <div
-                        v-else-if="isProvidersError || noProvidersAvailable"
-                        class="q-mb-md q-pa-md"
-                        style="
-                            background-color: #fff3cd;
-                            border: 1px solid #ffc107;
-                            border-radius: 4px;
-                            color: #856404;
-                        "
-                    >
-                        <div style="font-weight: 500; margin-bottom: 8px">
-                            Backend Unavailable
-                        </div>
-                        <div style="font-size: 14px">
-                            The authentication backend is currently unavailable.
-                            Please try again later or contact your system
-                            administrator.
-                        </div>
-                        <q-btn
-                            label="Retry Connection"
-                            color="warning"
-                            flat
-                            class="q-mt-sm full-width login-button"
-                            @click="handleRefetchProviders"
-                        />
-                    </div>
-
-                    <!-- OAuth buttons -->
-                    <template v-else>
-                        <template v-if="availableProviders?.fakeOauth">
-                            <q-btn
-                                class="button-border full-width login-button"
-                                flat
-                                outline
-                                size="md"
-                                label="Dev Login (Fake OAuth)"
-                                @click="loginWithFakeOAuth"
-                            />
-                        </template>
-
-                        <q-btn
-                            v-if="availableProviders?.google"
-                            class="button-border full-width login-button"
-                            flat
-                            outline
-                            size="md"
-                            label="Login with Google"
-                            @click="loginWithGoogle"
-                        />
-
-                        <q-btn
-                            v-if="availableProviders?.github"
-                            class="button-border full-width q-mt-md login-button"
-                            flat
-                            outline
-                            size="md"
-                            label="Login with GitHub"
-                            @click="loginWithGitHub"
-                        />
-                    </template>
-
-                    <div v-if="$route.query.error_msg" class="q-mt-lg">
-                        <span class="text-negative">
-                            {{ $route.query.error_msg }}
-                        </span>
-                    </div>
-                </div>
+            <!-- Loading state -->
+            <div
+                v-if="isLoadingProviders"
+                class="q-mb-md"
+                style="display: flex; justify-content: center"
+            >
+                <q-spinner color="primary" size="48px" />
             </div>
-            <div class="login-frame-cell login-frame-cell--middle-right" />
 
-            <div class="login-frame-cell login-frame-cell--bottom-left" />
-            <div class="login-frame-cell login-frame-cell--bottom-center" />
-            <div class="login-frame-cell login-frame-cell--bottom-right" />
+            <!-- Backend unavailable warning -->
+            <div
+                v-else-if="isProvidersError || noProvidersAvailable"
+                class="q-mb-md q-pa-md"
+                style="
+                    background-color: #fff3cd;
+                    border: 1px solid #ffc107;
+                    border-radius: 4px;
+                    color: #856404;
+                "
+            >
+                <div style="font-weight: 500; margin-bottom: 8px">
+                    Backend Unavailable
+                </div>
+                <div style="font-size: 14px">
+                    The authentication backend is currently unavailable. Please
+                    try again later or contact your system administrator.
+                </div>
+                <q-btn
+                    label="Retry Connection"
+                    color="warning"
+                    flat
+                    class="q-mt-sm full-width login-button"
+                    @click="handleRefetchProviders"
+                />
+            </div>
+
+            <!-- OAuth buttons -->
+            <template v-else>
+                <template v-if="availableProviders?.fakeOauth">
+                    <q-btn
+                        class="button-border full-width login-button"
+                        flat
+                        outline
+                        size="md"
+                        label="Dev Login (Fake OAuth)"
+                        @click="loginWithFakeOAuth"
+                    />
+                </template>
+
+                <q-btn
+                    v-if="availableProviders?.google"
+                    class="button-border full-width login-button"
+                    flat
+                    outline
+                    size="md"
+                    label="Login with Google"
+                    @click="loginWithGoogle"
+                />
+
+                <q-btn
+                    v-if="availableProviders?.github"
+                    class="button-border full-width q-mt-md login-button"
+                    flat
+                    outline
+                    size="md"
+                    label="Login with GitHub"
+                    @click="loginWithGitHub"
+                />
+            </template>
+
+            <div v-if="$route.query.error_msg" class="q-mt-lg">
+                <span class="text-negative">
+                    {{ $route.query.error_msg }}
+                </span>
+            </div>
         </div>
-    </div>
+    </auth-frame>
 </template>
 
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
+import AuthFrame from 'components/common/auth-frame.vue';
 import { getAvailableProviders, login } from 'src/services/auth';
 import { getMe } from 'src/services/queries/user';
 import { computed, watch } from 'vue';
@@ -164,74 +150,6 @@ const handleRefetchProviders = () => {
 </script>
 
 <style scoped>
-/*
- * The login card sits inside a decorative 3x3 frame. On desktop the frame is
- * exactly 48px + 460px + 48px wide (unchanged); on narrow viewports the middle
- * column shrinks so the page never scrolls horizontally.
- *
- * The page fills whatever the layout leaves above the footer instead of
- * claiming a fixed slice of the viewport, so the footer never pushes the
- * content past 100vh.
- */
-.login-page {
-    flex: 1 1 auto;
-    min-height: 0;
-}
-
-.login-frame {
-    border-radius: 0;
-    display: grid;
-    grid-template-columns: 48px minmax(0, 460px) 48px;
-    grid-template-rows: 48px minmax(460px, auto) 48px;
-    width: 100%;
-    max-width: 556px;
-}
-
-.login-frame-cell--top-left {
-    border-bottom: 1px solid #e0e0e0;
-    border-right: 1px solid #e0e0e0;
-}
-
-.login-frame-cell--top-center {
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.login-frame-cell--top-right {
-    border-bottom: 1px solid #e0e0e0;
-    border-left: 1px solid #e0e0e0;
-}
-
-.login-frame-cell--middle-left {
-    border-right: 1px solid #e0e0e0;
-}
-
-.login-frame-cell--middle-right {
-    border-left: 1px solid #e0e0e0;
-}
-
-.login-frame-cell--bottom-left {
-    border-top: 1px solid #e0e0e0;
-    border-right: 1px solid #e0e0e0;
-}
-
-.login-frame-cell--bottom-center {
-    border-top: 1px solid #e0e0e0;
-}
-
-.login-frame-cell--bottom-right {
-    border-top: 1px solid #e0e0e0;
-    border-left: 1px solid #e0e0e0;
-}
-
-.login-card {
-    align-items: center;
-    background: white;
-    display: flex;
-    justify-content: center;
-    padding: 48px;
-    text-align: center;
-}
-
 .login-logo {
     height: 28px;
     margin-bottom: 48px;
@@ -254,19 +172,6 @@ const handleRefetchProviders = () => {
 }
 
 @media (max-width: 599px) {
-    .login-page {
-        padding: 24px 0;
-    }
-
-    .login-frame {
-        grid-template-columns: 16px minmax(0, 1fr) 16px;
-        grid-template-rows: 16px auto 16px;
-    }
-
-    .login-card {
-        padding: 32px 20px;
-    }
-
     .login-logo {
         margin-bottom: 32px;
     }

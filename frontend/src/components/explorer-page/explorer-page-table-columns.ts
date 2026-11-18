@@ -4,7 +4,7 @@ import type {
     MetadataTypeDto,
 } from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
-import { DataType } from '@kleinkram/shared';
+import { DataType, safeLinkUrl } from '@kleinkram/shared';
 import { formatDate } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 
@@ -256,8 +256,6 @@ const findMetadata = (
 ): MetadataDto | undefined =>
     row.metadata.find((candidate) => candidate.type.name === name);
 
-const LINK_PROTOCOLS = new Set(['http:', 'https:']);
-
 /**
  * The URL to link a mission's metadata value to, if it is a LINK and safe to
  * open. Decided per value: types sharing a name can differ in datatype, and
@@ -270,12 +268,7 @@ export function metadataHref(
 ): string | undefined {
     const metadata = findMetadata(row, name);
     if (metadata?.type.datatype !== DataType.LINK) return undefined;
-    try {
-        const url = new URL(String(metadata.value));
-        return LINK_PROTOCOLS.has(url.protocol) ? url.href : undefined;
-    } catch {
-        return undefined;
-    }
+    return safeLinkUrl(metadata.value);
 }
 
 /**

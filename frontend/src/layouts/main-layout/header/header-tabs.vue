@@ -48,13 +48,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-
-export interface MainMenu {
-    title: string;
-    to: string;
-    icon: string;
-    subpageNames: string[];
-}
+import type { MainMenu } from './main-menu';
 
 const { mainMenu } = defineProps<{ mainMenu: MainMenu[] }>();
 

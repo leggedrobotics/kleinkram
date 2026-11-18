@@ -9,12 +9,14 @@ import {
 } from '@kleinkram/api-dto';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { UserRole } from '@kleinkram/shared';
 import {
     isImageInDockerNamespace,
     normalizeDockerNamespace,
     validateDockerImageName,
 } from '@kleinkram/validation';
 import {
+    BadRequestException,
     ConflictException,
     ForbiddenException,
     Injectable,
@@ -77,22 +79,38 @@ export class TemplateService {
         }
     }
 
+    /**
+     * Save a new version of the template identified by `uuid`.
+     *
+     * The template is resolved from the route, never from the body: the name
+     * of the new version is always the stored name, so this endpoint cannot be
+     * used to append to another template's history or to create a new one.
+     * Only the creator of the template (the author of its first version) or
+     * an admin may add versions.
+     */
     async createVersion(
+        uuid: string,
         data: UpdateTemplateDto,
         auth: AuthHeader,
     ): Promise<ActionTemplateDto> {
-        await this.assertNotSystemTemplate(data.name);
+        const base = await this.findModifiableTemplate(uuid, auth);
 
-        const nextVersion = await this.calculateNextVersion(data.name);
+        if (data.name !== base.name) {
+            throw new BadRequestException(
+                'A new version cannot change the template name.',
+            );
+        }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-        delete (data as any).uuid;
         this.validateDockerNamespace(data.dockerImage);
 
-        const newTemplate = this.actionTemplateRepository.create({
-            // eslint-disable-next-line @typescript-eslint/no-misused-spread
-            ...data,
+        const nextVersion = await this.calculateNextVersion(base.name);
 
+        const { uuid: _ignored, ...fields } = data;
+
+        const newTemplate = this.actionTemplateRepository.create({
+            ...fields,
+
+            name: base.name,
             description: data.description,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             image_name: data.dockerImage,
@@ -103,14 +121,69 @@ export class TemplateService {
             isArchived: false,
         });
 
-        const saved = await this.actionTemplateRepository.save(newTemplate);
+        try {
+            const saved = await this.actionTemplateRepository.save(newTemplate);
 
-        const fullEntity = await this.actionTemplateRepository.findOneOrFail({
-            where: { uuid: saved.uuid },
+            const fullEntity =
+                await this.actionTemplateRepository.findOneOrFail({
+                    where: { uuid: saved.uuid },
+                    relations: { creator: true },
+                });
+
+            return actionTemplateEntityToDto(fullEntity);
+        } catch (error) {
+            if (
+                error instanceof QueryFailedError &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                error.driverError?.code === '23505'
+            ) {
+                throw new ConflictException(
+                    'Another version of this template was saved at the same time, please retry.',
+                );
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Load the template `uuid` and make sure `auth` may change it.
+     *
+     * Ownership belongs to the creator of the first version, not of the latest
+     * one; otherwise anyone who got a version in would become an owner.
+     * System templates cannot be changed by anyone through the API.
+     */
+    private async findModifiableTemplate(
+        uuid: string,
+        auth: AuthHeader,
+    ): Promise<ActionTemplateEntity> {
+        const template = await this.actionTemplateRepository.findOne({
+            where: { uuid },
+            select: { uuid: true, name: true },
+        });
+
+        if (!template) {
+            throw new NotFoundException('Template not found');
+        }
+
+        await this.assertNotSystemTemplate(template.name);
+
+        if (auth.user.role === UserRole.ADMIN) {
+            return template;
+        }
+
+        const first = await this.actionTemplateRepository.findOne({
+            where: { name: template.name },
+            order: { version: 'ASC' },
             relations: { creator: true },
         });
 
-        return actionTemplateEntityToDto(fullEntity);
+        if (first?.creator.uuid !== auth.user.uuid) {
+            throw new ForbiddenException(
+                'Only the creator of this template or an admin can modify it. Save your changes as a new template instead.',
+            );
+        }
+
+        return template;
     }
 
     async findAll(
@@ -200,21 +273,11 @@ export class TemplateService {
      *
      * @param uuid
      */
-    async delete(uuid: string): Promise<DeleteTemplateResponseDto> {
-        const template = await this.actionTemplateRepository.findOne({
-            where: { uuid },
-            select: {
-                name: true,
-            },
-        });
-
-        if (!template) {
-            throw new NotFoundException('Template not found');
-        }
-
-        const { name } = template;
-
-        await this.assertNotSystemTemplate(name);
+    async delete(
+        uuid: string,
+        auth: AuthHeader,
+    ): Promise<DeleteTemplateResponseDto> {
+        const { name } = await this.findModifiableTemplate(uuid, auth);
 
         const totalExecutionCount = await this.actionRepository
             .createQueryBuilder('action')

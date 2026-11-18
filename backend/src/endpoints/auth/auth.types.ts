@@ -5,6 +5,8 @@ import { Request } from 'express';
 export interface AuthenticatedUser {
     user: UserEntity;
     apiKey?: ApiKeyEntity | null;
+    /** the login session of the access token, missing for API keys */
+    sessionUuid?: string;
 }
 
 export interface AuthenticatedRequest extends Request {

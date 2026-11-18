@@ -1,15 +1,6 @@
 import { appVersion } from '@/app-version';
-import {
-    ApiKeyEntity,
-    FileEntity,
-    UserEntity,
-} from '@kleinkram/backend-common';
-import {
-    AccessGroupRights,
-    FileType,
-    KeyTypes,
-    UserRole,
-} from '@kleinkram/shared';
+import { FileEntity, UserEntity } from '@kleinkram/backend-common';
+import { AccessGroupRights, FileType, UserRole } from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -19,6 +10,7 @@ import {
 } from '../utils/api-calls';
 import { database } from '../utils/database-utilities';
 import {
+    createActionApiKey,
     setupDatabaseHooks,
     setupTestEnvironment,
 } from '../utils/test-helpers';
@@ -200,15 +192,11 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
             }),
         );
 
-        const apiKeyRepository = database.getRepository(ApiKeyEntity);
-        const apiKey = apiKeyRepository.create({
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            key_type: KeyTypes.ACTION,
-            mission: { uuid: sourceMissionUuid },
+        const apiKey = await createActionApiKey({
+            missionUuid: sourceMissionUuid,
+            userUuid: owner.uuid,
             rights: AccessGroupRights.WRITE,
-            user: { uuid: owner.uuid },
         });
-        await apiKeyRepository.save(apiKey);
 
         const response = await fetch(`${DEFAULT_URL}/files/${file.uuid}`, {
             method: 'PUT',
@@ -260,15 +248,11 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
             where: { filename: 'config.yaml', mission: { uuid: missionUuid } },
         });
 
-        const apiKeyRepository = database.getRepository(ApiKeyEntity);
-        const apiKey = apiKeyRepository.create({
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            key_type: KeyTypes.ACTION,
-            mission: { uuid: missionUuid },
+        const apiKey = await createActionApiKey({
+            missionUuid: missionUuid,
+            userUuid: owner.uuid,
             rights: AccessGroupRights.WRITE,
-            user: { uuid: owner.uuid },
         });
-        await apiKeyRepository.save(apiKey);
 
         const response = await fetch(`${DEFAULT_URL}/files/${file.uuid}`, {
             method: 'PUT',

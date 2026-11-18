@@ -8,7 +8,6 @@ import {
 } from '@kleinkram/backend-common';
 import { AccessGroupConfig, Providers } from '@kleinkram/shared';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { database } from '../../utils/database-utilities';
 import { setupDatabaseHooks } from '../../utils/test-helpers';
 
@@ -51,7 +50,7 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
     });
 
     beforeEach(async () => {
-        await affiliationGroupService.createAccessGroups(config);
+        await affiliationGroupService.upsertAccessGroups(config);
     });
 
     test('should sync affiliation groups when account is linked to existing user (createNewUser)', async () => {
@@ -133,7 +132,6 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         } as unknown as ConfigService;
 
         const authService = new AuthService(
-            {} as unknown as JwtService, // JwtService not needed for validateAndCreate
             accountRepository,
             userRepository,
             affiliationGroupService,
@@ -201,7 +199,6 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         } as unknown as ConfigService;
 
         const authService = new AuthService(
-            {} as unknown as JwtService, // JwtService not needed for validateAndCreate
             accountRepository,
             userRepository,
             affiliationGroupService,
@@ -268,7 +265,7 @@ describe('syncAccessGroups', () => {
     });
 
     beforeEach(async () => {
-        await affiliationGroupService.createAccessGroups(testConfig);
+        await affiliationGroupService.upsertAccessGroups(testConfig);
     });
 
     test('adds missing memberships for matching users', async () => {

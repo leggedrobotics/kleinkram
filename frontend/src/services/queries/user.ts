@@ -1,6 +1,7 @@
 import type { PermissionsDto } from '@kleinkram/api-dto/types/permissions.dto';
 import type { ApiKeysDto } from '@kleinkram/api-dto/types/user/api-keys.dto';
 import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
+import type { SessionsDto } from '@kleinkram/api-dto/types/user/session.dto';
 import type { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
@@ -64,4 +65,17 @@ export const resolveUsers = async (
         },
     );
     return response.data;
+};
+
+export const getMySessions = async (): Promise<SessionsDto> => {
+    const response = await axios.get<SessionsDto>('/users/me/sessions');
+    return response.data;
+};
+
+export const revokeMySession = async (uuid: string): Promise<void> => {
+    await axios.delete(`/users/me/sessions/${encodeURIComponent(uuid)}`);
+};
+
+export const revokeMyOtherSessions = async (): Promise<void> => {
+    await axios.post('/users/me/sessions/revoke-others');
 };

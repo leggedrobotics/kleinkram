@@ -5,7 +5,7 @@ import {
 } from 'class-validator';
 import { ValidationOptions } from 'class-validator/types/decorator/ValidationOptions';
 import { isValidDockerImageName } from './docker-image.validation';
-import { FILE_NAME_REGEX } from './filename.validation';
+import { getFileNameValidationError } from './filename.validation';
 import { getNameValidationError } from './name.validation';
 import { NON_UUID_REGEX } from './validation-logic';
 
@@ -18,24 +18,51 @@ export const IsNoValidUUID = (
     });
 
 /**
- * Validates that the property is a valid filename.
- *
- * A valid file name is ending with .bag or .mcap.
- * The file name can contain letters, numbers, underscores, hyphens and dots.
- *
- * Spaces, special characters and other characters are not allowed.
+ * Validates that the property is a valid file name, see
+ * `filename.validation.ts` for the rules. The error message says what is
+ * wrong and suggests a valid name.
  *
  * @param validationOptions
- * @constructor
  */
-
-export const IsValidFileName = (
+export function IsValidFileName(
     validationOptions?: ValidationOptions,
-): PropertyDecorator =>
-    Matches(FILE_NAME_REGEX, {
-        message: 'Filename "$value" is not valid!',
-        ...validationOptions,
-    });
+): PropertyDecorator {
+    return function (object: object, propertyName: string | symbol) {
+        registerDecorator({
+            name: 'isValidFileName',
+            target: object.constructor,
+            propertyName: propertyName as string,
+            options: validationOptions,
+            validator: {
+                validate(value: unknown) {
+                    return (
+                        typeof value === 'string' &&
+                        getFileNameValidationError(value) === undefined
+                    );
+                },
+                defaultMessage(validationArguments: ValidationArguments) {
+                    // with `each: true` the message gets the whole list: name the bad entry
+                    const value: unknown = validationArguments.value;
+                    if (Array.isArray(value)) {
+                        for (const entry of value) {
+                            const error =
+                                typeof entry === 'string'
+                                    ? getFileNameValidationError(entry)
+                                    : 'File name is not valid';
+                            if (error !== undefined)
+                                return `${String(entry)}: ${error}`;
+                        }
+                    }
+                    return (
+                        getFileNameValidationError(
+                            typeof value === 'string' ? value : '',
+                        ) ?? 'File name is not valid'
+                    );
+                },
+            },
+        });
+    };
+}
 
 /**
  * Validates that the property is a valid project, mission or access group

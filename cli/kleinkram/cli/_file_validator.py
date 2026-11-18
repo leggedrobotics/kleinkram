@@ -11,9 +11,9 @@ import typer
 from kleinkram.config import get_shared_state
 from kleinkram.errors import DatatypeNotSupported
 from kleinkram.errors import FileNameNotSupported
+from kleinkram.naming import get_file_name_validation_error
 from kleinkram.utils import EXPERIMENTAL_FILE_TYPES
 from kleinkram.utils import SUPPORT_FILE_TYPES
-from kleinkram.utils import check_filename_is_sanatized
 
 
 def supported_suffixes(*, experimental_datatypes: bool) -> Sequence[str]:
@@ -30,6 +30,9 @@ class FileValidator:
     skip: bool
     experimental_datatypes: bool
     fix_filenames: bool = False
+    # `klein verify` only looks files up, so the naming rule for new files does
+    # not apply: a file uploaded under an older rule must still be verifiable
+    check_filename: bool = True
 
     # Stores (file, reason) for skipped files
     skipped_files: List[tuple[Path, str]] = field(default_factory=list)
@@ -86,12 +89,12 @@ class FileValidator:
             raise DatatypeNotSupported(f"Experimental datatype '{file_suffix}' not enabled for file {file}")
 
         # 4. Check filename, unless it gets sanitized on upload anyway
-        if self.fix_filenames:
+        if self.fix_filenames or not self.check_filename:
             return
 
-        is_bad_name = not check_filename_is_sanatized(file.stem)
-        if is_bad_name:
-            raise FileNameNotSupported(f"Badly formed filename for file {file}")
+        error = get_file_name_validation_error(file.name)
+        if error is not None:
+            raise FileNameNotSupported(f"{file}: {error}")
 
     def _raise_with_skip_hint(self, e: Exception) -> None:
         """Re-raises a validation error with a hint to use --skip."""

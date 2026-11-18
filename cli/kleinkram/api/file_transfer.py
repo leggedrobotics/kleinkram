@@ -14,6 +14,7 @@ from pathlib import Path
 from time import monotonic
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import NamedTuple
 from typing import Optional
 from typing import Set
@@ -615,6 +616,29 @@ class UploadResult:
     canceled: int = 0
     total_bytes: int = 0
     elapsed_seconds: float = 0.0
+    # local files the server refused because their name is taken in the mission
+    existing: List[Path] = field(default_factory=list)
+    # of `existing`: the content differs from the file in the mission, so the
+    # local file was NOT uploaded (filled in by `kleinkram.core.upload`)
+    conflicts: List[Path] = field(default_factory=list)
+    # of `existing`: the content could not be compared, because the file in the
+    # mission is not in state OK yet or the mission's files could not be read
+    # (filled in by `kleinkram.core.upload`)
+    unchecked: List[Path] = field(default_factory=list)
+
+
+# download outcomes where the requested file did NOT end up as asked; `klein
+# download` exits with 1 if any file ends in one of them (failures count too)
+DOWNLOAD_STATES_NOT_DONE = frozenset(
+    {
+        DownloadState.DOWNLOADED_INVALID_HASH,
+        DownloadState.SKIPPED_INVALID_HASH,
+        DownloadState.SKIPPED_FILE_SIZE_MISMATCH,
+        DownloadState.SKIPPED_INVALID_REMOTE_STATE,
+        DownloadState.SKIPPED_CORRUPTED,
+        DownloadState.SKIPPED_SLICE_EXISTS,
+    }
+)
 
 
 @dataclass
@@ -640,15 +664,15 @@ def _download_state_message(state: DownloadState, path: Path, file: File) -> Opt
         ),
         DownloadState.DOWNLOADED_INVALID_HASH: (f"downloaded {path} but failed hash check", True),
         DownloadState.SKIPPED_OK: (f"skipped {path} already downloaded (hash ok)", False),
-        DownloadState.SKIPPED_INVALID_HASH: (f"skipped {path}, exists with hash mismatch (use --overwrite?)", False),
+        DownloadState.SKIPPED_INVALID_HASH: (f"skipped {path}, exists with hash mismatch (use --overwrite?)", True),
         DownloadState.SKIPPED_FILE_SIZE_MISMATCH: (
             f"skipped {path}, exists with file size mismatch (use --overwrite?)",
-            False,
+            True,
         ),
         DownloadState.SKIPPED_INVALID_REMOTE_STATE: (
             f"skipped {path}, remote file has invalid state ({file.state.value})"
             + (f": {file.state_comment}" if file.state_comment else ""),
-            False,
+            True,
         ),
         DownloadState.DOWNLOADED_PARTIAL: (
             f"downloaded a filtered slice of {path}",
@@ -660,13 +684,13 @@ def _download_state_message(state: DownloadState, path: Path, file: File) -> Opt
         ),
         DownloadState.SKIPPED_SLICE_EXISTS: (
             f"skipped {path}, already exists (use --overwrite to replace it with the slice)",
-            False,
+            True,
         ),
         DownloadState.SKIPPED_CORRUPTED: (
             f"skipped {path}, remote file is CORRUPTED"
             + (f": {file.state_comment}" if file.state_comment else "")
             + " (use --allow-corrupt to override)",
-            False,
+            True,
         ),
         DownloadState.SKIPPED_CORRUPTED_LOCAL_OK: (
             f"skipped {path}, already present locally (hash ok) but remote file is CORRUPTED; " "treat as potentially harmful",
@@ -727,6 +751,7 @@ def _resolve_upload_future(
         message = f"uploaded {path}"
     elif state == UploadState.EXISTS:
         result.skipped += 1
+        result.existing.append(path)
         message = f"skipped {path} (already uploaded)"
     else:
         result.canceled += 1
@@ -779,10 +804,11 @@ def upload_files(
     try:
         for name, path in files.items():
             if not path.is_file():
-                logger.warning(f"Skipping non-existent file: {path}")
+                # it was checked before; it vanished since, so it is not uploaded
+                logger.error(f"File disappeared before upload: {path}")
                 if on_message_cb is not None:
-                    on_message_cb(f"Skipping non-existent file: {path}", False)
-                result.skipped += 1
+                    on_message_cb(f"Error uploading {path}: file does not exist anymore", True)
+                result.failed += 1
                 if on_overall_progress_cb is not None:
                     on_overall_progress_cb()
                 continue
@@ -817,6 +843,13 @@ def upload_files(
         cancel_event.set()
         executor.shutdown(wait=False, cancel_futures=True)
         _wait_for_cancelled_workers(futures)
+    except BaseException:
+        # any other error, e.g. from a callback: stop the transfers as Ctrl+C
+        # does, so none of them keeps running after this call has failed
+        cancel_event.set()
+        executor.shutdown(wait=False, cancel_futures=True)
+        _wait_for_cancelled_workers(futures)
+        raise
     else:
         executor.shutdown(wait=True)
 
@@ -1021,6 +1054,13 @@ def download_files(
         cancel_event.set()
         executor.shutdown(wait=False, cancel_futures=True)
         _wait_for_cancelled_workers(futures)
+    except BaseException:
+        # any other error, e.g. from a callback: stop the transfers as Ctrl+C
+        # does, so none of them keeps running after this call has failed
+        cancel_event.set()
+        executor.shutdown(wait=False, cancel_futures=True)
+        _wait_for_cancelled_workers(futures)
+        raise
     else:
         executor.shutdown(wait=True)
 

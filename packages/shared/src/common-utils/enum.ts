@@ -154,6 +154,12 @@ export enum KeyTypes {
     ACTION = 'ACTION',
 }
 
+/** Where a login session was started: the web app or the CLI. */
+export enum SessionKind {
+    WEB = 'WEB',
+    CLI = 'CLI',
+}
+
 export enum CookieNames {
     AUTH_TOKEN = 'authtoken',
     REFRESH_TOKEN = 'refreshtoken',
@@ -222,6 +228,21 @@ export enum AccessGroupRights {
 
     _ADMIN = 100,
 }
+
+/**
+ * The rights that can be granted on a project. `_ADMIN` is excluded: it only
+ * stands for system admins in the frontend and must never be stored on a
+ * project access entry, where it would rank above DELETE.
+ */
+export const GRANTABLE_ACCESS_GROUP_RIGHTS: readonly AccessGroupRights[] = [
+    AccessGroupRights.READ,
+    AccessGroupRights.CREATE,
+    AccessGroupRights.WRITE,
+    AccessGroupRights.DELETE,
+];
+
+export const isGrantableAccessGroupRight = (rights: unknown): boolean =>
+    (GRANTABLE_ACCESS_GROUP_RIGHTS as readonly unknown[]).includes(rights);
 
 export enum FileEventType {
     // Lifecycle

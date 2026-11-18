@@ -27,7 +27,10 @@ import {
     TriggerEvent,
     UserRole,
 } from '@kleinkram/shared';
-import { isValidFileName, splitFileName } from '@kleinkram/validation';
+import {
+    getFileNameValidationError,
+    splitFileName,
+} from '@kleinkram/validation';
 import {
     BadRequestException,
     ConflictException,
@@ -111,6 +114,12 @@ export class FileLifecycleService implements OnModuleInit {
 
         const oldFilename = databaseFile.filename;
         const isRenamed = file.filename !== oldFilename;
+
+        // names from before the naming rules are kept until they are changed
+        if (isRenamed) {
+            const nameError = getFileNameValidationError(file.filename);
+            if (nameError) throw new BadRequestException(nameError);
+        }
 
         // validate file ending
         const validExtensions = [...FILE_EXTENSION_TO_FILE_TYPE_MAP.entries()]
@@ -319,10 +328,9 @@ export class FileLifecycleService implements OnModuleInit {
                 targetNames.set(file.uuid, file.filename);
                 continue;
             }
-            if (!isValidFileName(newName)) {
-                throw new BadRequestException(
-                    `Filename "${newName}" is not valid`,
-                );
+            const nameError = getFileNameValidationError(newName);
+            if (nameError) {
+                throw new BadRequestException(`"${newName}": ${nameError}`);
             }
             if (
                 splitFileName(newName).extension.toLowerCase() !==

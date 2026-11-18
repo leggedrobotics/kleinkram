@@ -39,8 +39,19 @@
                             v-model="localTrigger.name"
                             outlined
                             dense
-                            placeholder="e.g. Nightly Build"
-                            :rules="[(val) => !!val || 'Name is required']"
+                            placeholder="e.g. nightly-build"
+                            :rules="[
+                                (val) => !!val || 'Name is required',
+                                (val) =>
+                                    // an unchanged name is kept even if it predates the naming rules
+                                    (isEditing &&
+                                        val === props.triggerToEdit?.name) ||
+                                    (getNameValidationError(
+                                        val,
+                                        'Trigger name',
+                                    ) ??
+                                        true),
+                            ]"
                         />
                     </div>
 
@@ -306,6 +317,7 @@ import type { ActionTriggerDto } from '@kleinkram/api-dto/types/actions/action-t
 import type { CreateActionTriggerDto } from '@kleinkram/api-dto/types/actions/create-action-trigger.dto';
 import type { UpdateActionTriggerDto } from '@kleinkram/api-dto/types/actions/update-action-trigger.dto';
 import { cronToHuman, isValidCron, TriggerType } from '@kleinkram/shared';
+import { getNameValidationError } from '@kleinkram/validation/frontend';
 import ScopeSelector from 'components/common/scope-selector.vue';
 import { QForm, useQuasar } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';

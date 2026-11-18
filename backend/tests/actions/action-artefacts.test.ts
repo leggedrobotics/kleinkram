@@ -21,7 +21,7 @@ describe('Action Artefacts Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Artefact Test Action',
+                name: 'Artefact-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',

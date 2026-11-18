@@ -150,6 +150,10 @@
                 <documentation-icon />
             </div>
 
+            <header-cli-menu
+                :style="{ marginRight: $q.screen.gt.xs ? '10px' : '0' }"
+            />
+
             <header-profile-menu />
         </div>
     </q-tabs>
@@ -162,6 +166,7 @@ import { useQuasar } from 'quasar';
 import { useIsUploading, useUser } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { computed, inject, ref, watch } from 'vue';
+import HeaderCliMenu from './header-cli-menu.vue';
 import HeaderCreateMenu from './header-create-menu.vue';
 import HeaderProfileMenu from './header-profile-menu.vue';
 

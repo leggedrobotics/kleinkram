@@ -28,7 +28,13 @@ import {
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, In, Repository } from 'typeorm';
+import {
+    EntityManager,
+    FindOptionsWhere,
+    ILike,
+    In,
+    Repository,
+} from 'typeorm';
 import logger from '../logger';
 import { UserService } from './user.service';
 
@@ -180,19 +186,33 @@ export class AccessQueryService {
         };
     }
 
+    /**
+     * Whether the user has at least `rights` on the project.
+     *
+     * Inside a transaction, pass its `manager`: the check then runs on the
+     * connection the transaction already holds. Taking a second connection
+     * from the pool while holding a lock can stall once the pool is full of
+     * requests waiting for that lock.
+     */
     async hasProjectRights(
         projectUUID: string,
         auth: AuthHeader,
         rights: AccessGroupRights = AccessGroupRights.WRITE,
+        manager?: EntityManager,
     ): Promise<boolean> {
-        const dbuser = await this.userRepository.findOneOrFail({
+        const userRepository =
+            manager?.getRepository(UserEntity) ?? this.userRepository;
+        const projectRepository =
+            manager?.getRepository(ProjectEntity) ?? this.projectRepository;
+
+        const dbuser = await userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
         });
         if (dbuser.role === UserRole.ADMIN) {
             return true;
         }
 
-        return this.projectRepository
+        return projectRepository
             .createQueryBuilder('project')
             .leftJoin(
                 'project_access_view_entity',

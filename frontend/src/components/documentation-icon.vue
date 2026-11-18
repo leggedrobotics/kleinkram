@@ -13,7 +13,7 @@
 <script setup lang="ts">
 const { link } = defineProps<{ link?: string }>();
 
-const documentationBasePath = 'https://docs.datasets.leggedrobotics.com';
+const documentationBasePath = 'https://kleinkram.dev';
 const documentationDefaultPath = '/usage/getting-started';
 
 const documentationLink =

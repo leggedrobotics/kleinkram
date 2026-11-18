@@ -63,6 +63,20 @@ class NotAuthenticated(Exception):
         super().__init__(LOGIN_MESSAGE)
 
 
+NO_ENDPOINT_MESSAGE = (
+    "No Kleinkram server configured. Run `klein login <url>` with the address of your "
+    "Kleinkram web app, e.g. `klein login https://datasets.example.org`."
+)
+
+
+class NoEndpointConfigured(Exception):
+    def __init__(self) -> None:
+        super().__init__(NO_ENDPOINT_MESSAGE)
+
+
+class ServerDiscoveryError(Exception): ...
+
+
 class UpdateCLIVersion(Exception):
     def __init__(self) -> None:
         super().__init__(UPDATE_MESSAGE)

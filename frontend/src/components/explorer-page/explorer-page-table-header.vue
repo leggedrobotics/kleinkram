@@ -6,7 +6,7 @@
             </h2>
             <HelpMessage
                 text="You can only see missions on which you have at least view access on project level or mission level."
-                link="https://docs.datasets.leggedrobotics.com/usage/getting-started.html"
+                link="https://kleinkram.dev/usage/getting-started.html"
             />
         </template>
 
@@ -16,7 +16,7 @@
             </h2>
             <HelpMessage
                 text="You can only see files of missions you have access to."
-                link="https://docs.datasets.leggedrobotics.com/usage/getting-started.html"
+                link="https://kleinkram.dev/usage/getting-started.html"
             />
         </template>
     </div>

@@ -47,15 +47,18 @@ const sdk = new NodeSDK({
     ],
 });
 
-// gracefully shut down the SDK on process exit
-process.on('SIGTERM', () => {
-    sdk.shutdown()
-        .then(() => logger.debug('Tracing terminated'))
-        .catch((error: unknown) =>
-            logger.debug('Error terminating tracing', error),
-        )
-        .finally(() => process.exit(0));
-});
+/**
+ * Flushes and stops the tracing SDK. `main.ts` calls it on SIGTERM, after the
+ * worker has revoked the API keys of its running actions.
+ */
+export const shutdownTracing = async (): Promise<void> => {
+    try {
+        await sdk.shutdown();
+        logger.debug('Tracing terminated');
+    } catch (error: unknown) {
+        logger.debug('Error terminating tracing', error);
+    }
+};
 
 export default sdk;
 
@@ -98,7 +101,7 @@ export const traceWrapper =
                     ) {
                         span.setAttribute(
                             'queue_processor_job_id',
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                             argument?.id,
                         );
                     } else if (
@@ -107,7 +110,7 @@ export const traceWrapper =
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         !!argument?.uuid
                     ) {
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         span.setAttribute('queue_uuid', argument?.uuid);
                     }
                 });

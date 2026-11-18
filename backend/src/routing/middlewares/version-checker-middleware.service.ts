@@ -12,7 +12,13 @@ import logger from '../../logger';
  * - `x.y.z`: Block an exact version match.
  *
  */
-const FORBIDDEN_RANGES = ['<0.58.0'];
+/**
+ * Oldest client version the API accepts. Also published to the CLI through
+ * `GET /cli/config` so it can refuse to log in with an unsupported version.
+ */
+export const MIN_CLIENT_VERSION = '0.58.0';
+
+const FORBIDDEN_RANGES = [`<${MIN_CLIENT_VERSION}`];
 
 /**
  * Enforces client version compatibility by inspecting the request headers.

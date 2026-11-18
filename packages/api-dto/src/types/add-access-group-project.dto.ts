@@ -1,13 +1,16 @@
-import { AccessGroupRights } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    GRANTABLE_ACCESS_GROUP_RIGHTS,
+} from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum } from 'class-validator';
+import { IsIn } from 'class-validator';
 
 export class AddAccessGroupToProjectDto {
-    @IsEnum(AccessGroupRights)
+    @IsIn(GRANTABLE_ACCESS_GROUP_RIGHTS)
     @ApiProperty({
         description: 'Access Group Rights',
         format: 'AccessGroupRights',
-        enum: AccessGroupRights,
+        enum: GRANTABLE_ACCESS_GROUP_RIGHTS,
     })
     rights!: AccessGroupRights;
 }

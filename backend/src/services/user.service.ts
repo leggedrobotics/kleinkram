@@ -1,3 +1,4 @@
+import { actionKeyRejection } from '@/endpoints/auth/action-key-validity';
 import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
     apiKeyEntityToMetadataDto,
@@ -24,7 +25,12 @@ import {
     AccessGroupType,
     UserRole,
 } from '@kleinkram/shared';
-import { ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
+import {
+    ForbiddenException,
+    Injectable,
+    OnModuleInit,
+    UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
     FindOptionsRelations,
@@ -308,6 +314,12 @@ export class UserService implements OnModuleInit {
                 },
             },
         });
+
+        const rejection = actionKeyRejection(apiKey);
+        if (rejection !== undefined) {
+            throw new UnauthorizedException(rejection);
+        }
+
         return { user, apiKey };
     }
 

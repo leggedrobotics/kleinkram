@@ -1,4 +1,5 @@
 import { TriggerType } from '@kleinkram/shared';
+import { IsValidName } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
 import {
     IsEnum,
@@ -12,6 +13,7 @@ import type { TriggerConfig } from './action-trigger.dto';
 export class CreateActionTriggerDto {
     @ApiProperty()
     @IsString()
+    @IsValidName('Trigger name')
     name!: string;
 
     @ApiProperty()

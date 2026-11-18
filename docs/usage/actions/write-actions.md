@@ -42,13 +42,13 @@ immutable image layers. [-> Docker Documentation](https://docs.docker.com/engine
 
 To persist data beyond the lifetime of the action, Kleinkram provides two approaches:
 
-1. **Re-Upload Files to a Mission**: You can re-upload files to any mission within the same project using the
-   `kleinkram upload` command from within your action. You may also use the Python SDK for this purpose. Kleinkram
-   actions have access to all missions within the same project.
+1. **Re-Upload Files to the Mission**: You can re-upload files to the mission the action runs on using the
+   `kleinkram upload` command from within your action. You may also use the Python SDK for this purpose. An action
+   only has access to its own mission, not to other missions of the same project.
 
     ::: warning Access Rights
-    Make sure that the action has the necessary access rights to upload files to the target mission. The action
-    needs at least "Write" access to re-upload files.
+    Make sure that the action has the necessary access rights to upload files to the mission. The action needs at
+    least "Write" access to re-upload files.
     :::
 
 2. You can write files to the special `/out` directory inside the container. All files written to this directory

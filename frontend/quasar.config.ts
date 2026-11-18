@@ -4,6 +4,7 @@
 import { defineConfig } from '#q-app';
 
 import path from 'node:path';
+import type { Plugin } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 const appDirectory = import.meta.dirname;
@@ -14,6 +15,43 @@ const backendUrlFromProcess = (() => {
     const raw = (process.env.BACKEND_URL ?? '').trim();
     return raw === '' ? undefined : raw;
 })();
+
+/**
+ * `/.well-known/kleinkram.json` names the API of this web app, so that
+ * `klein login <web app address>` can find it. The rest (S3, login options,
+ * versions) the CLI reads from `GET <api>/cli/config`.
+ *
+ * Served by the dev server and written into the build output, from where
+ * nginx serves it like any other static file.
+ */
+const WELL_KNOWN_PATH = '/.well-known/kleinkram.json';
+const wellKnownPlugin = (): Plugin => {
+    const body = `${JSON.stringify(
+        { apiUrl: backendUrlFromProcess ?? 'http://localhost:3000' },
+        undefined,
+        2,
+    )}\n`;
+    return {
+        name: 'kleinkram-well-known',
+        configureServer(server) {
+            server.middlewares.use((request, response, next) => {
+                if (request.url?.split('?')[0] !== WELL_KNOWN_PATH) {
+                    next();
+                    return;
+                }
+                response.setHeader('Content-Type', 'application/json');
+                response.end(body);
+            });
+        },
+        generateBundle() {
+            this.emitFile({
+                type: 'asset',
+                fileName: WELL_KNOWN_PATH.slice(1),
+                source: body,
+            });
+        },
+    };
+};
 
 export default defineConfig((/* ctx */) => {
     return {
@@ -191,6 +229,7 @@ export default defineConfig((/* ctx */) => {
             // (that one is typed as `(options?) => Plugin`), so instantiate it
             // here and spread the resulting plugins.
             vitePlugins: [
+                wellKnownPlugin(),
                 ...nodePolyfills({
                     globals: { global: true, Buffer: true, process: true },
                     protocolImports: true,

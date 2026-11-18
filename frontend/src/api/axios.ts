@@ -62,6 +62,26 @@ type AxiosInterceptorParameters = Parameters<
     typeof axiosInstance.interceptors.response.use
 >;
 
+/**
+ * The refresh in flight, shared by all requests that fail at the same time.
+ * The server rotates the refresh token on each refresh, so one refresh for a
+ * burst of 401s keeps the browser on a single token.
+ */
+let refreshInFlight: Promise<unknown> | undefined;
+
+const refreshSession = async (): Promise<void> => {
+    refreshInFlight ??= axios
+        .post(
+            `${ENV.BACKEND_URL}/auth/refresh-token`,
+            {},
+            { withCredentials: true },
+        )
+        .finally(() => {
+            refreshInFlight = undefined;
+        });
+    await refreshInFlight;
+};
+
 const refreshAccessTokenAndRetry: AxiosInterceptorParameters[1] = async (
     error,
 ) => {
@@ -91,14 +111,12 @@ const refreshAccessTokenAndRetry: AxiosInterceptorParameters[1] = async (
     // and we refresh the access token
     originalRequest.isRetryWithRefreshedToken = true;
 
-    await axios.post(
-        `${ENV.BACKEND_URL}/auth/refresh-token`,
-        {},
-        { withCredentials: true },
-    );
+    await refreshSession();
 
-    // we retry the original request
-    return axios(originalRequest);
+    // retry through the instance, so the response gets the same handling
+    // (dates parsed, version read) as any other; the flag above prevents a
+    // second retry
+    return axiosInstance(originalRequest);
 };
 
 const parseResponse: AxiosInterceptorParameters[0] = (response) => {

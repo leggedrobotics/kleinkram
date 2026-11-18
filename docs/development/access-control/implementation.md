@@ -36,6 +36,9 @@ An Api key has a:
 
 As an Api key inherits its rights from the user, on key creation, the rights it has are at maximum the rights of the user on the mission.
 Api keys have no rights on projects, only on missions. Thus many listing operations like listing projects and missions are not allowed for Api keys (@UserOnly() guard).
+A key only reaches its own mission: file listings are limited to it, and a single file (read, update, delete, upload
+confirmation) is only accessible when it belongs to the key's mission, even if the user has access to other missions of
+the same project.
 
 In the middleware (backend/src/UserResolverMiddleware.ts), before the JWT is checked & resolved, the Api key is checked. If an Api key is present,
 the user is resolved to the user the key represents. Written into the request object is `req.user = {user: User, apiKey: ApiKey}`.
@@ -43,3 +46,19 @@ the user is resolved to the user the key represents. Written into the request ob
 Each guard is responsible for detecting whether an Api key is present and if so, whether the key grants the required rights.
 
 Files or other entities that are created with an Api key have as the creator the user the key represents.
+
+### Api Key Lifetime
+
+The queue consumer creates the key when it starts the action and revokes it (soft delete) when the run ends. Three
+safeguards cover a worker that dies before it gets there:
+
+- `findUserByAPIKey` (`backend/src/endpoints/auth/action-key-validity.ts`) rejects an action key with `401` if its
+  action is missing or in a terminal state (`DONE`, `FAILED`, `UNPROCESSABLE`, `CANCELLED`), or if the key is older
+  than the action's runtime limit plus one hour. The hour covers the image pull, which happens before the runtime
+  limit starts counting.
+- On `SIGTERM`, the queue consumer revokes the keys of the actions it is running before it exits.
+- At startup and on every janitor run (every 30 seconds), each queue consumer revokes all action keys whose action is
+  missing or no longer running. Keys of actions that still run, on any worker, are left alone.
+
+The queue consumer never writes the container environment, which holds the key, to its logs; values are masked as
+`***`.

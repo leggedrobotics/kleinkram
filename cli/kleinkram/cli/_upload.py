@@ -9,10 +9,14 @@ import typer
 import kleinkram.core
 import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.file_transfer import UploadResult
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.cli._context import OPTIONS_ANYWHERE
 from kleinkram.cli._deprecation import warn_deprecated
+from kleinkram.cli._exit_codes import EXIT_INCOMPLETE
+from kleinkram.cli._exit_codes import EXIT_INTERRUPTED
+from kleinkram.cli._exit_codes import print_errors_only
 from kleinkram.cli._file_expansion import expand_file_args
 from kleinkram.cli._file_validator import FileValidator
 from kleinkram.cli._file_validator import _report_skipped_files
@@ -64,7 +68,43 @@ def _handle_no_files_to_upload(original_count: int, uploaded_count: int) -> None
         )
     else:
         typer.echo(typer.style("No files provided to upload.", fg=typer.colors.RED), err=True)
-    raise typer.Exit(code=1)
+    raise typer.Exit(code=EXIT_INCOMPLETE)
+
+
+def _report_existing_files(result: UploadResult) -> None:
+    """\
+    files the server skipped because their name is taken in the mission are
+    only fine if they are the same file; say so loudly when they are not
+    """
+    if result.conflicts:
+        typer.echo(
+            typer.style(
+                f"\n{len(result.conflicts)} file(s) were NOT uploaded: a different file with the same name "
+                "is already in the mission:",
+                fg=typer.colors.RED,
+                bold=True,
+            ),
+            err=True,
+        )
+        for path in result.conflicts:
+            typer.echo(f"  {path}", err=True)
+        typer.echo(
+            "Rename the local file(s), or delete the file(s) in the mission (`klein file delete`) and upload again.",
+            err=True,
+        )
+    if result.unchecked:
+        typer.echo(
+            typer.style(
+                f"\n{len(result.unchecked)} file(s) were skipped because a file with the same name is in the mission, "
+                "but the content could not be compared (the file in the mission is not processed yet, "
+                "or the mission could not be read):",
+                fg=typer.colors.YELLOW,
+            ),
+            err=True,
+        )
+        for path in result.unchecked:
+            typer.echo(f"  {path}", err=True)
+        typer.echo("Run `klein verify` later to compare them.", err=True)
 
 
 @upload_typer.callback()
@@ -184,7 +224,7 @@ def upload(
                     parts.append(f"{result.skipped} skipped")
                 typer.echo(f"\n{', '.join(parts)}")
         else:
-            # No verbose: no progress bars, no callbacks
+            # No verbose: no progress bars, but every problem still gets a line on stderr
             result, interrupted = run_interruptible(
                 lambda: kleinkram.core.upload(
                     client=AuthenticatedClient(),
@@ -194,6 +234,7 @@ def upload(
                     fix_filenames=fix_filenames,
                     metadata=load_metadata(Path(metadata)) if metadata else None,
                     ignore_missing_metadata=ignore_missing_metadata,
+                    on_message_cb=print_errors_only,
                 )
             )
             if result.failed > 0 or result.canceled > 0:
@@ -229,4 +270,8 @@ def upload(
 
     else:
         if interrupted:
-            raise typer.Exit(code=130)  # 128 + SIGINT, the shell convention for Ctrl+C
+            raise typer.Exit(code=EXIT_INTERRUPTED)
+        _report_existing_files(result)
+        # every requested file must be in the mission: uploaded now, or already there unchanged
+        if result.failed or result.conflicts or result.unchecked:
+            raise typer.Exit(code=EXIT_INCOMPLETE)

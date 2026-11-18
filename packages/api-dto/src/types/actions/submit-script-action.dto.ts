@@ -1,4 +1,5 @@
 import { MAX_ACTION_SCRIPT_BYTES } from '@kleinkram/shared';
+import { SCRIPT_FILENAME_REGEX } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
 import {
     IsNumber,
@@ -11,14 +12,8 @@ import {
     MinLength,
 } from 'class-validator';
 
-/**
- * Filenames accepted for a submitted script.
- *
- * The name is only used to label the stored object and to make the run
- * readable; it never becomes a path, so it is restricted to a flat `.py` name
- * with no separators.
- */
-const SCRIPT_FILENAME_PATTERN = /^[\w.-]{1,96}\.py$/;
+// see `SCRIPT_FILENAME_REGEX` in `@kleinkram/validation`
+const SCRIPT_FILENAME_PATTERN = SCRIPT_FILENAME_REGEX;
 
 /**
  * What `klein action run-script` sends: the script itself, plus where to run it.

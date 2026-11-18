@@ -38,7 +38,7 @@ def offline(monkeypatch, tmp_path):
     for module in ("_upload", "_verify", "_download"):
         monkeypatch.setattr(f"kleinkram.cli.{module}.AuthenticatedClient", MagicMock)
     monkeypatch.chdir(tmp_path)
-    for name in ("a.bag", "b.bag", "-dash.bag"):
+    for name in ("aaa.bag", "bbb.bag", "-dash.bag"):
         (tmp_path / name).write_bytes(b"x")
 
 
@@ -84,54 +84,55 @@ def paths(mock: MagicMock) -> List[str]:
 @pytest.mark.parametrize(
     "args",
     [
-        ["-p", "p", "-m", "m", "--create", "a.bag", "b.bag"],  # options first, as before
-        ["a.bag", "b.bag", "-p", "p", "-m", "m", "--create"],  # options last
-        ["a.bag", "-p", "p", "b.bag", "--create", "-m", "m"],  # mixed
+        ["-p", "p", "-m", "m", "--create", "aaa.bag", "bbb.bag"],  # options first, as before
+        ["aaa.bag", "bbb.bag", "-p", "p", "-m", "m", "--create"],  # options last
+        ["aaa.bag", "-p", "p", "bbb.bag", "--create", "-m", "m"],  # mixed
     ],
 )
 def test_upload_options_anywhere(runner, upload, args):
     result = invoke(runner, ["upload", *args])
     assert result.exit_code == 0, result.output
-    assert paths(upload) == ["a.bag", "b.bag"]
+    assert paths(upload) == ["aaa.bag", "bbb.bag"]
     assert upload.call_args.kwargs["create"] is True
     assert upload.call_args.kwargs["query"].patterns == ["m"]
 
 
 def test_upload_double_dash_ends_options(runner, upload):
-    result = invoke(runner, ["upload", "-p", "p", "-m", "m", "a.bag", "--", "-dash.bag"])
+    # a leading '-' is not a valid name in a mission, --fix-filenames uploads it as `_dash.bag`
+    result = invoke(runner, ["upload", "-p", "p", "-m", "m", "--fix-filenames", "aaa.bag", "--", "-dash.bag"])
     assert result.exit_code == 0, result.output
-    assert paths(upload) == ["a.bag", "-dash.bag"]
+    assert paths(upload) == ["aaa.bag", "-dash.bag"]
     assert upload.call_args.kwargs["create"] is False
 
 
 def test_upload_mistyped_option_is_not_taken_as_a_file(runner, upload):
-    result = invoke(runner, ["upload", "a.bag", "-p", "p", "-m", "m", "--creat"])
+    result = invoke(runner, ["upload", "aaa.bag", "-p", "p", "-m", "m", "--creat"])
     assert result.exit_code == 2
     assert "No such option: --creat" in plain(result.stderr)
     upload.assert_not_called()
 
 
 def test_upload_help_after_files(runner, upload):
-    result = invoke(runner, ["upload", "a.bag", "-h"])
+    result = invoke(runner, ["upload", "aaa.bag", "-h"])
     assert result.exit_code == 0, result.output
     assert "--create" in plain(result.stdout)
     upload.assert_not_called()
 
 
 def test_verify_options_anywhere(runner, verify):
-    result = invoke(runner, ["verify", "a.bag", "-p", "p", "-m", "m", "--no-check-file-hash", "b.bag"])
+    result = invoke(runner, ["verify", "aaa.bag", "-p", "p", "-m", "m", "--no-check-file-hash", "bbb.bag"])
     assert result.exit_code == 0, result.output
-    assert paths(verify) == ["a.bag", "b.bag"]
+    assert paths(verify) == ["aaa.bag", "bbb.bag"]
     assert verify.call_args.kwargs["check_file_hash"] is False
 
 
 def test_download_options_anywhere(runner, download, tmp_path: Path):
     dest = tmp_path / "dest"
     dest.mkdir()
-    result = invoke(runner, ["download", "a.bag", "*.mcap", "-p", "p", "-m", "m", "--dest", str(dest), "--nested"])
+    result = invoke(runner, ["download", "aaa.bag", "*.mcap", "-p", "p", "-m", "m", "--dest", str(dest), "--nested"])
     assert result.exit_code == 0, result.output
     kwargs = download.call_args.kwargs
     assert kwargs["nested"] is True
     assert kwargs["base_dir"] == dest
-    assert kwargs["query"].patterns == ["a.bag", "*.mcap"]
+    assert kwargs["query"].patterns == ["aaa.bag", "*.mcap"]
     assert kwargs["query"].mission_query.patterns == ["m"]

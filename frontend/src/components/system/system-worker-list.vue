@@ -1,8 +1,5 @@
 <template>
-    <div
-        class="dashboard-card"
-        style="grid-row: span 2; grid-column: span 1; background-color: white"
-    >
+    <div class="system-card" style="background-color: white">
         <!-- Top row with Device Availability -->
         <q-card class="full-width q-pa-md" flat>
             <span style="font-size: larger">Device Availability</span>
