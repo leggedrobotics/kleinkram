@@ -1,3 +1,5 @@
+import { AuthController } from '@/endpoints/auth/auth.controller';
+import { JwtStrategy } from '@/endpoints/auth/jwt.strategy';
 import {
     AuthService,
     createNewUser,
@@ -7,6 +9,7 @@ import {
     InvalidSessionError,
     SessionService,
 } from '@/services/session.service';
+import { UserService } from '@/services/user.service';
 import {
     AccessGroupEntity,
     AccountEntity,
@@ -23,8 +26,10 @@ import {
     SessionKind,
     UserRole,
 } from '@kleinkram/shared';
+import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import type { Request, Response } from 'express';
 import { database } from '../../utils/database-utilities';
 import { setupDatabaseHooks } from '../../utils/test-helpers';
 
@@ -49,11 +54,81 @@ const configServiceFor = (config: AccessGroupConfig): ConfigService =>
         },
     }) as unknown as ConfigService;
 
+const jwtService = new JwtService({ secret: env.JWT_SECRET });
+
 const sessionServiceFor = (config: AccessGroupConfig): SessionService =>
     new SessionService(
         database.getRepository(SessionEntity),
-        new JwtService({ secret: env.JWT_SECRET }),
+        jwtService,
         configServiceFor(config),
+    );
+
+/** only what JwtStrategy and AuthController use of the UserService */
+const userServiceStub = {
+    findOneByUUID: (uuid: string) =>
+        database.getRepository(UserEntity).findOneOrFail({ where: { uuid } }),
+} as unknown as UserService;
+
+/** a token signed before sessions existed: no `sid` */
+const legacyToken = (userUuid: string, expiresIn: '30m' | '7d') =>
+    jwtService.sign({ uuid: userUuid }, { expiresIn });
+
+interface RecordedResponse {
+    status?: number;
+    clearedCookies: string[];
+    setCookies: string[];
+}
+
+/** a minimal express response that records status and cookies */
+const recordingResponse = (): {
+    response: Response;
+    recorded: RecordedResponse;
+} => {
+    const recorded: RecordedResponse = { clearedCookies: [], setCookies: [] };
+    const response = {
+        status(code: number) {
+            recorded.status = code;
+            return response;
+        },
+        json() {
+            return response;
+        },
+        cookie(name: string, value: string) {
+            (value === '' ? recorded.clearedCookies : recorded.setCookies).push(
+                name,
+            );
+            return response;
+        },
+    };
+    return { response: response as unknown as Response, recorded };
+};
+
+const refreshWithLegacyToken = async (
+    config: AccessGroupConfig,
+    refreshToken: string,
+): Promise<RecordedResponse> => {
+    const controller = new AuthController(
+        sessionServiceFor(config),
+        jwtService,
+        userServiceStub,
+    );
+    const { response, recorded } = recordingResponse();
+    await controller.refreshToken(
+        {
+            cookies: { [CookieNames.REFRESH_TOKEN]: refreshToken },
+            headers: {},
+        } as unknown as Request,
+        response,
+    );
+    return recorded;
+};
+
+const validateLegacyAccessToken = (
+    config: AccessGroupConfig,
+    userUuid: string,
+): Promise<unknown> =>
+    new JwtStrategy(userServiceStub, sessionServiceFor(config)).validate(
+        jwtService.decode(legacyToken(userUuid, '30m')),
     );
 
 const googleProfile = (
@@ -355,6 +430,72 @@ describe('Restrict sign-in to internal users (allow_external_users)', () => {
                     sid: externalSession.session.uuid,
                 }),
             ).not.toBeNull();
+        });
+    });
+
+    describe('tokens from before sessions', () => {
+        test('should reject the legacy access token of a user with an email on another domain', async () => {
+            const user = await createExistingUser(
+                'google-legacy-access-external',
+                'kim@gmail.com',
+            );
+
+            await expect(
+                validateLegacyAccessToken(restrictedConfig, user.uuid),
+            ).rejects.toThrow(UnauthorizedException);
+
+            // unchanged without the restriction
+            await expect(
+                validateLegacyAccessToken(baseConfig, user.uuid),
+            ).resolves.toMatchObject({ user: { uuid: user.uuid } });
+        });
+
+        test('should accept the legacy access token of a user with an email on an allowed domain', async () => {
+            const user = await createExistingUser(
+                'google-legacy-access-internal',
+                'liam@leggedrobotics.com',
+            );
+
+            await expect(
+                validateLegacyAccessToken(restrictedConfig, user.uuid),
+            ).resolves.toMatchObject({ user: { uuid: user.uuid } });
+        });
+
+        test('should refuse a legacy refresh of a user with an email on another domain and clear both cookies', async () => {
+            const user = await createExistingUser(
+                'google-legacy-refresh-external',
+                'mia@gmail.com',
+            );
+
+            const recorded = await refreshWithLegacyToken(
+                restrictedConfig,
+                legacyToken(user.uuid, '7d'),
+            );
+
+            expect(recorded.status).toBe(401);
+            expect(recorded.setCookies).toEqual([]);
+            expect(recorded.clearedCookies).toEqual(
+                expect.arrayContaining([
+                    CookieNames.AUTH_TOKEN,
+                    CookieNames.REFRESH_TOKEN,
+                ]),
+            );
+        });
+
+        test('should refresh a legacy token of a user with an email on an allowed domain', async () => {
+            const user = await createExistingUser(
+                'google-legacy-refresh-internal',
+                'noah@leggedrobotics.com',
+            );
+
+            const recorded = await refreshWithLegacyToken(
+                restrictedConfig,
+                legacyToken(user.uuid, '7d'),
+            );
+
+            expect(recorded.status).toBe(200);
+            expect(recorded.setCookies).toEqual([CookieNames.AUTH_TOKEN]);
+            expect(recorded.clearedCookies).toEqual([]);
         });
     });
 
