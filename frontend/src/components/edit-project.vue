@@ -50,6 +50,24 @@
                 https://github.com/leggedrobotics/kleinkram/issues/1250.
             </span>
         </div>
+
+        <div class="flex column q-mt-lg">
+            <label for="foxglovePreviewEnabled">Foxglove preview</label>
+            <q-toggle
+                v-model="foxglovePreviewEnabled"
+                name="foxglovePreviewEnabled"
+                label="Show the Preview tab in missions"
+                color="primary"
+                dense
+                style="margin: 10px 0"
+            />
+            <span
+                v-if="systemSettings?.foxglovePreviewEnabled === false"
+                class="text-grey-8"
+            >
+                Turned off for the whole instance by an admin.
+            </span>
+        </div>
     </div>
     <div v-else>
         <q-spinner />
@@ -60,6 +78,7 @@ import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/typ
 import { getNameValidationError } from '@kleinkram/validation/frontend';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify, QInput } from 'quasar';
+import { useSystemSettings } from 'src/composables/use-foxglove-preview';
 import { useProjectQuery } from 'src/hooks/query-hooks';
 import { getErrorMessage } from 'src/services/error-handling';
 import { updateProject } from 'src/services/mutations/project';
@@ -72,6 +91,8 @@ const queryClient = useQueryClient();
 
 const projectName = ref('');
 const autoConvert = ref(true);
+const foxglovePreviewEnabled = ref(true);
+const { data: systemSettings } = useSystemSettings();
 const projectDescription = ref('');
 const hasValidInput = ref(false);
 
@@ -86,6 +107,7 @@ watch(
             projectName.value = newVale.name;
             projectDescription.value = newVale.description;
             autoConvert.value = newVale.autoConvert;
+            foxglovePreviewEnabled.value = newVale.foxglovePreviewEnabled;
         }
     },
     { immediate: true },
@@ -97,7 +119,8 @@ async function save_changes(): Promise<void> {
     if (
         projectName.value === project.value?.name &&
         projectDescription.value === project.value.description &&
-        autoConvert.value === project.value.autoConvert
+        autoConvert.value === project.value.autoConvert &&
+        foxglovePreviewEnabled.value === project.value.foxglovePreviewEnabled
     )
         return;
 
@@ -125,6 +148,7 @@ async function save_changes(): Promise<void> {
         projectName.value.trim(),
         projectDescription.value,
         autoConvert.value,
+        foxglovePreviewEnabled.value,
     ).catch((error: unknown) => {
         Notify.create({
             message: `Error updating project: ${getErrorMessage(error)}`,
