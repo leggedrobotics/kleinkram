@@ -69,6 +69,12 @@ export interface IStorageBucket {
 
     deleteFile(objectName: string): Promise<void>;
 
+    /**
+     * Copies an object inside the bucket without downloading it. Tags are not
+     * copied, set them on the copy with `addTags`.
+     */
+    copyFile(sourceObjectName: string, targetObjectName: string): Promise<void>;
+
     getTags(objectName: string): Promise<Record<string, string>>;
 
     addTags(objectName: string, tags: Record<string, string>): Promise<void>;
