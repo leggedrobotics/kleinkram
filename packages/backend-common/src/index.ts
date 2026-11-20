@@ -48,6 +48,7 @@ export * from './seeds/user/seed-users';
 export * from './services/action-state-transition';
 export * from './services/affiliation-group.service';
 export * from './services/recording-times-backfill';
+export * from './services/topic-stats-backfill';
 export * from './typeorm-config';
 export * from './types';
 export * from './viewEntities/mission-access-view.entity';

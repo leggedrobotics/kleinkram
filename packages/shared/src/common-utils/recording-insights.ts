@@ -40,6 +40,15 @@ export interface TopicCoverage {
     covered: TimeSpan[];
     /** Stretches without data that are too long to be the topic's own rate. */
     gaps: TimeSpan[];
+    /** Chunks holding at least one message of the topic. */
+    chunkCount: number;
+    /**
+     * Start of the first chunk that holds the topic, in nanoseconds since the
+     * epoch. Accurate to one chunk, like everything else here.
+     */
+    firstSeen: bigint;
+    /** End of the last chunk that holds the topic, in nanoseconds. */
+    lastSeen: bigint;
 }
 
 export interface RecordingCoverage {
@@ -74,14 +83,15 @@ const MIN_CHUNKS_FOR_PAUSES = 8;
 /** Message periods a topic may stay silent before that counts as a gap. */
 const SILENT_PERIODS = 3;
 /**
- * Chunks a topic has to appear in before its silences are reported.
+ * Chunks a topic has to appear in to count as a stream rather than a one-shot
+ * topic. Only a stream has gaps and a frequency.
  *
  * `/tf_static` and its like publish a handful of messages when the recording
  * starts and then nothing, by design. That is a one-shot topic, not a stream
  * that dropped out, and the chunk index tells the two apart: a stream shows up
  * in chunk after chunk, a one-shot topic in one or two.
  */
-const MIN_CHUNKS_FOR_GAPS = 5;
+export const MIN_CHUNKS_FOR_STREAM = 5;
 
 const seconds = (time: bigint, origin: bigint): number =>
     Number(time - origin) / 1e9;
@@ -158,15 +168,22 @@ function countMessages(
     return counts;
 }
 
-/** The spans of the chunks each topic appears in, in recording order. */
-function spansPerTopic(
-    chunks: { span: TimeSpan; channelIds: number[] }[],
+interface LocatedChunk {
+    span: TimeSpan;
+    startTime: bigint;
+    endTime: bigint;
+    channelIds: number[];
+}
+
+/** The chunks each topic appears in, in recording order. */
+function chunksPerTopic(
+    chunks: LocatedChunk[],
     channels: RecordingChannel[],
-): Map<string, TimeSpan[]> {
+): Map<string, LocatedChunk[]> {
     const topicOf = new Map(
         channels.map((channel) => [channel.id, channel.topic]),
     );
-    const spansByTopic = new Map<string, TimeSpan[]>();
+    const chunksByTopic = new Map<string, LocatedChunk[]>();
     for (const chunk of chunks) {
         const topics = new Set<string>();
         for (const channelId of chunk.channelIds) {
@@ -174,12 +191,26 @@ function spansPerTopic(
             if (topic !== undefined) topics.add(topic);
         }
         for (const topic of topics) {
-            const spans = spansByTopic.get(topic) ?? [];
-            spans.push(chunk.span);
-            spansByTopic.set(topic, spans);
+            const topicChunks = chunksByTopic.get(topic) ?? [];
+            topicChunks.push(chunk);
+            chunksByTopic.set(topic, topicChunks);
         }
     }
-    return spansByTopic;
+    return chunksByTopic;
+}
+
+/** Start of the earliest and end of the latest of `chunks`. */
+function seenBounds(
+    chunks: LocatedChunk[],
+    fallback: bigint,
+): { firstSeen: bigint; lastSeen: bigint } {
+    let firstSeen = chunks[0]?.startTime ?? fallback;
+    let lastSeen = chunks[0]?.endTime ?? fallback;
+    for (const chunk of chunks) {
+        if (chunk.startTime < firstSeen) firstSeen = chunk.startTime;
+        if (chunk.endTime > lastSeen) lastSeen = chunk.endTime;
+    }
+    return { firstSeen, lastSeen };
 }
 
 /**
@@ -209,12 +240,14 @@ export function computeRecordingCoverage(
     const durationSeconds = seconds(endTime, origin);
     if (durationSeconds <= 0) return undefined;
 
-    const located = chunks
+    const located: LocatedChunk[] = chunks
         .map((chunk) => ({
             span: {
                 start: seconds(chunk.startTime, origin),
                 end: seconds(chunk.endTime, origin),
             },
+            startTime: chunk.startTime,
+            endTime: chunk.endTime,
             channelIds: chunk.channelIds,
         }))
         // A fresh array from `map`, so sorting in place reaches no caller.
@@ -239,7 +272,8 @@ export function computeRecordingCoverage(
     }
 
     const counts = countMessages(channels);
-    for (const [topic, spans] of spansPerTopic(located, channels)) {
+    for (const [topic, topicChunks] of chunksPerTopic(located, channels)) {
+        const spans = topicChunks.map((chunk) => chunk.span);
         const count = counts.get(topic);
         // A slow topic is absent from most chunks without anything being
         // wrong, so the silence it is allowed scales with its own period.
@@ -251,7 +285,7 @@ export function computeRecordingCoverage(
             MIN_NOTABLE_SECONDS,
         );
         const covered = mergeSpans(spans, tolerance);
-        const isStream = spans.length >= MIN_CHUNKS_FOR_GAPS;
+        const isStream = spans.length >= MIN_CHUNKS_FOR_STREAM;
         topics[topic] = {
             covered,
             gaps: isStream
@@ -259,6 +293,8 @@ export function computeRecordingCoverage(
                       (hole) => hole.end - hole.start > tolerance,
                   )
                 : [],
+            chunkCount: topicChunks.length,
+            ...seenBounds(topicChunks, origin),
         };
     }
 
@@ -268,6 +304,81 @@ export function computeRecordingCoverage(
         topics,
         pauses: findPauses(chunkSpans),
     };
+}
+
+/**
+ * Messages per second over the stretch the topic publishes in, from its first
+ * chunk to its last.
+ *
+ * Dividing by the whole recording instead understates every topic that starts
+ * late or stops early. A one-shot topic (seen in fewer than
+ * {@link MIN_CHUNKS_FOR_STREAM} chunks) has no rate to speak of and gets 0.
+ * Undefined when the recorder wrote no message counts.
+ */
+export function topicFrequency(
+    messageCount: number | undefined,
+    coverage: Pick<TopicCoverage, 'chunkCount' | 'firstSeen' | 'lastSeen'>,
+): number | undefined {
+    if (messageCount === undefined) return undefined;
+    if (coverage.chunkCount < MIN_CHUNKS_FOR_STREAM) return 0;
+    const span = seconds(coverage.lastSeen, coverage.firstSeen);
+    return span > 0 ? messageCount / span : 0;
+}
+
+/** `[start, end]` in whole milliseconds since the recording's first message. */
+export type CoverageSpanMs = [startMs: number, endMs: number];
+
+/**
+ * The coverage of one topic in the form the backend stores it on the topic.
+ *
+ * Milliseconds rather than nanoseconds: the spans end up as JSON numbers,
+ * which lose precision above 2^53, and the coverage is only accurate to one
+ * chunk anyway.
+ */
+export interface StoredTopicStats {
+    firstSeen: Date;
+    lastSeen: Date;
+    chunkCount: number;
+    /** `covered`, relative to {@link RecordingCoverage.startTime}. */
+    coverage: CoverageSpanMs[];
+    /** See {@link topicFrequency}. */
+    frequency: number | undefined;
+}
+
+const toMilliseconds = (secondsValue: number): number =>
+    Math.round(secondsValue * 1000);
+
+const toDate = (timeNs: bigint): Date => new Date(Number(timeNs / 1_000_000n));
+
+/**
+ * Per topic, what the backend stores about where it has data.
+ *
+ * Built on {@link computeRecordingCoverage}, so stored and live values agree.
+ * Empty when coverage is unknown: no chunks, no duration, or a chunk without
+ * a message index.
+ */
+export function computeTopicStats(
+    chunks: RecordingChunk[],
+    channels: RecordingChannel[],
+): Map<string, StoredTopicStats> {
+    const stats = new Map<string, StoredTopicStats>();
+    const coverage = computeRecordingCoverage(chunks, channels);
+    if (!coverage) return stats;
+
+    const counts = countMessages(channels);
+    for (const [topic, topicCoverage] of Object.entries(coverage.topics)) {
+        stats.set(topic, {
+            firstSeen: toDate(topicCoverage.firstSeen),
+            lastSeen: toDate(topicCoverage.lastSeen),
+            chunkCount: topicCoverage.chunkCount,
+            coverage: topicCoverage.covered.map((span): CoverageSpanMs => [
+                toMilliseconds(span.start),
+                toMilliseconds(span.end),
+            ]),
+            frequency: topicFrequency(counts.get(topic), topicCoverage),
+        });
+    }
+    return stats;
 }
 
 /** How the chunks are stored, and what that means for a partial download. */

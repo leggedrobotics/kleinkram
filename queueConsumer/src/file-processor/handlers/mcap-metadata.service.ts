@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { AbstractMetadataService } from './abstract-metadata.service';
 import { ExtractedTopicInfo } from './file-handler.interface';
 import { getDurationSeconds, RecordingTimes, toRecordingTimes } from './time';
+import { mcapTopicStats, TopicStatsByName } from './topic-stats';
 
 class LocalFileReader implements IReadable {
     constructor(
@@ -97,6 +98,22 @@ export class McapMetadataService extends AbstractMetadataService {
         );
     }
 
+    /**
+     * Reads the per-topic statistics of a stored MCAP from its summary
+     * section, without touching the messages.
+     */
+    async probeTopicStatsFromUrl(
+        presignedUrl: string,
+        headers: Record<string, string> = {},
+    ): Promise<TopicStatsByName> {
+        const fileReader = new UniversalHttpReader(presignedUrl, headers);
+        await fileReader.init();
+        const reader = await McapIndexedReader.Initialize({
+            readable: fileReader,
+        });
+        return mcapTopicStats(reader);
+    }
+
     private async processReader(
         readable: IReadable,
         targetEntity: FileEntity,
@@ -152,6 +169,7 @@ export class McapMetadataService extends AbstractMetadataService {
         await this.finishExtraction(
             targetEntity,
             rawTopics,
+            mcapTopicStats(reader),
             Number(await readable.size()),
             recordingTimes,
             'mcap_indexed_reader',

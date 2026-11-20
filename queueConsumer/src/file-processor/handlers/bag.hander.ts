@@ -18,6 +18,7 @@ import logger from '../../logger';
 
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
+import { TOPIC_STATS_VERSION } from '@kleinkram/backend-common/services/topic-stats-backfill';
 import { calculateFileHash } from '../helper/hash-helper';
 import { toStateComment } from '../helper/state-comment';
 import { FileHandler, FileProcessingContext } from './file-handler.interface';
@@ -178,6 +179,8 @@ export class RosBagHandler implements FileHandler {
             primaryFile.date = savedMcapEntity.date;
             primaryFile.recordingStartDate = savedMcapEntity.recordingStartDate;
             primaryFile.recordingEndDate = savedMcapEntity.recordingEndDate;
+            // The topics, and their statistics, live on the converted MCAP.
+            primaryFile.topicStatsVersion = TOPIC_STATS_VERSION;
             primaryFile.state = FileState.OK;
             primaryFile.stateComment = null;
             await this.fileRepo.save(primaryFile);

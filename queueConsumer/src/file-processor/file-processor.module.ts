@@ -26,6 +26,8 @@ import { McapMetadataService } from './handlers/mcap-metadata.service';
 import { RosBagMetadataService } from './handlers/rosbag-metadata.service';
 import { RecordingTimesBackfillProvider } from './recording-times-backfill.provider';
 import { RecordingTimesBackfillService } from './recording-times-backfill.service';
+import { TopicStatsBackfillProvider } from './topic-stats-backfill.provider';
+import { TopicStatsBackfillService } from './topic-stats-backfill.service';
 
 import { Db3MetadataService } from './handlers/db3-metadata.service';
 import { Db3Handler } from './handlers/db3.handler';
@@ -52,6 +54,8 @@ import { Db3Handler } from './handlers/db3.handler';
         FileIngestionService,
         RecordingTimesBackfillService,
         RecordingTimesBackfillProvider,
+        TopicStatsBackfillService,
+        TopicStatsBackfillProvider,
         GoogleDriveStrategy,
         S3Strategy,
 

@@ -83,6 +83,8 @@ export class Db3MetadataService extends AbstractMetadataService {
             await this.finishExtraction(
                 targetEntity,
                 rawTopics,
+                // db3 has no chunk index; its topics keep the statistics null
+                new Map(),
                 fileSize,
                 // db3 message timestamps are nanoseconds since the epoch
                 toRecordingTimes(startTimeNs, endTimeNs),
