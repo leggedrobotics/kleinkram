@@ -44,6 +44,19 @@ interface TimedMessage {
 const FLUSH_INTERVAL_MS = 100;
 
 /**
+ * Seconds of full-rate frames kept behind the playhead. Scrubbing back a
+ * little stays smooth; anything older is dropped, so playing through a long
+ * recording does not accumulate every frame in memory.
+ */
+const WINDOW_KEEP_BEHIND_NS = 2_000_000_000n;
+
+/** Message objects as the previews hold them. */
+interface PreviewMessage extends TimedMessage {
+    /** Filled in around the playhead, not part of the sample. */
+    dense?: boolean;
+}
+
+/**
  * Merges a batch of freshly decoded messages into the ones already loaded,
  * keeping the result ordered by log time. Returns a new array so that the
  * reactive store is written once per batch instead of once per message.
@@ -173,6 +186,18 @@ export function useRosmsgPreview(): {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     formatPayload: (data: any) => string;
     cancelTopic: (topicName: string) => void;
+    /** Bytes a sampled read of a topic downloads at this stride. */
+    sampleCost: (topicName: string, stride: number) => number | undefined;
+    /**
+     * Load every message of a topic in [from, until), keeping only the full-
+     * rate frames between `playhead` minus a short margin and `until`.
+     */
+    fetchTopicWindow: (
+        topicName: string,
+        from: bigint,
+        until: bigint,
+        playhead: bigint,
+    ) => Promise<void>;
     reset: () => void;
     dbSchema?: Ref<string | null>;
     insights: Ref<RecordingInsights | null>;
@@ -193,8 +218,21 @@ export function useRosmsgPreview(): {
     // deeply reactive.
     const insights = shallowRef<RecordingInsights | null>(null);
     const abortControllers = new Map<string, AbortController>();
+    const windowControllers = new Map<string, AbortController>();
+    const sampleCosts = new Map<string, number | undefined>();
+
+    function sampleCost(topicName: string, stride: number): number | undefined {
+        if (!strategy.value) return undefined;
+        const key = `${topicName}\u0000${String(stride)}`;
+        if (!sampleCosts.has(key)) {
+            sampleCosts.set(key, strategy.value.sampleCost(topicName, stride));
+        }
+        return sampleCosts.get(key);
+    }
 
     function cancelTopic(topicName: string): void {
+        windowControllers.get(topicName)?.abort();
+        windowControllers.delete(topicName);
         const controller = abortControllers.get(topicName);
         if (controller) {
             controller.abort();
@@ -211,10 +249,15 @@ export function useRosmsgPreview(): {
         dbSchema.value = null;
         insights.value = null;
         strategy.value = null;
-        for (const controller of abortControllers.values()) {
+        for (const controller of [
+            ...abortControllers.values(),
+            ...windowControllers.values(),
+        ]) {
             controller.abort();
         }
         abortControllers.clear();
+        windowControllers.clear();
+        sampleCosts.clear();
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         for (const k of Object.keys(topicPreviews)) delete topicPreviews[k];
 
@@ -369,6 +412,71 @@ export function useRosmsgPreview(): {
         }
     }
 
+    async function fetchTopicWindow(
+        topicName: string,
+        from: bigint,
+        until: bigint,
+        playhead: bigint,
+    ): Promise<void> {
+        if (!strategy.value) return;
+        windowControllers.get(topicName)?.abort();
+        const controller = new AbortController();
+        windowControllers.set(topicName, controller);
+
+        // Drop full-rate frames the playhead has left behind; the sample
+        // across the recording stays
+        const keepFrom = playhead - WINDOW_KEEP_BEHIND_NS;
+        const current = (topicPreviews[topicName] ?? []) as PreviewMessage[];
+        const kept = current.filter(
+            (message) =>
+                !message.dense ||
+                (message.logTime >= keepFrom && message.logTime < until),
+        );
+        if (kept.length !== current.length) topicPreviews[topicName] = kept;
+        const loadedTimes = new Set(kept.map((message) => message.logTime));
+
+        const batcher = createMessageBatcher(
+            (batch) => {
+                topicPreviews[topicName] = mergeBatch(
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+                    topicPreviews[topicName] ?? [],
+                    batch,
+                    true,
+                );
+            },
+            () => controller.signal.aborted,
+        );
+
+        try {
+            await strategy.value.getMessages(
+                topicName,
+                Number.MAX_SAFE_INTEGER,
+                (message) => {
+                    if (controller.signal.aborted) return;
+                    batcher.add(markRaw({ ...message, dense: true }));
+                },
+                controller.signal,
+                undefined,
+                {
+                    window: { start: from, end: until },
+                    skip: (logTime): boolean => loadedTimes.has(logTime),
+                },
+            );
+        } catch (error: unknown) {
+            // The sample stays usable, playback just shows fewer frames
+            if (!controller.signal.aborted) {
+                console.warn(`Error reading ${topicName} ahead`, error);
+            }
+        } finally {
+            if (controller.signal.aborted) {
+                batcher.cancel();
+            } else {
+                batcher.flush();
+                windowControllers.delete(topicName);
+            }
+        }
+    }
+
     return {
         isReaderReady,
         readerError,
@@ -385,6 +493,8 @@ export function useRosmsgPreview(): {
         fetchTopicMessages,
         formatPayload,
         cancelTopic,
+        sampleCost,
+        fetchTopicWindow,
         reset,
     };
 }

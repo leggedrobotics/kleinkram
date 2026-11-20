@@ -212,7 +212,7 @@ const properties = withDefaults(
     { isLoading: false, sampleStride: 1, canRefine: false },
 );
 
-const emit = defineEmits(['load-more', 'pause-preview']);
+const emit = defineEmits(['load-more', 'pause-preview', 'load-window']);
 
 const SPEED_OPTIONS = [0.25, 0.5, 1, 2, 4, 8];
 
@@ -267,9 +267,39 @@ const playedFraction = computed(() =>
  * gaps that still have to be filled show as holes in the buffered bar.
  */
 const coverage = computed(() => {
-    const times = frameTimes.value;
-    if (duration.value <= 0 || times.length < 2) return [];
-    const typicalGap = duration.value / (times.length - 1);
+    if (duration.value <= 0) return [];
+    // Frames filled in around the playhead are far denser than the sample
+    // across the recording; measured together, every gap of the sample would
+    // look like a hole. Each kind is measured on its own spacing.
+    const sampled: number[] = [];
+    const dense: number[] = [];
+    for (const [index, message] of properties.messages.entries()) {
+        const time = frameTimes.value[index] ?? 0;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (message.dense) dense.push(time);
+        else sampled.push(time);
+    }
+    return [
+        ...coverageSegments(sampled, duration.value / (sampled.length - 1)),
+        ...coverageSegments(dense, typicalSpacing(dense)),
+    ];
+});
+
+/** Median spacing of consecutive times, the frame interval of a dense run. */
+const typicalSpacing = (times: number[]): number => {
+    const gaps: number[] = [];
+    for (let index = 1; index < times.length; index++) {
+        gaps.push((times[index] ?? 0) - (times[index - 1] ?? 0));
+    }
+    gaps.sort((a, b) => a - b);
+    return gaps[Math.floor(gaps.length / 2)] ?? 0;
+};
+
+const coverageSegments = (
+    times: number[],
+    typicalGap: number,
+): { x: number; width: number }[] => {
+    if (times.length < 2 || !(typicalGap > 0)) return [];
     const maxGap = typicalGap * 2;
     const scale = 1000 / duration.value;
     const segments: { x: number; width: number }[] = [];
@@ -290,11 +320,48 @@ const coverage = computed(() => {
         width: Math.max(2, (previous - segmentStart) * scale),
     });
     return segments;
-});
+};
 
 // --- Playback loop (real time × speed) ---
 let animationFrame: number | null = null;
 let lastTick = 0;
+
+// --- Full-rate window ahead of the playhead ---
+// The sample across the recording keeps only every n-th frame, which plays
+// back as a slide show. While playing, every frame just ahead of the playhead
+// is loaded as well, the way desktop players read ahead. Frames the playhead
+// has left behind are dropped again by the loader, so memory stays bounded.
+
+/** Seconds of recording loaded ahead of the playhead. */
+const WINDOW_AHEAD_S = 10;
+/** Load the next window once less than this much is left of the current. */
+const WINDOW_REFILL_S = 4;
+/**
+ * Above this speed the sample alone plays smoothly enough, and a window could
+ * not be read as fast as it is played through.
+ */
+const WINDOW_MAX_SPEED = 2;
+
+/** Requested window, in seconds since the first frame. */
+let windowFrom = NaN;
+let windowUntil = NaN;
+
+const requestWindow = (): void => {
+    if (properties.sampleStride <= 1 || speed.value > WINDOW_MAX_SPEED) {
+        return;
+    }
+    const at = playhead.value;
+    if (at >= windowFrom && at + WINDOW_REFILL_S <= windowUntil) return;
+    // Continue where the current window ends, unless the playhead jumped
+    const from = at >= windowFrom && at <= windowUntil ? windowUntil : at;
+    const until = Math.min(duration.value, at + WINDOW_AHEAD_S);
+    if (until <= from) return;
+    windowFrom = at >= windowFrom && at <= windowUntil ? windowFrom : at;
+    windowUntil = until;
+    const toLogTime = (seconds: number): bigint =>
+        startTime.value + BigInt(Math.round(seconds * 1e9));
+    emit('load-window', toLogTime(from), toLogTime(until), toLogTime(at));
+};
 
 const tick = (now: number): void => {
     if (!isPlaying.value) return;
@@ -303,6 +370,7 @@ const tick = (now: number): void => {
     let next = playhead.value + elapsed * speed.value;
     if (next > duration.value) next = 0; // loop
     playhead.value = next;
+    requestWindow();
     animationFrame = requestAnimationFrame(tick);
 };
 
@@ -410,10 +478,20 @@ const nextFrame = (): void => {
 
 // --- Rendering ---
 const canvasReference = ref<HTMLCanvasElement | null>(null);
-const { draw, renderError, isDecoded, isUltraWide } = useImageDecoder(
+const { draw, prefetch, renderError, isDecoded, isUltraWide } = useImageDecoder(
     canvasReference,
     currentData,
 );
+
+// Decode the next frames while the current one is shown
+watch(currentIndex, (index) => {
+    prefetch(
+        properties.messages
+            .slice(index + 1, index + 7)
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+            .map((message) => message.data),
+    );
+});
 
 onMounted(() => {
     if (currentData.value) draw();

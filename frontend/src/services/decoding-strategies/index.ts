@@ -16,6 +16,16 @@ export abstract class DecodingStrategy {
         options?: ReadOptions,
     ): Promise<LogMessage[]>;
 
+    /**
+     * Bytes a progressive read of `topic` at this stride downloads, or
+     * undefined when the format addresses messages individually (then the
+     * cost is the messages' own size). Compressed chunks are fetched whole,
+     * so a sampled message can cost far more than its size.
+     */
+    sampleCost(_topic: string, _stride: number): number | undefined {
+        return undefined;
+    }
+
     getSchema(): string | null {
         return null;
     }

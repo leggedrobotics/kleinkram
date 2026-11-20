@@ -102,6 +102,7 @@
                 :can-refine="canRefine ?? false"
                 @load-required="loadRequired"
                 @load-more="loadMore"
+                @load-window="loadWindow"
                 @pause-preview="emitPausePreview"
             />
         </div>
@@ -146,7 +147,12 @@ const properties = defineProps<{
     canRefine?: boolean;
 }>();
 
-const emit = defineEmits(['load-more', 'load-required', 'pause-preview']);
+const emit = defineEmits([
+    'load-more',
+    'load-required',
+    'pause-preview',
+    'load-window',
+]);
 
 const hasData = computed(
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -194,6 +200,10 @@ const loadRequired = (): void => {
 
 const loadMore = (): void => {
     emit('load-more');
+};
+
+const loadWindow = (from: bigint, until: bigint, playhead: bigint): void => {
+    emit('load-window', from, until, playhead);
 };
 
 const emitPausePreview = (): void => {
