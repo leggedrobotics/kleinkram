@@ -212,7 +212,7 @@
     <!-- Kept mounted once opened, so coming back to the tab neither reads
          every record again nor folds the rows that were open. -->
     <div
-        v-if="file && metadataOpenedFor === file.uuid"
+        v-if="file && insights && metadataOpenedFor === file.uuid"
         v-show="activeTab === 'metadata'"
         class="q-my-lg"
     >
@@ -301,6 +301,11 @@ watch(
     },
     { immediate: true },
 );
+// Leaving a file closes its panel: on return it is only mounted again once
+// the tab is opened, by which time the file's reader is ready to read from.
+watch(fileUuid, () => {
+    metadataOpenedFor.value = undefined;
+});
 const yamlContent = ref<string | undefined>(undefined);
 const tumContent = ref<string | undefined>(undefined);
 const textContent = ref<string | undefined>(undefined);
