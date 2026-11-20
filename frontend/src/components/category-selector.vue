@@ -158,9 +158,19 @@ const emptyMessage = computed(() => {
         : 'No categories yet. Type a name to create one.';
 });
 
-const { mutate: create, isPending: isCreating } = useMutation({
+// Several categories can be created at once; the mutation's own `isPending`
+// only follows the latest call, so the running ones are counted.
+const pendingCreations = ref(0);
+const isCreating = computed(() => pendingCreations.value > 0);
+const { mutate: create } = useMutation({
     mutationFn: (name: string) =>
         createCategory(name, properties.projectUuid) as Promise<CategoryDto>,
+    onMutate: () => {
+        pendingCreations.value++;
+    },
+    onSettled: () => {
+        pendingCreations.value--;
+    },
     onSuccess: async (category: CategoryDto) => {
         emit('update:selected', [...properties.selected, category]);
         await queryClient.invalidateQueries({
