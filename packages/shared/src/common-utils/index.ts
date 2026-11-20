@@ -10,6 +10,7 @@ export * from './enum';
 export * from './link-url';
 export * from './mcap-message-index';
 export * from './public-access';
+export * from './recording-insights';
 export * from './state-cause';
 export * from './text-decoding';
 export * from './universal-http-reader';

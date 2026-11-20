@@ -18,14 +18,17 @@
             <div class="q-mt-lg q-mb-lg system-grid">
                 <system-running-actions class="system-grid__actions" />
                 <system-worker-list class="system-grid__workers" />
+                <system-settings-card v-if="isAdmin" />
             </div>
         </template>
     </div>
 </template>
 
 <script setup lang="ts">
+import { UserRole } from '@kleinkram/shared';
 import StorageInsights from 'components/system/storage-insights.vue';
 import SystemRunningActions from 'components/system/system-running-actions.vue';
+import SystemSettingsCard from 'components/system/system-settings-card.vue';
 import SystemWorkerList from 'components/system/system-worker-list.vue';
 import TitleSection from 'components/title-section.vue';
 import { canCreateProject, usePermissionsQuery } from 'src/hooks/query-hooks';
@@ -47,6 +50,8 @@ const {
  * group) see them; the backend answers 403 to everyone else.
  */
 const canView = computed(() => canCreateProject(permissions.value));
+/** Instance-wide settings can only be changed by admins. */
+const isAdmin = computed(() => permissions.value?.role === UserRole.ADMIN);
 
 const retry = async (): Promise<void> => {
     await refetch();
@@ -72,8 +77,8 @@ watch(
 
 <style scoped>
 /*
- * Below the storage section: the running actions and the workers, each the
- * full width of the page.
+ * Below the storage section: the running actions, the workers and (for
+ * admins) the instance settings, each the full width of the page.
  */
 .system-grid {
     display: flex;

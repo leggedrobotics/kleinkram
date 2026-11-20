@@ -56,6 +56,21 @@
                         >known limitations</a
                     >.
                 </p>
+
+                <q-toggle
+                    v-model="foxglovePreviewEnabled"
+                    name="foxglovePreviewEnabled"
+                    label="Show the Preview tab in missions"
+                    color="button-primary"
+                    dense
+                    class="q-mt-md"
+                />
+                <p
+                    v-if="systemSettings?.foxglovePreviewEnabled === false"
+                    class="text-secondary q-mt-sm q-mb-none"
+                >
+                    Turned off for the whole instance by an admin.
+                </p>
             </q-form>
             <q-spinner v-else />
         </template>
@@ -78,6 +93,7 @@ import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/typ
 import { useQueryClient } from '@tanstack/vue-query';
 import NameField from 'components/common/name-field.vue';
 import { Notify, QForm, useDialogPluginComponent } from 'quasar';
+import { useSystemSettings } from 'src/composables/use-foxglove-preview';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { useProjectQuery } from 'src/hooks/query-hooks';
 import {
@@ -105,6 +121,8 @@ const descriptionId = `edit-project-description-${useId()}`;
 
 const projectName = ref('');
 const autoConvert = ref(true);
+const foxglovePreviewEnabled = ref(true);
+const { data: systemSettings } = useSystemSettings();
 const projectDescription = ref('');
 const saving = ref(false);
 const errorMessage = ref('');
@@ -123,6 +141,7 @@ watch(
             projectName.value = newValue.name;
             projectDescription.value = newValue.description;
             autoConvert.value = newValue.autoConvert;
+            foxglovePreviewEnabled.value = newValue.foxglovePreviewEnabled;
         }
     },
     { immediate: true },
@@ -133,7 +152,9 @@ const dirty = computed(
         !!project.value &&
         (projectName.value !== project.value.name ||
             projectDescription.value !== project.value.description ||
-            autoConvert.value !== project.value.autoConvert),
+            autoConvert.value !== project.value.autoConvert ||
+            foxglovePreviewEnabled.value !==
+                project.value.foxglovePreviewEnabled),
 );
 
 const formReference = ref<QForm>();
@@ -155,6 +176,7 @@ async function saveProject(): Promise<void> {
             projectName.value.trim(),
             projectDescription.value,
             autoConvert.value,
+            foxglovePreviewEnabled.value,
         );
     } catch (error: unknown) {
         if (isNameError(error)) {
@@ -177,9 +199,13 @@ async function saveProject(): Promise<void> {
     });
     onDialogOK();
 
+    // Missions carry their project, including the Foxglove preview switch
+    // the mission page reads, so they are refreshed as well.
     await queryClient.invalidateQueries({
         predicate: (query) =>
-            query.queryKey[0] === 'projects' || query.queryKey[0] === 'project',
+            query.queryKey[0] === 'projects' ||
+            query.queryKey[0] === 'project' ||
+            query.queryKey[0] === 'mission',
     });
 }
 </script>

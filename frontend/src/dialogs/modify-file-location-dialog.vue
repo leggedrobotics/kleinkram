@@ -4,108 +4,706 @@
         v-model:error="errorMessage"
         :busy="isPending"
         :dirty="dirty"
-        :submit-disabled="alreadyThere || isPending"
-        @submit="saveAction"
+        :submit-disabled="!canSubmit || isPending"
+        @submit="submit"
     >
-        <template #title>{{ actionLabel }}</template>
+        <template #title>
+            {{
+                files.length === 1
+                    ? 'Move or Copy File'
+                    : `Move or Copy ${files.length} Files`
+            }}
+        </template>
         <template v-if="files.length === 1" #subtitle>
             {{ files[0]?.filename }}
         </template>
 
         <template #content>
-            <q-form ref="formReference" greedy @submit.prevent>
-                <ScopeSelector
-                    v-model:project-uuid="targetProjectUuid"
-                    v-model:mission-uuid="targetMissionUuid"
-                    layout="column"
-                    :required="true"
-                />
-            </q-form>
+            <div
+                class="column transfer-dialog"
+                :class="{ 'transfer-dialog--locked': isPending }"
+            >
+                <div>
+                    <div class="text-weight-bold q-mb-xs">Action</div>
+                    <q-btn-toggle
+                        v-model="mode"
+                        no-caps
+                        unelevated
+                        toggle-color="button-primary"
+                        color="white"
+                        text-color="grey-9"
+                        class="button-border"
+                        :options="[
+                            { label: 'Move', value: 'move' },
+                            { label: 'Copy', value: 'copy' },
+                        ]"
+                    />
+                    <div class="text-caption text-grey-7 q-mt-xs">
+                        <template v-if="mode === 'move'">
+                            The files leave
+                            <b
+                                >{{ mission.project.name }} /
+                                {{ mission.name }}</b
+                            >.
+                        </template>
+                        <template v-else>
+                            The originals stay in
+                            <b
+                                >{{ mission.project.name }} /
+                                {{ mission.name }}</b
+                            >. Kleinkram copies the data on the server; nothing
+                            is downloaded.
+                        </template>
+                    </div>
+                </div>
+
+                <div class="row q-col-gutter-sm">
+                    <div class="col-6">
+                        <AppSelect
+                            :model-value="targetProjectUuid"
+                            :options="projects"
+                            label="Project"
+                            :required="true"
+                            :loading="isProjectsLoading"
+                            option-label="name"
+                            option-value="uuid"
+                            placeholder="Select Project"
+                            searchable
+                            @update:model-value="onProjectChange"
+                        />
+                    </div>
+                    <div class="col-6">
+                        <AppSelect
+                            v-model="targetMissionUuid"
+                            :options="missionOptions"
+                            label="Mission"
+                            :required="true"
+                            :disable="!targetProjectUuid"
+                            :loading="isMissionsLoading"
+                            option-label="name"
+                            option-value="uuid"
+                            placeholder="Select Mission"
+                            searchable
+                        >
+                            <template #option="scope">
+                                <q-item v-bind="scope.itemProps">
+                                    <q-item-section
+                                        :class="{
+                                            'text-button-primary text-weight-medium':
+                                                scope.opt.uuid === NEW_MISSION,
+                                        }"
+                                    >
+                                        {{ scope.opt.name }}
+                                    </q-item-section>
+                                </q-item>
+                            </template>
+                        </AppSelect>
+                    </div>
+                </div>
+
+                <div
+                    v-if="mode === 'move' && isSameMission"
+                    class="text-caption text-grey-7"
+                    style="margin-top: -8px"
+                >
+                    The files are already in this mission. Pick another mission,
+                    or choose Copy to duplicate them here.
+                </div>
+
+                <div v-if="isNewMission" class="new-mission q-pa-md">
+                    <div class="new-mission__tag q-mb-sm">
+                        NEW MISSION IN {{ selectedProject?.name }}
+                    </div>
+                    <q-input
+                        v-model="newMissionName"
+                        outlined
+                        dense
+                        autofocus
+                        bg-color="white"
+                        placeholder="Mission name"
+                        :error="!!newMissionNameError"
+                        :error-message="newMissionNameError"
+                        hide-bottom-space
+                    />
+                    <div v-if="selectedProject" class="q-mt-md">
+                        <SelectMissionMetadata
+                            :metadata-values="metadataValues"
+                            :project-uuid="selectedProject.uuid"
+                            @update:metadata-values="updateMetadataValues"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <div class="text-weight-bold q-mb-xs">Files</div>
+                    <q-list bordered separator class="rounded-borders">
+                        <q-item
+                            v-for="row in fileRows"
+                            :key="row.file.uuid"
+                            dense
+                            :class="{ 'file-row--conflict': row.problem }"
+                        >
+                            <q-item-section>
+                                <div class="row items-center no-wrap">
+                                    <span
+                                        class="file-row__name ellipsis"
+                                        :class="{
+                                            'text-strike text-grey-6':
+                                                row.resolution.action ===
+                                                'skip',
+                                        }"
+                                    >
+                                        {{ row.file.filename }}
+                                    </span>
+                                    <q-space />
+                                    <span
+                                        v-if="isChecking"
+                                        class="text-caption text-grey-6"
+                                    >
+                                        checking…
+                                    </span>
+                                    <span
+                                        v-else-if="row.problem"
+                                        class="text-caption text-warning-dark"
+                                    >
+                                        <q-icon name="sym_o_warning" />
+                                        {{ row.problem }}
+                                    </span>
+                                    <span
+                                        v-else-if="
+                                            row.resolution.action === 'skip'
+                                        "
+                                        class="text-caption text-grey-6"
+                                    >
+                                        skipped
+                                    </span>
+                                    <span
+                                        v-else
+                                        class="text-caption text-positive"
+                                    >
+                                        <q-icon name="sym_o_check" />
+                                        {{
+                                            row.resolution.action === 'rename'
+                                                ? 'ready, renamed'
+                                                : 'ready'
+                                        }}
+                                    </span>
+                                </div>
+                                <div
+                                    v-if="row.needsResolution"
+                                    class="row items-center q-gutter-x-sm q-mt-xs"
+                                >
+                                    <q-btn
+                                        v-for="option in resolutionOptions"
+                                        :key="option.value"
+                                        :label="option.label"
+                                        size="sm"
+                                        rounded
+                                        unelevated
+                                        no-caps
+                                        :outline="
+                                            row.resolution.action !==
+                                            option.value
+                                        "
+                                        :color="
+                                            row.resolution.action ===
+                                            option.value
+                                                ? 'button-primary'
+                                                : 'grey-7'
+                                        "
+                                        @click="
+                                            () =>
+                                                setAction(
+                                                    row.file,
+                                                    option.value,
+                                                )
+                                        "
+                                    />
+                                    <q-input
+                                        v-if="
+                                            row.resolution.action === 'rename'
+                                        "
+                                        v-model="row.resolution.name"
+                                        dense
+                                        outlined
+                                        bg-color="white"
+                                        class="col file-row__rename"
+                                        input-class="text-mono"
+                                        @update:model-value="
+                                            () => markManual(row.file)
+                                        "
+                                    />
+                                </div>
+                            </q-item-section>
+                        </q-item>
+                    </q-list>
+                    <div class="text-caption text-grey-7 q-mt-xs">
+                        Names are checked before anything changes. While a
+                        conflict is unresolved, no file is
+                        {{ mode === 'move' ? 'moved' : 'copied' }}.
+                    </div>
+                </div>
+
+                <div v-if="cliCommand" class="cli-hint q-pa-sm">
+                    <div class="row no-wrap items-start">
+                        <code class="col cli-hint__code">{{ cliCommand }}</code>
+                        <q-btn
+                            flat
+                            dense
+                            size="sm"
+                            icon="sym_o_content_copy"
+                            @click="copyCliCommand"
+                        >
+                            <q-tooltip>Copy command</q-tooltip>
+                        </q-btn>
+                    </div>
+                    <div
+                        v-if="isNewMission"
+                        class="text-caption text-grey-7 q-mt-xs"
+                    >
+                        On the command line, create the mission first with
+                        <code>klein mission create</code>.
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <template #footer-start>
+            <span class="text-caption text-grey-7 self-center">
+                {{ includedFiles.length }}
+                {{ includedFiles.length === 1 ? 'file' : 'files' }} ·
+                {{ formatSize(includedSize) }}
+            </span>
         </template>
         <template #actions>
-            <span class="disabled-reason">
-                <q-btn
-                    flat
-                    no-caps
-                    :label="files.length === 1 ? 'Move File' : 'Move Files'"
-                    class="bg-button-primary"
-                    :loading="isPending"
-                    :disable="alreadyThere"
-                    @click="saveAction"
-                />
-                <q-tooltip v-if="alreadyThere"
-                    >Already in this mission</q-tooltip
-                >
-            </span>
+            <q-btn
+                flat
+                no-caps
+                :label="submitLabel"
+                class="bg-button-primary"
+                :loading="isPending"
+                :disable="!canSubmit"
+                @click="submit"
+            />
         </template>
     </base-dialog>
 </template>
 
 <script setup lang="ts">
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { Notify, QForm, useDialogPluginComponent } from 'quasar';
-import { getDialogErrorMessage } from 'src/services/error-handling';
-import { computed, ref } from 'vue';
-
-// API Types
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
-
-// Components & Services
-import ScopeSelector from 'components/common/scope-selector.vue';
+import {
+    getNameValidationError,
+    isValidFileName,
+    splitFileName,
+} from '@kleinkram/validation/frontend';
+import {
+    keepPreviousData,
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from '@tanstack/vue-query';
+import AppSelect from 'components/common/app-select.vue';
+import SelectMissionMetadata from 'components/select-mission-metadata.vue';
+import { Notify, useDialogPluginComponent } from 'quasar';
+import { useScopeSelection } from 'src/composables/use-scope-selection';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { moveFiles } from 'src/services/mutations/file';
+import { canCreateMission, usePermissionsQuery } from 'src/hooks/query-hooks';
+import { getDialogErrorMessage } from 'src/services/error-handling';
+import { formatSize } from 'src/services/general-formatting';
+import { copyFiles, moveFiles } from 'src/services/mutations/file';
+import { createMission } from 'src/services/mutations/mission';
+import { existingFilenames } from 'src/services/queries/file';
+import { computed, reactive, ref, watch } from 'vue';
+
+type Mode = 'move' | 'copy';
+type Action = 'keep' | 'rename' | 'skip';
+interface Resolution {
+    action: Action;
+    name: string;
+    /** set by the dialog to resolve a conflict, not by the user */
+    auto?: boolean;
+}
+
+interface TransferRequest {
+    mode: Mode;
+    missionUuid: string;
+    /** set when the mission has to be created first */
+    newMission:
+        | {
+              name: string;
+              projectUuid: string;
+              metadata: Record<string, string>;
+          }
+        | undefined;
+    fileUuids: string[];
+    renames: Record<string, string>;
+}
+
+const NEW_MISSION = '__new_mission__';
 
 const props = defineProps<{
     mission: MissionWithFilesDto;
     files: FileWithTopicDto[];
 }>();
 
+defineEmits([...useDialogPluginComponent.emits]);
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const queryClient = useQueryClient();
 
-// State: Initialize with the current location of the file(s)
+const mode = ref<Mode>('move');
+const errorMessage = ref('');
 const targetProjectUuid = ref<string | undefined>(props.mission.project.uuid);
 const targetMissionUuid = ref<string | undefined>(props.mission.uuid);
 
-const errorMessage = ref('');
-const actionLabel = computed(() =>
-    props.files.length === 1
-        ? 'Move File'
-        : `Move ${String(props.files.length)} Files`,
-);
-const dirty = computed(() => targetMissionUuid.value !== props.mission.uuid);
-const alreadyThere = computed(
-    () => targetMissionUuid.value === props.mission.uuid,
-);
-const formReference = ref<QForm>();
+const {
+    projects,
+    missions,
+    selectedProject,
+    setProject,
+    isProjectsLoading,
+    isMissionsLoading,
+} = useScopeSelection(targetProjectUuid, targetMissionUuid);
 
-const { mutate: moveFilesMutation, isPending } = useMutation({
-    mutationFn: () => {
-        if (!targetMissionUuid.value) {
-            throw new Error('No mission selected');
-        }
-        return moveFiles(
-            props.files.map((f) => f.uuid),
-            targetMissionUuid.value,
-        );
+const onProjectChange = (value: string | null | undefined): void => {
+    setProject(value ?? undefined);
+};
+
+const { data: permissions } = usePermissionsQuery();
+const missionOptions = computed(() => {
+    const options = missions.value.map((m) => ({ uuid: m.uuid, name: m.name }));
+    if (
+        targetProjectUuid.value &&
+        canCreateMission(targetProjectUuid.value, permissions.value)
+    ) {
+        options.unshift({ uuid: NEW_MISSION, name: '+ New mission' });
+    }
+    return options;
+});
+
+// --- new mission -------------------------------------------------------
+const isNewMission = computed(() => targetMissionUuid.value === NEW_MISSION);
+const newMissionName = ref('');
+const metadataValues = ref<Record<string, string>>({});
+const newMissionNameError = computed(() =>
+    newMissionName.value
+        ? (getNameValidationError(newMissionName.value, 'Mission name') ?? '')
+        : '',
+);
+const updateMetadataValues = (update: Record<string, string>): void => {
+    metadataValues.value = update;
+};
+const isNewMissionValid = computed(
+    () =>
+        !!newMissionName.value &&
+        !newMissionNameError.value &&
+        (selectedProject.value?.requiredMetadataTypes ?? []).every(
+            (type) =>
+                metadataValues.value[type.uuid] !== undefined &&
+                metadataValues.value[type.uuid] !== '',
+        ),
+);
+
+// --- name conflicts ----------------------------------------------------
+const resolutions = reactive<Record<string, Resolution>>(
+    Object.fromEntries(
+        props.files.map((file) => [
+            file.uuid,
+            { action: 'keep', name: file.filename },
+        ]),
+    ),
+);
+
+const resolutionOf = (file: FileWithTopicDto): Resolution =>
+    resolutions[file.uuid] ?? { action: 'keep', name: file.filename };
+
+const finalName = (file: FileWithTopicDto): string => {
+    const resolution = resolutionOf(file);
+    return resolution.action === 'rename' ? resolution.name : file.filename;
+};
+
+/** Something was chosen that closing the dialog would discard */
+const dirty = computed(
+    () =>
+        mode.value === 'copy' ||
+        targetMissionUuid.value !== props.mission.uuid ||
+        props.files.some((file) => resolutionOf(file).action !== 'keep'),
+);
+
+const isSameMission = computed(
+    () => !isNewMission.value && targetMissionUuid.value === props.mission.uuid,
+);
+
+/** `name_1.ext` … `name_N.ext`, the names `suggestName` tries first */
+const candidateNames = (file: FileWithTopicDto, count: number): string[] => {
+    const { name, extension } = splitFileName(file.filename);
+    return Array.from(
+        { length: count },
+        (_, index) => `${name}_${String(index + 1)}${extension}`,
+    );
+};
+
+// The candidates are checked along with the names, so a suggested name is
+// known to be free without another round trip in most cases.
+const namesToCheck = computed(() =>
+    [
+        ...new Set(
+            props.files.flatMap((file) => [
+                file.filename,
+                finalName(file),
+                ...candidateNames(file, 5),
+            ]),
+        ),
+    ]
+        .filter(Boolean)
+        .toSorted(),
+);
+
+// Moving into the current mission is not possible, so there is nothing to
+// check. Copying into it is, and then every name clashes with its original.
+const checkTarget = computed(() =>
+    targetMissionUuid.value &&
+    !isNewMission.value &&
+    !(mode.value === 'move' && isSameMission.value)
+        ? targetMissionUuid.value
+        : undefined,
+);
+
+const { data: existingNames, isFetching: isChecking } = useQuery({
+    queryKey: computed(() => [
+        'existingNames',
+        checkTarget.value,
+        namesToCheck.value,
+    ]),
+    queryFn: async () => {
+        const target = checkTarget.value ?? '';
+        return {
+            target,
+            existing: await existingFilenames(target, namesToCheck.value),
+        };
     },
-    onSuccess: async () => {
+    enabled: computed(() => !!checkTarget.value),
+    // A new suggestion adds names to check. Until that answer is there, the
+    // last one still holds for the names it covered; dropping it would undo
+    // the suggestion and start the cycle again.
+    placeholderData: keepPreviousData,
+});
+
+const existingSet = computed(
+    () =>
+        new Set(
+            checkTarget.value &&
+                existingNames.value?.target === checkTarget.value
+                ? existingNames.value.existing
+                : [],
+        ),
+);
+
+/** A free name like `name_1.ext` that clashes with nothing. */
+const suggestName = (file: FileWithTopicDto, taken: Set<string>): string => {
+    const { name, extension } = splitFileName(file.filename);
+    for (let index = 1; index < 1000; index++) {
+        const candidate = `${name}_${String(index)}${extension}`;
+        if (!taken.has(candidate)) return candidate;
+    }
+    return file.filename;
+};
+
+// Files whose name is taken get a suggested new name, the user can change
+// it or skip the file instead. Suggestions are undone once the conflict is
+// gone, e.g. after picking another mission.
+watch(
+    [existingSet, checkTarget],
+    () => {
+        for (const file of props.files) {
+            const resolution = resolutionOf(file);
+            if (!resolution.auto) continue;
+            // undo a suggestion once the conflict is gone, and replace one
+            // that turned out to be taken itself
+            if (
+                !existingSet.value.has(file.filename) ||
+                existingSet.value.has(resolution.name)
+            ) {
+                resolutions[file.uuid] = {
+                    action: 'keep',
+                    name: file.filename,
+                };
+            }
+        }
+        const taken = new Set([
+            ...existingSet.value,
+            ...props.files.map((file) => finalName(file)),
+        ]);
+        for (const file of props.files) {
+            const resolution = resolutionOf(file);
+            if (
+                resolution.action === 'keep' &&
+                existingSet.value.has(file.filename)
+            ) {
+                const suggestion = suggestName(file, taken);
+                taken.add(suggestion);
+                resolutions[file.uuid] = {
+                    action: 'rename',
+                    name: suggestion,
+                    auto: true,
+                };
+            }
+        }
+    },
+    { immediate: true },
+);
+
+const markManual = (file: FileWithTopicDto): void => {
+    const resolution = resolutionOf(file);
+    resolution.auto = false;
+};
+
+const includedFiles = computed(() =>
+    props.files.filter((file) => resolutionOf(file).action !== 'skip'),
+);
+const includedSize = computed(() =>
+    includedFiles.value.reduce((sum, file) => sum + file.size, 0),
+);
+
+const fileRows = computed(() => {
+    const finalNames = includedFiles.value.map((file) => finalName(file));
+    return props.files.map((file) => {
+        const resolution = resolutionOf(file);
+        const name = finalName(file);
+        let problem = '';
+        if (resolution.action !== 'skip') {
+            if (
+                resolution.action === 'rename' &&
+                (!isValidFileName(name) ||
+                    splitFileName(name).extension.toLowerCase() !==
+                        splitFileName(file.filename).extension.toLowerCase())
+            ) {
+                problem = `invalid name, keep ${splitFileName(file.filename).extension}`;
+            } else if (existingSet.value.has(name)) {
+                problem = 'name taken in target';
+            } else if (
+                finalNames.indexOf(name) !== finalNames.lastIndexOf(name)
+            ) {
+                problem = 'same name as another file';
+            }
+        }
+        return {
+            file,
+            resolution,
+            problem,
+            needsResolution:
+                resolution.action !== 'keep' ||
+                existingSet.value.has(file.filename),
+        };
+    });
+});
+
+const resolutionOptions: { label: string; value: Action }[] = [
+    { label: 'Rename', value: 'rename' },
+    { label: 'Skip', value: 'skip' },
+];
+
+const setAction = (file: FileWithTopicDto, action: Action): void => {
+    const current = resolutionOf(file);
+    resolutions[file.uuid] = {
+        action,
+        name:
+            current.name === file.filename
+                ? suggestName(file, existingSet.value)
+                : current.name,
+        auto: false,
+    };
+};
+
+const canSubmit = computed(
+    () =>
+        !!targetMissionUuid.value &&
+        !(mode.value === 'move' && isSameMission.value) &&
+        (!isNewMission.value || isNewMissionValid.value) &&
+        includedFiles.value.length > 0 &&
+        !isChecking.value &&
+        fileRows.value.every((row) => !row.problem),
+);
+
+const submitLabel = computed(() => {
+    const verb = mode.value === 'move' ? 'Move' : 'Copy';
+    const count = includedFiles.value.length;
+    const files = `${String(count)} ${count === 1 ? 'file' : 'files'}`;
+    return isNewMission.value
+        ? `Create mission & ${verb.toLowerCase()}`
+        : `${verb} ${files}`;
+});
+
+// --- CLI ---------------------------------------------------------------
+/** Quotes an argument for a POSIX shell when it needs it. */
+const shellQuote = (value: string): string =>
+    /^[\w@%+=:,./-]+$/.test(value)
+        ? value
+        : `'${value.replaceAll("'", String.raw`'\''`)}'`;
+
+const cliCommand = computed(() => {
+    if (
+        !targetMissionUuid.value ||
+        includedFiles.value.length === 0 ||
+        (mode.value === 'move' && isSameMission.value)
+    )
+        return '';
+    const target = isNewMission.value
+        ? `--to-project ${shellQuote(selectedProject.value?.name ?? '')} --to-mission ${shellQuote(newMissionName.value || 'NAME')}`
+        : `--to-mission ${targetMissionUuid.value}`;
+    const renames = includedFiles.value
+        .filter((file) => resolutionOf(file).action === 'rename')
+        .map(
+            (file) =>
+                ` --rename ${shellQuote(`${file.uuid}=${finalName(file)}`)}`,
+        )
+        .join('');
+    const files = includedFiles.value.map((file) => file.uuid).join(' ');
+    return `klein file ${mode.value} ${files} ${target}${renames}`;
+});
+
+const copyCliCommand = async (): Promise<void> => {
+    await navigator.clipboard.writeText(cliCommand.value);
+};
+
+// --- submit ------------------------------------------------------------
+const { mutate: submitMutation, isPending } = useMutation({
+    mutationFn: async (request: TransferRequest) => {
+        let missionUuid = request.missionUuid;
+        if (request.newMission) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            const created: { uuid: string } = await createMission(
+                request.newMission.name,
+                request.newMission.projectUuid,
+                request.newMission.metadata,
+            );
+            missionUuid = created.uuid;
+            // a failed transfer must not create the mission a second time
+            await queryClient.invalidateQueries({
+                predicate: (query) => query.queryKey[0] === 'missions',
+            });
+            targetMissionUuid.value = missionUuid;
+        }
+
+        await (request.mode === 'move'
+            ? moveFiles(request.fileUuids, missionUuid, request.renames)
+            : copyFiles(request.fileUuids, missionUuid, request.renames));
+    },
+    onSuccess: async (_data, request) => {
+        const count = request.fileUuids.length;
         Notify.create({
             group: false,
-            message: 'Files moved',
+            message: `${request.mode === 'move' ? 'Moved' : 'Copied'} ${String(count)} ${count === 1 ? 'file' : 'files'}`,
             color: 'positive',
             spinner: false,
             position: 'bottom',
             timeout: 3000,
         });
-
         await queryClient.invalidateQueries({
             predicate: (query) =>
                 query.queryKey[0] === 'files' ||
                 query.queryKey[0] === 'missions',
         });
-
         onDialogOK();
     },
     onError(error: unknown) {
@@ -113,12 +711,88 @@ const { mutate: moveFilesMutation, isPending } = useMutation({
     },
 });
 
-const saveAction = async (): Promise<void> => {
-    if (alreadyThere.value || isPending.value) return;
-    if (!(await formReference.value?.validate(true))) return;
+// The request is read once, when the button is clicked: creating the
+// mission takes a moment, and a change made meanwhile must not alter it.
+const submit = (): void => {
+    const missionUuid = targetMissionUuid.value;
+    const projectUuid = targetProjectUuid.value;
+    if (!missionUuid || !projectUuid) return;
+    if (!canSubmit.value || isPending.value) return;
     errorMessage.value = '';
-    moveFilesMutation();
+    submitMutation({
+        mode: mode.value,
+        missionUuid,
+        newMission: isNewMission.value
+            ? {
+                  name: newMissionName.value,
+                  projectUuid,
+                  metadata: { ...metadataValues.value },
+              }
+            : undefined,
+        fileUuids: includedFiles.value.map((file) => file.uuid),
+        renames: Object.fromEntries(
+            includedFiles.value
+                .filter((file) => resolutionOf(file).action === 'rename')
+                .map((file) => [file.uuid, finalName(file)]),
+        ),
+    });
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.transfer-dialog {
+    gap: 16px;
+}
+
+/* the request uses the values from the moment of the click */
+.transfer-dialog--locked {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.new-mission {
+    border: 1px solid #0f62fe;
+    border-radius: 4px;
+    background: #f3f7ff;
+}
+
+.new-mission__tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #0f62fe;
+    background: #dfe9ff;
+    border-radius: 3px;
+    padding: 1px 6px;
+}
+
+.file-row__name {
+    font-family: monospace;
+    font-size: 13px;
+    min-width: 0;
+}
+
+.file-row--conflict {
+    background: #fff8e5;
+}
+
+.file-row__rename {
+    max-width: 260px;
+}
+
+.text-warning-dark {
+    color: #9a6700;
+}
+
+.cli-hint {
+    background: #f6f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+}
+
+.cli-hint__code {
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+</style>

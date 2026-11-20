@@ -266,6 +266,13 @@ export class AuthController {
                     .json({ message: 'Invalid refresh token' });
             }
 
+            if (!(await this.sessionService.userMaySignIn(user.uuid))) {
+                clearAuthCookies(response);
+                return response
+                    .status(401)
+                    .json({ message: 'Session ended, please log in again' });
+            }
+
             const newAuthToken = this.jwtService.sign(
                 { uuid: user.uuid },
                 { expiresIn: ACCESS_TOKEN_LIFETIME },
