@@ -492,9 +492,14 @@ export class AccessModificationService {
         // leave a group without its access or access without its group.
         // Memberships and audit events cascade in the database.
         await this.entityManager.transaction(async (transaction) => {
+            // Exclusive lock on the group first: adding a grant for it takes
+            // a key share lock on the group (foreign key), so no grant can be
+            // added while it is deleted, and every grant committed before is
+            // visible below. Otherwise a project could be handed to this
+            // group after the grants were read and lose its last owner.
             const accessGroup = await transaction.findOneOrFail(
                 AccessGroupEntity,
-                { where: { uuid } },
+                { where: { uuid }, lock: { mode: 'pessimistic_write' } },
             );
 
             // Lock the projects the group has access to (in a fixed order,
