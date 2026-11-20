@@ -24,6 +24,7 @@ import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, ILike, Not, Repository } from 'typeorm';
 import logger from '../logger';
+import { isEmptyMetadataValue } from './metadata-values';
 import { MetadataService } from './metadata.service';
 import { updateStorageTags } from './storage-tags';
 import { UserService } from './user.service';
@@ -131,18 +132,14 @@ export class MissionService {
 
         // `tags` / `ignoreTags` are deprecated aliases kept for old clients;
         // the canonical fields win when both are given.
-        // An empty value means "not set", as when a mission's metadata is
-        // saved later: it is not written and does not satisfy a requirement.
+        // An empty or whitespace-only value means "not set", as when a
+        // mission's metadata is saved later: it is not written and does not
+        // satisfy a requirement.
         // The keys are metadata type UUIDs; the database returns them in
         // lowercase, so they are compared in lowercase.
         const metadata = Object.fromEntries(
             Object.entries(createMission.metadata ?? createMission.tags ?? {})
-                .filter(
-                    ([, value]) =>
-                        (value as unknown) !== '' &&
-                        (value as unknown) !== null &&
-                        (value as unknown) !== undefined,
-                )
+                .filter(([, value]) => !isEmptyMetadataValue(value))
                 .map(([key, value]) => [key.toLowerCase(), value]),
         );
         const ignoreMissingMetadata =

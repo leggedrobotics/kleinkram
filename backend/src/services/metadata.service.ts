@@ -17,7 +17,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, In, Repository } from 'typeorm';
-import { MetadataValueColumns, parseMetadataValue } from './metadata-values';
+import {
+    isEmptyMetadataValue,
+    MetadataValueColumns,
+    parseMetadataValue,
+} from './metadata-values';
 
 /**
  * The value columns for a client value, or 422 with what the value should
@@ -231,14 +235,7 @@ export class MetadataService {
 
         // Filter out empty values and identify metadata to keep/upsert
         const metadataToUpsert = Object.entries(metadata).filter(
-            ([_, value]) => {
-                const valueToCheck = value as unknown;
-                return (
-                    valueToCheck !== '' &&
-                    valueToCheck !== null &&
-                    valueToCheck !== undefined
-                );
-            },
+            ([_, value]) => !isEmptyMetadataValue(value),
         );
         const metadataTypeUUIDsToKeep = new Set(
             metadataToUpsert.map(([uuid]) => uuid),
