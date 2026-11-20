@@ -14,7 +14,7 @@ def test_bad_filename_is_rejected():
         bad_name = Path(temp_dir) / "bad name!.bag"
         bad_name.touch()
 
-        validator = FileValidator(skip=False, experimental_datatypes=False)
+        validator = FileValidator(skip=False)
 
         with pytest.raises(FileNameNotSupported, match="--fix-filenames"):
             validator.filter_files([bad_name])
@@ -25,7 +25,7 @@ def test_bad_filename_is_accepted_with_fix_filenames():
         bad_name = Path(temp_dir) / "bad name!.bag"
         bad_name.touch()
 
-        validator = FileValidator(skip=False, experimental_datatypes=False, fix_filenames=True)
+        validator = FileValidator(skip=False, fix_filenames=True)
 
         assert validator.filter_files([bad_name]) == [bad_name]
         assert validator.skipped_files == []
@@ -38,7 +38,7 @@ def test_fix_filenames_does_not_skip_other_checks():
         is_dir = Path(temp_dir) / "some dir"
         is_dir.mkdir()
 
-        validator = FileValidator(skip=True, experimental_datatypes=False, fix_filenames=True)
+        validator = FileValidator(skip=True, fix_filenames=True)
 
         assert validator.filter_files([bad_type, is_dir]) == []
         assert len(validator.skipped_files) == 2
@@ -51,6 +51,6 @@ def test_name_rule_is_not_checked_without_check_filename(name):
         path = Path(temp_dir) / name
         path.touch()
 
-        validator = FileValidator(skip=False, experimental_datatypes=False, check_filename=False)
+        validator = FileValidator(skip=False, check_filename=False)
 
         assert validator.filter_files([path]) == [path]

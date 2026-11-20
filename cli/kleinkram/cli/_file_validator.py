@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
 from typing import List
-from typing import Sequence
 
 import typer
 
@@ -12,15 +11,7 @@ from kleinkram.config import get_shared_state
 from kleinkram.errors import DatatypeNotSupported
 from kleinkram.errors import FileNameNotSupported
 from kleinkram.naming import get_file_name_validation_error
-from kleinkram.utils import EXPERIMENTAL_FILE_TYPES
 from kleinkram.utils import SUPPORT_FILE_TYPES
-
-
-def supported_suffixes(*, experimental_datatypes: bool) -> Sequence[str]:
-    """file suffixes the validator accepts with the given flags"""
-    if experimental_datatypes:
-        return [*SUPPORT_FILE_TYPES, *EXPERIMENTAL_FILE_TYPES]
-    return SUPPORT_FILE_TYPES
 
 
 @dataclass
@@ -28,7 +19,6 @@ class FileValidator:
     """Encapsulates all file validation logic based on CLI flags."""
 
     skip: bool
-    experimental_datatypes: bool
     fix_filenames: bool = False
     # `klein verify` only looks files up, so the naming rule for new files does
     # not apply: a file uploaded under an older rule must still be verifiable
@@ -76,19 +66,12 @@ class FileValidator:
         if file.is_dir():
             raise IsADirectoryError(f"{file} is a directory")
 
+        # 2. Check if the datatype is supported
         file_suffix = file.suffix.lower()
-        is_experimental = file_suffix in EXPERIMENTAL_FILE_TYPES
-        is_standard = file_suffix in SUPPORT_FILE_TYPES
-
-        # 2. Check if the datatype is known at all
-        if not is_standard and not is_experimental:
+        if file_suffix not in SUPPORT_FILE_TYPES:
             raise DatatypeNotSupported(f"Unsupported file type '{file_suffix}' on file {file}")
 
-        # 3. Check if an experimental datatype is allowed
-        if is_experimental and not self.experimental_datatypes:
-            raise DatatypeNotSupported(f"Experimental datatype '{file_suffix}' not enabled for file {file}")
-
-        # 4. Check filename, unless it gets sanitized on upload anyway
+        # 3. Check filename, unless it gets sanitized on upload anyway
         if self.fix_filenames or not self.check_filename:
             return
 
@@ -103,9 +86,6 @@ class FileValidator:
 
         if isinstance(e, IsADirectoryError):
             hint = "Use --recursive to include the files inside, or --skip to ignore directories."
-        elif isinstance(e, DatatypeNotSupported):
-            if "Experimental" in base_message:
-                hint = "Use --experimental-datatypes to allow or --skip to ignore."
         elif isinstance(e, FileNameNotSupported):
             hint = "Use --fix-filenames to upload under a sanitized name or --skip to ignore."
 
