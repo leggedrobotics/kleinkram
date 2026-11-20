@@ -2,10 +2,19 @@ import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import { CategoriesDto } from '@kleinkram/api-dto';
 import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    ConflictException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, QueryFailedError, Repository } from 'typeorm';
 import logger from '../logger';
+
+const categoryNameTaken = (name: string): ConflictException =>
+    new ConflictException(
+        `A category named "${name}" already exists in this project`,
+    );
 
 @Injectable()
 export class CategoryService {
@@ -39,22 +48,48 @@ export class CategoryService {
         };
     }
 
+    /**
+     * Creates a category in the given project.
+     *
+     * Category names are unique per project (soft-deleted categories don't
+     * count, see the `unique_category_name_per_project` index). A taken name is
+     * reported as 409 Conflict: the check up front gives the common case a
+     * clear message, the unique violation catches two requests racing for the
+     * same name.
+     */
     async create(
         name: string,
         projectUUID: string,
         user: AuthHeader,
         description = '',
     ) {
+        const exists = await this.categoryRepository.exists({
+            where: { name, project: { uuid: projectUUID } },
+        });
+        if (exists) throw categoryNameTaken(name);
+
         const category = this.categoryRepository.create({
             name,
             description,
             project: { uuid: projectUUID },
             creator: user.user,
         });
-        const saved = await this.categoryRepository.save(category);
-        return this.categoryRepository.findOneOrFail({
-            where: { uuid: saved.uuid },
-        });
+
+        try {
+            const saved = await this.categoryRepository.save(category);
+            return await this.categoryRepository.findOneOrFail({
+                where: { uuid: saved.uuid },
+            });
+        } catch (error) {
+            if (
+                error instanceof QueryFailedError &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                error.driverError?.code === '23505'
+            ) {
+                throw categoryNameTaken(name);
+            }
+            throw error;
+        }
     }
 
     /**

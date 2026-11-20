@@ -104,6 +104,63 @@ describe('Category API Endpoints', () => {
         );
     });
 
+    test('should return 409 Conflict if a category with the same name exists in the project', async () => {
+        const { user } = await generateAndFetchDatabaseUser('internal', 'user');
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: 'category_duplicate_project',
+                description: 'Project to test duplicate category names',
+            },
+            user,
+        );
+        await createCategory(user, projectUuid, 'duplicate_category');
+
+        const headersBuilder = new HeaderCreator(user);
+        headersBuilder.addHeader('Content-Type', 'application/json');
+        const response = await fetch(`${DEFAULT_URL}/categories`, {
+            method: 'POST',
+            headers: headersBuilder.getHeaders(),
+            body: JSON.stringify({
+                name: 'duplicate_category',
+                projectUUID: projectUuid,
+            }),
+        });
+
+        assert.equal(response.status, 409);
+        const body = (await response.json()) as { message: string };
+        assert.equal(
+            body.message,
+            'A category named "duplicate_category" already exists in this project',
+        );
+
+        const listResponse = await fetch(
+            `${DEFAULT_URL}/categories?projectUuid=${projectUuid}`,
+            { headers: new HeaderCreator(user).getHeaders() },
+        );
+        const list = (await listResponse.json()) as CategoryListTestResponse;
+        assert.equal(list.count, 1, 'no second category should be stored');
+    });
+
+    test('should allow the same category name in different projects', async () => {
+        const { user } = await generateAndFetchDatabaseUser('internal', 'user');
+        const firstProjectUuid = await createProjectUsingPost(
+            { name: 'category_first_project', description: 'First project' },
+            user,
+        );
+        const secondProjectUuid = await createProjectUsingPost(
+            { name: 'category_second_project', description: 'Second project' },
+            user,
+        );
+
+        await createCategory(user, firstProjectUuid, 'shared_name');
+        const category = await createCategory(
+            user,
+            secondProjectUuid,
+            'shared_name',
+        );
+        assert.equal(category.name, 'shared_name');
+    });
+
     test('should store the description of a newly created category', async () => {
         const { user } = await generateAndFetchDatabaseUser('internal', 'user');
         const projectUuid = await createProjectUsingPost(
