@@ -1,12 +1,16 @@
 # Postgres
 
-Auto-generated documentation from TypeORM entities.
-
-Entities are located in `../packages/backend-common/src/entities`.
+Generated from the TypeORM entities in `packages/backend-common/src/entities`. Do not edit this page by hand: after changing an entity, run `pnpm --filter kleinkram-docs run gen:entities` and commit the result.
 
 <h2 id="accessgroupentity-access_group">AccessGroupEntity (access_group)</h2>
 
 Defined in: `auth/access-group.entity.ts`
+
+### Indices
+
+| Index Definition                                                                                |
+| :---------------------------------------------------------------------------------------------- |
+| `@Index('unique_access_group_name', ['name'], { where: '"deletedAt" IS NULL', unique: true, })` |
 
 ### Columns
 
@@ -19,6 +23,29 @@ Defined in: `auth/access-group.entity.ts`
 | `type`             | `enum`                                                             | Not Null     |                                                                                                                                                                                     |
 | `creator`          | [UserEntity](#userentity-user)                                     | FK, Nullable |                                                                                                                                                                                     |
 | `hidden`           | `boolean`                                                          | Not Null     | A hidden access group is not returned in any search queries. Hidden access groups may still be accessed by referenced by UUID (e.g., when listing groups with access to a project). |
+
+---
+
+<h2 id="accessgroupevententity-access_group_event">AccessGroupEventEntity (access_group_event)</h2>
+
+Defined in: `auth/access-group-event.entity.ts`
+
+### Indices
+
+| Index Definition                 |
+| :------------------------------- |
+| Column `accessGroup`: `@Index()` |
+
+### Columns
+
+| Column        | Type                                                 | Constraints  | Description                                                                                                                                |
+| :------------ | :--------------------------------------------------- | :----------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| `uuid`        | `string`                                             | Not Null     |                                                                                                                                            |
+| `createdAt`   | `timestamp`                                          | Not Null     |                                                                                                                                            |
+| `type`        | `enum`                                               | Not Null     |                                                                                                                                            |
+| `details`     | `jsonb`                                              | Not Null     | JSON payload for specific details. e.g. { projectUuid: "...", rights: 10 } Only store UUIDs here, names are resolved when the log is read. |
+| `actor`       | [UserEntity](#userentity-user)                       | FK, Nullable |                                                                                                                                            |
+| `accessGroup` | [AccessGroupEntity](#accessgroupentity-access_group) | FK, Not Null |                                                                                                                                            |
 
 ---
 
@@ -36,47 +63,88 @@ Defined in: `auth/account.entity.ts`
 
 ---
 
+<h2 id="actiondiagnosticentity-action_diagnostic">ActionDiagnosticEntity (action_diagnostic)</h2>
+
+Defined in: `action/action-diagnostic.entity.ts`
+
+### Indices
+
+| Index Definition                                                                       |
+| :------------------------------------------------------------------------------------- |
+| `@Index('idx_action_diagnostic_dedup', [ 'actionUuid', 'severity', 'code', 'file', ])` |
+| Column `action`: `@Index()`                                                            |
+
+### Columns
+
+| Column       | Type                                 | Constraints  | Description                                                                                                                                                                                                                                    |
+| :----------- | :----------------------------------- | :----------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `uuid`       | `string`                             | Not Null     |                                                                                                                                                                                                                                                |
+| `createdAt`  | `timestamp`                          | Not Null     |                                                                                                                                                                                                                                                |
+| `severity`   | `enum`                               | Not Null     |                                                                                                                                                                                                                                                |
+| `message`    | `string`                             | Not Null     |                                                                                                                                                                                                                                                |
+| `code`       | `string`                             | Nullable     | Stable identifier the action author chooses, used to group repeated findings (`MISSING_TF`, `SHORT_RECORDING`). Optional: a one-off warning does not need one.                                                                                 |
+| `file`       | `string`                             | Nullable     | Free-text locator for whatever the diagnostic is about, usually a filename. Deliberately not a foreign key: actions warn about paths inside the container, topics and time ranges as often as they warn about files that exist in the mission. |
+| `count`      | `integer`                            | Not Null     | How many times this diagnostic was reported. Identical diagnostics are folded into one row with a count rather than stored repeatedly, so a loop over ten thousand files cannot flood the table.                                               |
+| `details`    | `jsonb`                              | Nullable     |                                                                                                                                                                                                                                                |
+| `action`     | [ActionEntity](#actionentity-action) | FK, Nullable |                                                                                                                                                                                                                                                |
+| `actionUuid` | `string`                             | Not Null     |                                                                                                                                                                                                                                                |
+
+---
+
 <h2 id="actionentity-action">ActionEntity (action)</h2>
 
 Defined in: `action/action.entity.ts`
 
 ### Indices
 
-| Index Definition           |
-| :------------------------- |
-| Column `state`: `@Index()` |
+| Index Definition                   |
+| :--------------------------------- |
+| Column `state`: `@Index()`         |
+| Column `severity`: `@Index()`      |
+| Column `failureOrigin`: `@Index()` |
 
 ### Columns
 
-| Column                     | Type                                                          | Constraints  | Description |
-| :------------------------- | :------------------------------------------------------------ | :----------- | :---------- |
-| `state`                    | `enum`                                                        | Not Null     |             |
-| `container`                | `Container`                                                   | Nullable     |             |
-| `creator`                  | [UserEntity](#userentity-user)                                | FK, Nullable |             |
-| `state_cause`              | `string`                                                      | Nullable     |             |
-| `executionStartedAt`       | `Date`                                                        | Nullable     |             |
-| `executionEndedAt`         | `Date`                                                        | Nullable     |             |
-| `actionContainerStartedAt` | `Date`                                                        | Nullable     |             |
-| `actionContainerExitedAt`  | `Date`                                                        | Nullable     |             |
-| `mission`                  | [MissionEntity](#missionentity-mission)                       | FK, Nullable |             |
-| `auditLogs`                | `unknown[]`                                                   | Nullable     |             |
-| `exit_code`                | `number`                                                      | Nullable     |             |
-| `artifact_path`            | `string`                                                      | Nullable     |             |
-| `artifacts`                | `enum`                                                        | Not Null     |             |
-| `artifact_size`            | `number`                                                      | Nullable     |             |
-| `artifact_files`           | `string[]`                                                    | Nullable     |             |
-| `key`                      | [ApiKeyEntity](#apikeyentity-apikey)                          | Nullable     |             |
-| `template`                 | [ActionTemplateEntity](#actiontemplateentity-action_template) | FK, Nullable |             |
-| `image`                    | `Image`                                                       | Nullable     |             |
-| `worker`                   | [WorkerEntity](#workerentity-worker)                          | FK, Nullable |             |
-| `triggerSource`            | `enum`                                                        | Not Null     |             |
-| `trigger`                  | [ActionTriggerEntity](#actiontriggerentity-action_trigger)    | FK, Nullable |             |
-| `triggerUuid`              | `string`                                                      | Nullable     |             |
-| `errorHint`                | `enum`                                                        | Nullable     |             |
-| `resourceUsage`            | `ResourceUsage`                                               | Nullable     |             |
-| `maxMemoryBytes`           | `bigint`                                                      | Nullable     |             |
-| `avgCpuPercent`            | `number`                                                      | Nullable     |             |
-| `efficiencyScore`          | `number`                                                      | Nullable     |             |
+| Column                     | Type                                                                                  | Constraints  | Description                                                                                                                                                                                                                                                                                                                       |
+| :------------------------- | :------------------------------------------------------------------------------------ | :----------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `state`                    | `enum`                                                                                | Not Null     |                                                                                                                                                                                                                                                                                                                                   |
+| `severity`                 | `enum`                                                                                | Not Null     | The verdict of the run, orthogonal to `state`. `state` says whether the container reached the end; `severity` says what it found. It is raised by diagnostics reported during the run and by an exit code of 75, and never lowered.                                                                                               |
+| `failureOrigin`            | `enum`                                                                                | Nullable     | Who is responsible for a failure. Null unless `state` is `FAILED`, and null for actions that ran before this was recorded.                                                                                                                                                                                                        |
+| `diagnostics`              | [ActionDiagnosticEntity](#actiondiagnosticentity-action_diagnostic)[]                 | OneToMany    |                                                                                                                                                                                                                                                                                                                                   |
+| `stateTransitions`         | [ActionStateTransitionEntity](#actionstatetransitionentity-action_state_transition)[] | OneToMany    |                                                                                                                                                                                                                                                                                                                                   |
+| `diagnosticCount`          | `integer`                                                                             | Not Null     | Number of distinct diagnostics stored for this action. Denormalised so that the action list can show "3 warnings" without joining the diagnostics table for every row.                                                                                                                                                            |
+| `diagnosticsTruncated`     | `boolean`                                                                             | Not Null     | True when the action reported more distinct diagnostics than are kept and later ones were dropped.                                                                                                                                                                                                                                |
+| `container`                | `Container`                                                                           | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `creator`                  | [UserEntity](#userentity-user)                                                        | FK, Nullable |                                                                                                                                                                                                                                                                                                                                   |
+| `state_cause`              | `string`                                                                              | Nullable     | The cause as text: the description at write time, or the raw message of an external error. Kept for search and for clients that predate `state_cause_code`.                                                                                                                                                                       |
+| `state_cause_code`         | `string \| null`                                                                      | Nullable     | Why the action is in its current state: an `ActionStateCause`, kept as text (see there). Mirrors the latest row of `stateTransitions`.                                                                                                                                                                                            |
+| `state_cause_params`       | `jsonb`                                                                               | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `executionStartedAt`       | `Date`                                                                                | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `executionEndedAt`         | `Date`                                                                                | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `actionContainerStartedAt` | `Date`                                                                                | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `actionContainerExitedAt`  | `Date`                                                                                | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `mission`                  | [MissionEntity](#missionentity-mission)                                               | FK, Nullable |                                                                                                                                                                                                                                                                                                                                   |
+| `auditLogs`                | `unknown[]`                                                                           | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `exit_code`                | `number`                                                                              | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `artifact_path`            | `string`                                                                              | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `artifacts`                | `enum`                                                                                | Not Null     |                                                                                                                                                                                                                                                                                                                                   |
+| `artifact_size`            | `number`                                                                              | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `artifact_files`           | `string[]`                                                                            | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `artifactExpirationDate`   | `Date`                                                                                | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `key`                      | [ApiKeyEntity](#apikeyentity-apikey)                                                  | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `template`                 | [ActionTemplateEntity](#actiontemplateentity-action_template)                         | FK, Nullable |                                                                                                                                                                                                                                                                                                                                   |
+| `image`                    | `Image`                                                                               | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `scriptObject`             | `string`                                                                              | Nullable     | Object key of the single-file Python script this action runs, inside the scripts bucket. Null for ordinary actions, which carry their code in their image. When set, the runner hands the container a presigned URL for this object through `KLEINKRAM_SCRIPT_URL`, and the shared `script-runner` image fetches and executes it. |
+| `maxRuntimeHours`          | `number`                                                                              | Nullable     | Per-run runtime budget in hours, overriding the template's. Null means "use the template's `maxRuntime`". It can only lower the budget, never raise it, so a caller cannot use it to buy more runtime than the template allows.                                                                                                   |
+| `worker`                   | [WorkerEntity](#workerentity-worker)                                                  | FK, Nullable |                                                                                                                                                                                                                                                                                                                                   |
+| `triggerSource`            | `enum`                                                                                | Not Null     |                                                                                                                                                                                                                                                                                                                                   |
+| `trigger`                  | [ActionTriggerEntity](#actiontriggerentity-action_trigger)                            | FK, Nullable |                                                                                                                                                                                                                                                                                                                                   |
+| `triggerUuid`              | `string`                                                                              | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `errorHint`                | `enum`                                                                                | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `resourceUsage`            | `ResourceUsage`                                                                       | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `maxMemoryBytes`           | `bigint`                                                                              | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `avgCpuPercent`            | `number`                                                                              | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
+| `efficiencyScore`          | `number`                                                                              | Nullable     |                                                                                                                                                                                                                                                                                                                                   |
 
 ---
 
@@ -96,28 +164,62 @@ Defined in: `action/action-runner.entity.ts`
 
 ---
 
+<h2 id="actionstatetransitionentity-action_state_transition">ActionStateTransitionEntity (action_state_transition)</h2>
+
+Defined in: `action/action-state-transition.entity.ts`
+
+### Indices
+
+| Index Definition                                                            |
+| :-------------------------------------------------------------------------- |
+| `@Index('idx_action_state_transition_action', ['actionUuid', 'createdAt'])` |
+
+### Columns
+
+| Column        | Type                                   | Constraints  | Description                                                                                                                     |
+| :------------ | :------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------------------ |
+| `uuid`        | `string`                               | Not Null     |                                                                                                                                 |
+| `createdAt`   | `timestamp`                            | Not Null     |                                                                                                                                 |
+| `state`       | `enum`                                 | Not Null     |                                                                                                                                 |
+| `causeCode`   | `string \| null`                       | Nullable     | An `ActionStateCause`, kept as text: a newer service may write a code this one does not know yet.                               |
+| `causeParams` | `jsonb`                                | Nullable     |                                                                                                                                 |
+| `message`     | `text`                                 | Nullable     | The raw message if there is one, otherwise the text at write time. Shown only for codes the reader does not know; never parsed. |
+| `action`      | [ActionEntity](#actionentity-action)   | FK, Nullable |                                                                                                                                 |
+| `actionUuid`  | `string`                               | Not Null     |                                                                                                                                 |
+| `actor`       | [UserEntity](#userentity-user) \| null | FK, Nullable | Who caused the change, e.g. who cancelled. Kept when the user is not.                                                           |
+| `actorUuid`   | `string \| null`                       | Nullable     |                                                                                                                                 |
+
+---
+
 <h2 id="actiontemplateentity-action_template">ActionTemplateEntity (action_template)</h2>
 
 Defined in: `action/action-template.entity.ts`
 
+### Indices
+
+| Index Definition                                                                                               |
+| :------------------------------------------------------------------------------------------------------------- |
+| `@Index('unique_versioned_action_name', ['name', 'version'], { where: '"deletedAt" IS NULL', unique: true, })` |
+
 ### Columns
 
-| Column         | Type                                   | Constraints  | Description |
-| :------------- | :------------------------------------- | :----------- | :---------- |
-| `image_name`   | `string`                               | Not Null     |             |
-| `name`         | `string`                               | Not Null     |             |
-| `description`  | `string`                               | Not Null     |             |
-| `creator`      | [UserEntity](#userentity-user)         | FK, Not Null |             |
-| `command`      | `string`                               | Nullable     |             |
-| `actions`      | [ActionEntity](#actionentity-action)[] | OneToMany    |             |
-| `version`      | `number`                               | Not Null     |             |
-| `isArchived`   | `boolean`                              | Not Null     |             |
-| `cpuCores`     | `number`                               | Not Null     |             |
-| `cpuMemory`    | `number`                               | Not Null     |             |
-| `gpuMemory`    | `number`                               | Not Null     |             |
-| `maxRuntime`   | `number`                               | Not Null     |             |
-| `entrypoint`   | `string`                               | Nullable     |             |
-| `accessRights` | `enum`                                 | Not Null     |             |
+| Column         | Type                                   | Constraints  | Description                                                                                                                                                                                                                                                                                                                         |
+| :------------- | :------------------------------------- | :----------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `image_name`   | `string`                               | Not Null     |                                                                                                                                                                                                                                                                                                                                     |
+| `name`         | `string`                               | Not Null     |                                                                                                                                                                                                                                                                                                                                     |
+| `description`  | `string`                               | Not Null     |                                                                                                                                                                                                                                                                                                                                     |
+| `creator`      | [UserEntity](#userentity-user)         | FK, Not Null |                                                                                                                                                                                                                                                                                                                                     |
+| `command`      | `string`                               | Nullable     |                                                                                                                                                                                                                                                                                                                                     |
+| `actions`      | [ActionEntity](#actionentity-action)[] | OneToMany    |                                                                                                                                                                                                                                                                                                                                     |
+| `version`      | `number`                               | Not Null     |                                                                                                                                                                                                                                                                                                                                     |
+| `isArchived`   | `boolean`                              | Not Null     |                                                                                                                                                                                                                                                                                                                                     |
+| `isSystem`     | `boolean`                              | Not Null     | True for templates the platform owns rather than a user. The `script-runner` template is infrastructure: every `run-script` execution points at it, so letting one person edit or delete it would break the feature for the whole deployment. System templates are seeded by migration and rejected by the update and delete paths. |
+| `cpuCores`     | `number`                               | Not Null     |                                                                                                                                                                                                                                                                                                                                     |
+| `cpuMemory`    | `number`                               | Not Null     |                                                                                                                                                                                                                                                                                                                                     |
+| `gpuMemory`    | `number`                               | Not Null     |                                                                                                                                                                                                                                                                                                                                     |
+| `maxRuntime`   | `number`                               | Not Null     |                                                                                                                                                                                                                                                                                                                                     |
+| `entrypoint`   | `string`                               | Nullable     |                                                                                                                                                                                                                                                                                                                                     |
+| `accessRights` | `enum`                                 | Not Null     |                                                                                                                                                                                                                                                                                                                                     |
 
 ---
 
@@ -145,6 +247,12 @@ Defined in: `action/action-trigger.entity.ts`
 <h2 id="apikeyentity-apikey">ApiKeyEntity (apikey)</h2>
 
 Defined in: `auth/api-key.entity.ts`
+
+### Indices
+
+| Index Definition                                                                              |
+| :-------------------------------------------------------------------------------------------- |
+| `@Index('unique_apikey_active', ['apikey'], { where: '"deletedAt" IS NULL', unique: true, })` |
 
 ### Columns
 
@@ -184,15 +292,21 @@ Defined in: `base-entity.entity.ts`
 
 Defined in: `category/category.entity.ts`
 
+### Indices
+
+| Index Definition                                                                                                   |
+| :----------------------------------------------------------------------------------------------------------------- |
+| `@Index('unique_category_name_per_project', ['name', 'project'], { where: '"deletedAt" IS NULL', unique: true, })` |
+
 ### Columns
 
-| Column        | Type                                    | Constraints  | Description                                                                                          |
-| :------------ | :-------------------------------------- | :----------- | :--------------------------------------------------------------------------------------------------- |
-| `name`        | `string`                                | Not Null     |                                                                                                      |
-| `description` | `string`                                | Not Null     | Optional, human readable explanation of what the category is used for. Empty string if not provided. |
-| `project`     | [ProjectEntity](#projectentity-project) | FK, Nullable |                                                                                                      |
-| `files`       | [FileEntity](#fileentity-file_entity)[] | ManyToMany   |                                                                                                      |
-| `creator`     | [UserEntity](#userentity-user)          | FK, Nullable |                                                                                                      |
+| Column        | Type                                    | Constraints  | Description                                                                                                         |
+| :------------ | :-------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------ |
+| `name`        | `string`                                | Not Null     |                                                                                                                     |
+| `description` | `string`                                | Not Null     | Optional, human readable explanation of what the category is used for. Empty string if no description was provided. |
+| `project`     | [ProjectEntity](#projectentity-project) | FK, Nullable |                                                                                                                     |
+| `files`       | [FileEntity](#fileentity-file_entity)[] | ManyToMany   |                                                                                                                     |
+| `creator`     | [UserEntity](#userentity-user)          | FK, Nullable |                                                                                                                     |
 
 ---
 
@@ -200,26 +314,33 @@ Defined in: `category/category.entity.ts`
 
 Defined in: `file/file.entity.ts`
 
+### Indices
+
+| Index Definition                                                                                                   |
+| :----------------------------------------------------------------------------------------------------------------- |
+| `@Index('unique_file_name_per_mission', ['filename', 'mission'], { where: '"deletedAt" IS NULL', unique: true, })` |
+
 ### Columns
 
-| Column                    | Type                                         | Constraints  | Description                                                                                                         |
-| :------------------------ | :------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------ |
-| `mission`                 | [MissionEntity](#missionentity-mission)      | FK, Nullable |                                                                                                                     |
-| `date`                    | `Date`                                       | Not Null     | The date the file is sorted and filtered by. Mirrors `recordingStartDate` once known, otherwise the upload time.    |
-| `recordingStartDate`      | `timestamp`                                  | Nullable     | Timestamp of the first message in the recording. Null while unknown.                                                |
-| `recordingEndDate`        | `timestamp`                                  | Nullable     | Timestamp of the last message in the recording. Null while unknown.                                                 |
-| `recordingTimesCheckedAt` | `timestamp`                                  | Nullable     | When the recording window of this file was last looked for, whether or not one was found.                           |
-| `topics`                  | [TopicEntity](#topicentity-topic)[]          | OneToMany    |                                                                                                                     |
-| `filename`                | `string`                                     | Not Null     |                                                                                                                     |
-| `size`                    | `bigint`                                     | Nullable     |                                                                                                                     |
-| `creator`                 | [UserEntity](#userentity-user)               | FK, Nullable | The user who uploaded the file.                                                                                     |
-| `type`                    | `enum`                                       | Not Null     |                                                                                                                     |
-| `state`                   | `enum`                                       | Not Null     |                                                                                                                     |
-| `hash`                    | `string`                                     | Nullable     |                                                                                                                     |
-| `categories`              | [CategoryEntity](#categoryentity-category)[] | ManyToMany   |                                                                                                                     |
-| `parent`                  | [FileEntity](#fileentity-file_entity)        | FK, Nullable | The parent file this file was derived from. e.g., If this is a .mcap converted from a .bag, the .bag is the parent. |
-| `derivedFiles`            | [FileEntity](#fileentity-file_entity)[]      | OneToMany    | Files derived from this file.                                                                                       |
-| `origin`                  | `enum`                                       | Nullable     |                                                                                                                     |
+| Column                    | Type                                         | Constraints  | Description                                                                                                                                                                                                                                                                                                                                                            |
+| :------------------------ | :------------------------------------------- | :----------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mission`                 | [MissionEntity](#missionentity-mission)      | FK, Nullable |                                                                                                                                                                                                                                                                                                                                                                        |
+| `date`                    | `Date`                                       | Not Null     | The date the file is sorted and filtered by. It mirrors `recordingStartDate` as soon as the recording times are known and falls back to the upload time for files we cannot extract a recording start from (e.g. configs). Use `recordingStartDate` whenever you need to know whether a date really comes from the recorded data, and `createdAt` for the upload time. |
+| `recordingStartDate`      | `Date \| null`                               | Nullable     | Timestamp of the first message in the recording. `null` while unknown (not yet extracted, or not a recording at all).                                                                                                                                                                                                                                                  |
+| `recordingEndDate`        | `Date \| null`                               | Nullable     | Timestamp of the last message in the recording. Together with `recordingStartDate` this gives the wall-clock length of the recording.                                                                                                                                                                                                                                  |
+| `recordingTimesCheckedAt` | `Date \| null`                               | Nullable     | When the recording window of this file was last looked for, whether or not one was found. It is what lets the backfill rotate through its backlog instead of retrying the same unreadable files forever.                                                                                                                                                               |
+| `topics`                  | [TopicEntity](#topicentity-topic)[]          | OneToMany    |                                                                                                                                                                                                                                                                                                                                                                        |
+| `filename`                | `string`                                     | Not Null     |                                                                                                                                                                                                                                                                                                                                                                        |
+| `size`                    | `bigint`                                     | Nullable     |                                                                                                                                                                                                                                                                                                                                                                        |
+| `creator`                 | [UserEntity](#userentity-user)               | FK, Nullable | The user who uploaded the file.                                                                                                                                                                                                                                                                                                                                        |
+| `type`                    | `enum`                                       | Not Null     |                                                                                                                                                                                                                                                                                                                                                                        |
+| `state`                   | `enum`                                       | Not Null     |                                                                                                                                                                                                                                                                                                                                                                        |
+| `stateComment`            | `text`                                       | Nullable     |                                                                                                                                                                                                                                                                                                                                                                        |
+| `hash`                    | `string`                                     | Nullable     |                                                                                                                                                                                                                                                                                                                                                                        |
+| `categories`              | [CategoryEntity](#categoryentity-category)[] | ManyToMany   |                                                                                                                                                                                                                                                                                                                                                                        |
+| `parent`                  | [FileEntity](#fileentity-file_entity)        | FK, Nullable | The parent file this file was derived from. e.g., If this is a .mcap converted from a .bag, the .bag is the parent.                                                                                                                                                                                                                                                    |
+| `derivedFiles`            | [FileEntity](#fileentity-file_entity)[]      | OneToMany    | Files derived from this file.                                                                                                                                                                                                                                                                                                                                          |
+| `origin`                  | `enum`                                       | Nullable     |                                                                                                                                                                                                                                                                                                                                                                        |
 
 ---
 
@@ -337,6 +458,12 @@ Defined in: `auth/mission-access.entity.ts`
 
 Defined in: `mission/mission.entity.ts`
 
+### Indices
+
+| Index Definition                                                                                                  |
+| :---------------------------------------------------------------------------------------------------------------- |
+| `@Index('unique_mission_name_per_project', ['name', 'project'], { where: '"deletedAt" IS NULL', unique: true, })` |
+
 ### Columns
 
 | Column             | Type                                                         | Constraints  | Description |
@@ -371,18 +498,44 @@ Defined in: `auth/project-access.entity.ts`
 
 Defined in: `project/project.entity.ts`
 
+### Indices
+
+| Index Definition                                                                                  |
+| :------------------------------------------------------------------------------------------------ |
+| `@Index('unique_project_name_active', ['name'], { where: '"deletedAt" IS NULL', unique: true, })` |
+
 ### Columns
 
-| Column                  | Type                                                         | Constraints  | Description                                                                                                   |
-| :---------------------- | :----------------------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------ |
-| `name`                  | `string`                                                     | Not Null     | The name of the project. This is the name that will be displayed in the UI. The name must be globally unique. |
-| `missions`              | [MissionEntity](#missionentity-mission)[]                    | OneToMany    |                                                                                                               |
-| `project_accesses`      | [ProjectAccessEntity](#projectaccessentity-project_access)[] | OneToMany    |                                                                                                               |
-| `description`           | `string`                                                     | Not Null     |                                                                                                               |
-| `creator`               | [UserEntity](#userentity-user)                               | FK, Nullable |                                                                                                               |
-| `requiredMetadataTypes` | [MetadataTypeEntity](#metadatatypeentity-metadata_type)[]    | ManyToMany   |                                                                                                               |
-| `categories`            | [CategoryEntity](#categoryentity-category)[]                 | OneToMany    |                                                                                                               |
-| `autoConvert`           | `boolean`                                                    | Nullable     |                                                                                                               |
+| Column                  | Type                                                         | Constraints  | Description                                                                                                                              |
+| :---------------------- | :----------------------------------------------------------- | :----------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                  | `string`                                                     | Not Null     | The name of the project. This is the name that will be displayed in the UI. The name must be unique among active (non-deleted) projects. |
+| `missions`              | [MissionEntity](#missionentity-mission)[]                    | OneToMany    |                                                                                                                                          |
+| `project_accesses`      | [ProjectAccessEntity](#projectaccessentity-project_access)[] | OneToMany    |                                                                                                                                          |
+| `description`           | `string`                                                     | Not Null     |                                                                                                                                          |
+| `creator`               | [UserEntity](#userentity-user)                               | FK, Nullable |                                                                                                                                          |
+| `requiredMetadataTypes` | [MetadataTypeEntity](#metadatatypeentity-metadata_type)[]    | ManyToMany   |                                                                                                                                          |
+| `categories`            | [CategoryEntity](#categoryentity-category)[]                 | OneToMany    |                                                                                                                                          |
+| `autoConvert`           | `boolean`                                                    | Nullable     |                                                                                                                                          |
+| `stars`                 | [ProjectStarEntity](#projectstarentity-project_star)[]       | OneToMany    |                                                                                                                                          |
+
+---
+
+<h2 id="projectstarentity-project_star">ProjectStarEntity (project_star)</h2>
+
+Defined in: `project/project-star.entity.ts`
+
+### Indices
+
+| Index Definition                                                                                               |
+| :------------------------------------------------------------------------------------------------------------- |
+| `@Index('unique_project_star_per_user', ['user', 'project'], { where: '"deletedAt" IS NULL', unique: true, })` |
+
+### Columns
+
+| Column    | Type                                    | Constraints  | Description |
+| :-------- | :-------------------------------------- | :----------- | :---------- |
+| `user`    | [UserEntity](#userentity-user)          | FK, Nullable |             |
+| `project` | [ProjectEntity](#projectentity-project) | FK, Nullable |             |
 
 ---
 
@@ -390,35 +543,32 @@ Defined in: `project/project.entity.ts`
 
 Defined in: `auth/session.entity.ts`
 
-One login of a user in the web app or the CLI. Refresh tokens are not stored: they are an HMAC over the session,
-its `generation` and `secret`, so a rotated-out token can be recognised. Access tokens carry the session id (`sid`),
-so revoking a session takes effect on the next request.
+### Indices
+
+| Index Definition                                             |
+| :----------------------------------------------------------- |
+| `@Index('idx_user_session_user', ['userUuid', 'revokedAt'])` |
 
 ### Columns
 
-| Column          | Type                           | Constraints  | Description                                                                      |
-| :-------------- | :----------------------------- | :----------- | :------------------------------------------------------------------------------- |
-| `uuid`          | `uuid`                         | PK           |                                                                                  |
-| `user`          | [UserEntity](#userentity-user) | FK, Not Null | Deleted with the user                                                            |
-| `kind`          | `enum` (`WEB`, `CLI`)          | Not Null     | Decides the lifetime                                                             |
-| `name`          | `string`                       | Nullable     | Browser or host name                                                             |
-| `platform`      | `string`                       | Nullable     | Operating system                                                                 |
-| `clientVersion` | `string`                       | Nullable     | CLI version that started the session                                             |
-| `createdAt`     | `timestamptz`                  | Not Null     |                                                                                  |
-| `lastUsedAt`    | `timestamptz`                  | Not Null     | Last refresh; idle limit counts from here                                        |
-| `expiresAt`     | `timestamptz`                  | Not Null     | Absolute end                                                                     |
-| `revokedAt`     | `timestamptz`                  | Nullable     | Set on logout, sign-out or detected token reuse                                  |
-| `revokedReason` | `string`                       | Nullable     | `logout`, `user`, `admin` or `reuse`                                             |
-| `generation`    | `integer`                      | Not Null     | Number of the current refresh token                                              |
-| `rotatedAt`     | `timestamptz`                  | Nullable     | Start of the grace period for the previous token                                 |
-| `rotating`      | `boolean`                      | Not Null     | Refresh tokens rotate; only ever switched on. CLIs before 0.67 are never rotated |
-| `secret`        | `string`                       | Not Null     | Per-session input to the refresh token HMAC                                      |
-
-### Indices
-
-| Index Definition                                     |
-| :--------------------------------------------------- |
-| `idx_user_session_user` on (`userUuid`, `revokedAt`) |
+| Column          | Type                           | Constraints  | Description                                                                                                                                                                                                                                               |
+| :-------------- | :----------------------------- | :----------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `uuid`          | `string`                       | Not Null     |                                                                                                                                                                                                                                                           |
+| `user`          | [UserEntity](#userentity-user) | FK, Nullable |                                                                                                                                                                                                                                                           |
+| `userUuid`      | `string`                       | Not Null     |                                                                                                                                                                                                                                                           |
+| `kind`          | `enum`                         | Not Null     |                                                                                                                                                                                                                                                           |
+| `name`          | `string \| null`               | Nullable     | Browser or host name, shown in the list of sessions.                                                                                                                                                                                                      |
+| `platform`      | `string \| null`               | Nullable     | Operating system, shown in the list of sessions.                                                                                                                                                                                                          |
+| `clientVersion` | `string \| null`               | Nullable     | CLI or web app version that started the session.                                                                                                                                                                                                          |
+| `createdAt`     | `timestamp`                    | Not Null     |                                                                                                                                                                                                                                                           |
+| `lastUsedAt`    | `Date`                         | Not Null     | Last refresh; the idle limit counts from here.                                                                                                                                                                                                            |
+| `expiresAt`     | `Date`                         | Not Null     | Absolute end of the session, no matter how actively it is used.                                                                                                                                                                                           |
+| `revokedAt`     | `Date \| null`                 | Nullable     |                                                                                                                                                                                                                                                           |
+| `revokedReason` | `string \| null`               | Nullable     | Why the session ended early, e.g. `logout`, `user`, `reuse`.                                                                                                                                                                                              |
+| `rotating`      | `boolean`                      | Not Null     | Whether refresh tokens of this session rotate. Set once the client is known to store rotated tokens (web app, CLI 0.67+) and never switched off again, so a caller cannot opt out of rotation (and its reuse detection) by sending an old client version. |
+| `generation`    | `number`                       | Not Null     | Number of the current refresh token, increased on every rotation.                                                                                                                                                                                         |
+| `rotatedAt`     | `Date \| null`                 | Nullable     | When the current refresh token replaced the previous one.                                                                                                                                                                                                 |
+| `secret`        | `string`                       | Not Null     | Per-session input to the refresh token HMAC.                                                                                                                                                                                                              |
 
 ---
 
@@ -455,6 +605,7 @@ Defined in: `user/user.entity.ts`
 | `account`          | [AccountEntity](#accountentity-account)                            | Nullable    |                                                                                                                                                                                                                       |
 | `memberships`      | [GroupMembershipEntity](#groupmembershipentity-group_membership)[] | OneToMany   |                                                                                                                                                                                                                       |
 | `projects`         | [ProjectEntity](#projectentity-project)[]                          | OneToMany   |                                                                                                                                                                                                                       |
+| `starredProjects`  | [ProjectStarEntity](#projectstarentity-project_star)[]             | OneToMany   |                                                                                                                                                                                                                       |
 | `missions`         | [MissionEntity](#missionentity-mission)[]                          | OneToMany   |                                                                                                                                                                                                                       |
 | `files`            | [FileEntity](#fileentity-file_entity)[]                            | OneToMany   |                                                                                                                                                                                                                       |
 | `queues`           | [IngestionJobEntity](#ingestionjobentity-ingestion_job)[]          | OneToMany   |                                                                                                                                                                                                                       |
@@ -470,6 +621,12 @@ Defined in: `user/user.entity.ts`
 <h2 id="workerentity-worker">WorkerEntity (worker)</h2>
 
 Defined in: `worker/worker.entity.ts`
+
+### Indices
+
+| Index Definition                                                                                             |
+| :----------------------------------------------------------------------------------------------------------- |
+| `@Index('unique_worker_identifier_active', ['identifier'], { where: '"deletedAt" IS NULL', unique: true, })` |
 
 ### Columns
 
