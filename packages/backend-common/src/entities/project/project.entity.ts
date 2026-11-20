@@ -66,6 +66,13 @@ export class ProjectEntity extends BaseEntity {
     @Column({ default: false })
     autoConvert?: boolean;
 
+    /**
+     * Whether the Preview tab of the project's missions shows its files in an
+     * embedded Foxglove viewer. Signed Foxglove links are not affected.
+     */
+    @Column({ default: true })
+    foxglovePreviewEnabled!: boolean;
+
     @OneToMany(
         () => ProjectStarEntity,
         (star: ProjectStarEntity) => star.project,
