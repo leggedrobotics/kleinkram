@@ -3,7 +3,7 @@ import DefaultTheme from 'vitepress/theme';
 import Module from '../components/module.vue';
 import Create from '../components/AccessWrites/create.vue';
 import CanEdit from '../components/AccessWrites/can-edit.vue';
-import Modify from '../components/AccessWrites/modify.vue';
+import Write from '../components/AccessWrites/write.vue';
 import Delete from '../components/AccessWrites/delete.vue';
 import Any from '../components/AccessWrites/any.vue';
 import Read from '../components/AccessWrites/read.vue';
@@ -18,7 +18,7 @@ export default {
         app.component('Module', Module);
         app.component('Create', Create);
         app.component('Read', Read);
-        app.component('Modify', Modify);
+        app.component('Write', Write);
         app.component('Delete', Delete);
         app.component('Any', Any);
         app.component('Creator', Creator);

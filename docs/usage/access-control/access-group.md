@@ -2,15 +2,15 @@
 
 The valid operations that can be performed on an access group are:
 
-| **Operation**  | **Description**                        | **Access Level**                                                                                                    |
-| -------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| view           | View the Access Group                  | <Any hint="Need to be inside an affiliation group" />                                                               |
-| create         | Create a new Access Group              | <Create hint="The create rights need to be from an affiliation group"/>                                             |
-| add user       | Add a user to Access Group             | <CanEdit/>                                                                                                          |
-| remove user    | Remove a user from the Access Group    | <CanEdit/>                                                                                                          |
-| add project    | Add a project to the Access Group      | <Modify hint="The user needs at least the rights they grant the access group on the project, and at least Modify"/> |
-| remove project | Remove a project from the Access Group | <Delete/>                                                                                                           |
-| delete         | Delete the Access Group                | <CanEdit/>                                                                                                          |
+| **Operation**  | **Description**                        | **Access Level**                                                                                                  |
+| -------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| view           | View the Access Group                  | <Any hint="Members of the group, and users who share a project with it" />                                        |
+| create         | Create a new Access Group              | <Create hint="The create rights need to be from an affiliation group"/>                                           |
+| add user       | Add a user to Access Group             | <CanEdit/>                                                                                                        |
+| remove user    | Remove a user from the Access Group    | <CanEdit/>                                                                                                        |
+| add project    | Add a project to the Access Group      | <Write hint="The user needs at least the rights they grant the access group on the project, and at least Write"/> |
+| remove project | Remove a project from the Access Group | <Delete hint="From the group page. Under Manage Access on the project, Write is enough for entries up to Write"/> |
+| delete         | Delete the Access Group                | <CanEdit/>                                                                                                        |
 
 ## Group Types
 
@@ -32,4 +32,9 @@ one year, or on a date you choose. The default is _Never_. The group's member li
 _Expired_.
 
 Access to projects through the group ends when the membership expires. Kleinkram removes expired memberships from the
-group every four hours; until then, access to missions granted to the group still applies.
+group every four hours.
+
+## Your Own Groups
+
+Every user, including users outside an affiliation group, can list the access groups they belong to on the
+**Access Groups** page with the **My Groups** filter. Only owners of a group see the email addresses of its members.

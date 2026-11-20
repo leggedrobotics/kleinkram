@@ -6,7 +6,7 @@
 <template>
     <ClientOnly>
         <Hint :hint="props.hint" class="access-right-view">
-            Modify</Hint
+            Write</Hint
         >
     </ClientOnly>
 </template>
