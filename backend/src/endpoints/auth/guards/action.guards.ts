@@ -21,6 +21,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsRelations, Repository } from 'typeorm';
 import { BaseGuard } from './base.guards';
+import { readUuidArray } from './body-fields';
 
 interface ActionBody {
     missionUUID?: string;
@@ -465,7 +466,7 @@ export class CreateActionsGuard extends BaseGuard {
         const { user, apiKey, request } = await this.getUser(context);
 
         const body = request.body as ActionBody | undefined;
-        const missionUUIDs = body?.missionUUIDs;
+        const missionUUIDs = readUuidArray(body, 'missionUUIDs');
         const actionTemplateUUID = body?.templateUUID;
 
         if (!missionUUIDs || missionUUIDs.length === 0 || !actionTemplateUUID) {

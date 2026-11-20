@@ -15,6 +15,7 @@ import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import { Response } from 'express';
 import { EntityNotFoundError } from 'typeorm';
 import logger from '../../logger';
+import { mapDatabaseError } from './database-error-mapping';
 
 /** Fallback for 503s that don't carry an explicit retry hint. */
 const DEFAULT_RETRY_AFTER_SECONDS = 15;
@@ -147,6 +148,19 @@ export class GlobalErrorFilter implements ExceptionFilter {
             return;
         }
 
+        const databaseError = mapDatabaseError(exception);
+        if (databaseError) {
+            // caused by the request, not a server fault: no stack trace
+            logger.warn(
+                `DatabaseError: endpoint="${request.method} ${request.url}" status=${databaseError.status.toString()} detail=${JSON.stringify(databaseError.logDetail)}`,
+            );
+            response.status(databaseError.status).json({
+                statusCode: databaseError.status,
+                message: databaseError.message,
+            });
+            return;
+        }
+
         logger.error(
             `GlobalErrorFilter: ${exception.name} on kleinkram-version ${appVersion} on endpoint ${request.url} with method ${request.method}`,
         );
@@ -174,17 +188,6 @@ export class GlobalErrorFilter implements ExceptionFilter {
             response.status(413).json({
                 statusCode: 413,
                 message: 'Payload too large',
-            });
-            return;
-        }
-
-        if (
-            exception.name === 'QueryFailedError' &&
-            exception.message.includes('invalid input syntax for type uuid')
-        ) {
-            response.status(400).json({
-                statusCode: 400,
-                message: 'Invalid UUID',
             });
             return;
         }

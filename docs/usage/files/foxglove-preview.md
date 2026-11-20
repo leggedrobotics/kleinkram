@@ -24,6 +24,17 @@ format toggle above the file list. Only files in state `OK` or `FOUND` are liste
 
 The toolbar also exports the current layout as JSON and switches the preview to fullscreen.
 
+## Turn the preview off
+
+The Preview tab is on by default. Two switches hide it, and the tab is shown only when both are on:
+
+- **Per project:** a user with `Write` rights on the project turns off **Foxglove preview** in the project's edit dialog.
+- **For the whole instance:** an admin turns off **Foxglove preview** under **Settings** on the System page. The API
+  equivalent is `PUT /system/settings` with `{ "foxglovePreviewEnabled": false }`; only admins may call it.
+
+Turning the preview off hides the Preview tab and the **Preview** button on the Files tab. A link to a mission's preview
+then opens its file list. The signed Foxglove links of single files keep working.
+
 ## Notes for operators
 
 The signed Foxglove links under `/integrations/foxglove/` answer CORS requests from `https://app.foxglove.dev` and
