@@ -22,7 +22,7 @@ import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity'
 import { ActionState, UserRole } from '@kleinkram/shared';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, In, Not, Repository } from 'typeorm';
+import { Brackets, ILike, Not, Repository } from 'typeorm';
 import logger from '../logger';
 import { MetadataService } from './metadata.service';
 import { UserService } from './user.service';
@@ -491,12 +491,41 @@ export class MissionService {
                 lock: { mode: 'pessimistic_write' },
             });
             // a running action would keep working on a deleted mission
-            const running = await manager.count(ActionEntity, {
-                where: {
-                    mission: { uuid },
-                    state: In(RUNNING_ACTION_STATES),
-                },
-            });
+            // An action counts as running while its state says so, or while
+            // its container started and the worker hasn't recorded its exit:
+            // a cancellation is written before the worker stops the
+            // container, so CANCELLED alone doesn't prove it stopped. A
+            // container is only waited for up to its maximum runtime (plus a
+            // margin), when the janitor kills it, so a crashed worker can't
+            // block the deletion for good.
+            const running = await manager
+                .createQueryBuilder(ActionEntity, 'action')
+                .innerJoin('action.template', 'template')
+                .innerJoin('action.mission', 'actionMission')
+                .where('actionMission.uuid = :uuid', { uuid })
+                .andWhere(
+                    new Brackets((query) => {
+                        query
+                            .where('action.state IN (:...states)', {
+                                states: RUNNING_ACTION_STATES,
+                            })
+                            .orWhere(
+                                new Brackets((container) => {
+                                    container
+                                        .where(
+                                            'action.actionContainerStartedAt IS NOT NULL',
+                                        )
+                                        .andWhere(
+                                            'action.actionContainerExitedAt IS NULL',
+                                        )
+                                        .andWhere(
+                                            `action.actionContainerStartedAt > NOW() - INTERVAL '1 hour' * (COALESCE(action.maxRuntimeHours, template.maxRuntime) + 1)`,
+                                        );
+                                }),
+                            );
+                    }),
+                )
+                .getCount();
             if (running > 0) {
                 throw new ConflictException(
                     running === 1

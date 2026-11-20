@@ -119,6 +119,43 @@ describe('Actions and Triggers of Deleted Missions', () => {
         );
     });
 
+    test('should return 409 while the container of a cancelled action has not exited', async () => {
+        const { user, missionUuid, templateUuid } = await setup();
+        const actionUuid = await submitAction(user, missionUuid, templateUuid);
+        // cancelled, but the worker hasn't confirmed the container stopped
+        await database.getRepository(ActionEntity).update(
+            { uuid: actionUuid },
+            {
+                state: ActionState.CANCELLED,
+                actionContainerStartedAt: new Date(),
+            },
+        );
+
+        const response = await send(user, 'DELETE', `/missions/${missionUuid}`);
+
+        expect(response.status).toBe(409);
+    });
+
+    test('should not wait for a container past its maximum runtime', async () => {
+        const { user, missionUuid, templateUuid } = await setup();
+        const actionUuid = await submitAction(user, missionUuid, templateUuid);
+        // the template allows 10 hours: after that the janitor kills it, so
+        // a missing exit (e.g. a crashed worker) must not block for good
+        await database.getRepository(ActionEntity).update(
+            { uuid: actionUuid },
+            {
+                state: ActionState.CANCELLED,
+                actionContainerStartedAt: new Date(
+                    Date.now() - 3 * 24 * 60 * 60 * 1000,
+                ),
+            },
+        );
+
+        const response = await send(user, 'DELETE', `/missions/${missionUuid}`);
+
+        expect(response.status).toBeLessThan(300);
+    });
+
     test('should hide the actions of a deleted mission instead of failing', async () => {
         const { user, missionUuid, templateUuid } = await setup();
         const actionUuid = await submitAction(user, missionUuid, templateUuid);
