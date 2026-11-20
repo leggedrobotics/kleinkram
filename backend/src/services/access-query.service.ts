@@ -56,7 +56,7 @@ const pickName = (
  * SQL condition for a membership that has not expired yet. Expired rows are
  * only removed by a periodic queue job, so reads must filter them too.
  */
-const ACTIVE_MEMBERSHIP = (alias: string): string =>
+export const ACTIVE_MEMBERSHIP = (alias: string): string =>
     `(${alias}.expirationDate IS NULL OR ${alias}.expirationDate > NOW())`;
 
 @Injectable()

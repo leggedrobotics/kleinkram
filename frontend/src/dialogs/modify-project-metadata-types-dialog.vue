@@ -1,44 +1,40 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title> Configure Enforced Metadata</template>
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="isPending"
+        size="lg"
+        :dirty="dirty"
+    >
+        <template #title>Required Metadata</template>
 
         <template #content>
             <ConfigureMetadata v-if="project" v-model:selected="selected" />
         </template>
 
         <template #actions>
-            <ButtonGroup>
-                <CreateMetadataTypeDialogOpener>
-                    <q-btn
-                        class="button-border"
-                        flat
-                        color="primary"
-                        icon="sym_o_sell"
-                        label="Create Metadata"
-                    />
-                </CreateMetadataTypeDialogOpener>
-
-                <q-btn
-                    flat
-                    label="Save Changes"
-                    class="bg-button-primary"
-                    @click="saveAction"
-                />
-            </ButtonGroup>
+            <q-btn
+                flat
+                no-caps
+                label="Save Changes"
+                class="bg-button-primary"
+                :loading="isPending"
+                @click="saveAction"
+            />
         </template>
     </base-dialog>
 </template>
+
 <script setup lang="ts">
 import type { MetadataTypeDto } from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import CreateMetadataTypeDialogOpener from 'components/button-wrapper/dialog-opener-create-metadata-type.vue';
-import ButtonGroup from 'components/buttons/button-group.vue';
 import ConfigureMetadata from 'components/configure-metadata.vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { useProjectQuery } from 'src/hooks/query-hooks';
+import { getDialogErrorMessage } from 'src/services/error-handling';
 import { updateProjectMetadataTypes } from 'src/services/mutations/project';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -48,6 +44,16 @@ const queryClient = useQueryClient();
 
 const { data: project } = useProjectQuery(projectUUID);
 const selected = ref<MetadataTypeDto[]>([]);
+const errorMessage = ref('');
+
+const selectedUuids = (types: MetadataTypeDto[]): string =>
+    JSON.stringify(types.map((type) => type.uuid).toSorted());
+const dirty = computed(
+    () =>
+        !!project.value &&
+        selectedUuids(selected.value) !==
+            selectedUuids(project.value.requiredMetadataTypes),
+);
 
 watch(
     () => project.value,
@@ -57,7 +63,7 @@ watch(
     },
     { immediate: true },
 );
-const { mutate } = useMutation({
+const { mutate, isPending } = useMutation({
     mutationFn: () => {
         return updateProjectMetadataTypes(
             project.value?.uuid ?? '',
@@ -66,7 +72,7 @@ const { mutate } = useMutation({
     },
     async onSuccess() {
         Notify.create({
-            message: 'Enforced Metadata updated',
+            message: 'Required metadata updated',
             color: 'positive',
             position: 'bottom',
         });
@@ -75,19 +81,17 @@ const { mutate } = useMutation({
                 query.queryKey[0] === 'project' &&
                 query.queryKey[1] === projectUUID,
         });
+        onDialogOK();
     },
     onError(error) {
-        Notify.create({
-            message: `Error updating enforced metadata: ${error.message}`,
-            color: 'negative',
-            position: 'bottom',
-        });
+        errorMessage.value = getDialogErrorMessage(error);
     },
 });
 
 const saveAction = (): void => {
+    if (isPending.value) return;
+    errorMessage.value = '';
     mutate();
-    onDialogOK();
 };
 </script>
 <style scoped></style>

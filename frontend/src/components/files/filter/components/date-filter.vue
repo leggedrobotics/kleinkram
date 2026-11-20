@@ -30,6 +30,7 @@
                                     <q-date
                                         :model-value="startDateProxy"
                                         :mask="dateMaskDateOnly"
+                                        color="button-primary"
                                         @update:model-value="handleDateUpdate"
                                     >
                                         <div
@@ -67,6 +68,7 @@
                                     <q-date
                                         :model-value="endDateProxy"
                                         :mask="dateMaskDateOnly"
+                                        color="button-primary"
                                         @update:model-value="updateEndDateProxy"
                                     >
                                         <div

@@ -32,6 +32,9 @@
                 <slot name="tabs" />
             </div>
         </div>
+        <div v-else-if="slots.footer" class="title-section__footer">
+            <slot name="footer" />
+        </div>
         <div v-else style="height: 14px" />
     </div>
 
@@ -56,6 +59,7 @@ defineSlots<{
     subtitle: string;
     buttons: string;
     tabs: string;
+    footer: string;
 }>();
 </script>
 
@@ -64,6 +68,14 @@ defineSlots<{
 .title-section__separator {
     margin: 0 calc(-1 * var(--page-gutter));
     padding: 0 var(--page-gutter);
+}
+
+/* a grey band across the bottom, like the footer of a dialog */
+.title-section__footer {
+    margin: 14px calc(-1 * var(--page-gutter)) 0;
+    padding: 10px var(--page-gutter);
+    border-top: 1px solid #e0e0e0; /* $border-subtle */
+    background: #f4f4f4; /* $layer */
 }
 
 .title-section__inner {

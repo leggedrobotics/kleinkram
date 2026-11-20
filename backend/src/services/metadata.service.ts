@@ -7,7 +7,8 @@ import {
 import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/metadata-type.entity';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
-import { DataType, safeLinkUrl } from '@kleinkram/shared';
+import { DataType } from '@kleinkram/shared';
+import { getMetadataValueError } from '@kleinkram/validation';
 import {
     BadRequestException,
     ConflictException,
@@ -16,20 +17,29 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, In, Repository } from 'typeorm';
+import { MetadataValueColumns, parseMetadataValue } from './metadata-values';
 
 /**
- * Returns a LINK value unchanged, or rejects it if it is not an absolute
- * `http:` or `https:` URL: the frontend opens these values on click, and a
- * `javascript:` URL would run in the viewer's session.
+ * The value columns for a client value, or 422 with what the value should
+ * look like.
  */
-const validateLink = <T>(value: T, name: string): T => {
-    if (safeLinkUrl(value) === undefined) {
-        throw new UnprocessableEntityException(
-            `Metadata "${name}" must be an absolute http:// or https:// URL`,
-        );
-    }
-    return value;
+const parseOrReject = (
+    name: string,
+    datatype: DataType,
+    value: unknown,
+): Partial<MetadataValueColumns> => {
+    const parsed = parseMetadataValue(name, datatype, value);
+    if (!parsed.ok) throw new UnprocessableEntityException(parsed.error);
+    return parsed.columns;
 };
+
+/** One invalid metadata value in a 422 response */
+interface MetadataValueError {
+    /** uuid of the metadata type */
+    field: string;
+    name: string;
+    error: string;
+}
 
 @Injectable()
 export class MetadataService {
@@ -97,99 +107,11 @@ export class MetadataService {
             throw new ConflictException('Metadata already exists');
         }
 
-        let metadata: MetadataEntity | undefined;
-        const isString = typeof value === 'string';
-        switch (metadataType.datatype) {
-            case DataType.NUMBER: {
-                if (typeof value === 'number' || isString) {
-                    if (isString) {
-                        value = Number.parseInt(value as string);
-                    }
-                    metadata = this.metadataRepository.create({
-                        metadataType,
-
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        value_number: value as number,
-                        mission,
-                    });
-                    break;
-                }
-
-                throw new UnprocessableEntityException(
-                    'Value must be a number',
-                );
-            }
-            case DataType.STRING:
-            case DataType.LINK: {
-                if (typeof value !== 'string') {
-                    throw new UnprocessableEntityException(
-                        'Value must be a string',
-                    );
-                }
-                metadata = this.metadataRepository.create({
-                    metadataType,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    value_string:
-                        metadataType.datatype === DataType.LINK
-                            ? validateLink(value, metadataType.name)
-                            : value,
-                    mission,
-                });
-                break;
-            }
-            case DataType.LOCATION: {
-                if (typeof value !== 'string') {
-                    throw new UnprocessableEntityException(
-                        'Value must be a string',
-                    );
-                }
-
-                metadata = this.metadataRepository.create({
-                    metadataType,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    value_location: value,
-                    mission,
-                });
-                break;
-            }
-            case DataType.BOOLEAN: {
-                if (typeof value === 'boolean' || isString) {
-                    if (isString) {
-                        value = value === 'true';
-                    }
-                    metadata = this.metadataRepository.create({
-                        metadataType,
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        value_boolean: value as boolean,
-                        mission,
-                    });
-                    break;
-                }
-
-                throw new UnprocessableEntityException(
-                    'Value must be a boolean',
-                );
-            }
-            case DataType.DATE: {
-                if (typeof value !== 'string') {
-                    throw new UnprocessableEntityException(
-                        'Value must be a string',
-                    );
-                }
-                metadata = this.metadataRepository.create({
-                    metadataType,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    value_date: new Date(value),
-                    mission,
-                });
-                break;
-            }
-
-            default: {
-                throw new Error('Unknown datatype');
-            }
-        }
-
+        const metadata = this.metadataRepository.create({
+            metadataType,
+            mission,
+            ...parseOrReject(metadataType.name, metadataType.datatype, value),
+        });
         await this.metadataRepository.save(metadata);
         return { success: true };
     }
@@ -217,76 +139,10 @@ export class MetadataService {
             throw new ConflictException("Metadata hasn't been set yet");
         }
 
-        const isString = typeof value === 'string';
-        switch (metadataType.datatype) {
-            case DataType.NUMBER: {
-                if (typeof value === 'number' || isString) {
-                    if (isString) {
-                        value = Number.parseInt(value as string);
-                    }
-
-                    existingMetadata.value_number = value as number;
-                    break;
-                }
-                throw new UnprocessableEntityException(
-                    'Value must be a number',
-                );
-            }
-
-            case DataType.STRING:
-            case DataType.LINK: {
-                if (typeof value !== 'string') {
-                    throw new UnprocessableEntityException(
-                        'Value must be a string',
-                    );
-                }
-
-                existingMetadata.value_string =
-                    metadataType.datatype === DataType.LINK
-                        ? validateLink(value, metadataType.name)
-                        : value;
-                break;
-            }
-
-            case DataType.BOOLEAN: {
-                if (typeof value === 'boolean' || isString) {
-                    if (isString) {
-                        value = value === 'true';
-                    }
-
-                    existingMetadata.value_boolean = value as boolean;
-                    break;
-                }
-
-                throw new UnprocessableEntityException(
-                    'Value must be a boolean',
-                );
-            }
-            case DataType.DATE: {
-                if (typeof value !== 'string') {
-                    throw new UnprocessableEntityException(
-                        'Value must be a string',
-                    );
-                }
-
-                existingMetadata.value_date = new Date(value);
-                break;
-            }
-            case DataType.LOCATION: {
-                if (typeof value !== 'string') {
-                    throw new UnprocessableEntityException(
-                        'Value must be a string',
-                    );
-                }
-
-                existingMetadata.value_location = value;
-                break;
-            }
-
-            default: {
-                throw new Error('Unknown datatype');
-            }
-        }
+        Object.assign(
+            existingMetadata,
+            parseOrReject(metadataType.name, metadataType.datatype, value),
+        );
         return this.metadataRepository.save(existingMetadata);
     }
 
@@ -306,12 +162,18 @@ export class MetadataService {
      *   the project marks as required
      */
     /**
-     * Rejects the request if a value of a LINK metadata type is not an
-     * absolute `http:` or `https:` URL. Call it before writing anything, so
-     * a bad link cannot leave a half-written mission behind; `addMetadata`
-     * and `updateMetadata` check each value again on their own.
+     * Rejects the request if any value doesn't fit its metadata type, e.g.
+     * `abc` for a NUMBER, `13.05.2024` for a DATE or a `javascript:` LINK.
+     * Call it before writing anything, so a bad value cannot leave a
+     * half-created mission or a partially replaced metadata set behind.
+     * Every invalid value is reported, not just the first one:
+     *
+     *     422 { message: 'Metadata "…" must be …; …', errors: [{ field, name, error }] }
+     *
+     * `field` is the metadata type uuid and `error` a short line for the
+     * field.
      */
-    async validateLinks(metadata: Record<string, unknown>): Promise<void> {
+    async validateValues(metadata: Record<string, unknown>): Promise<void> {
         // PostgreSQL matches uuids case-insensitively but returns them in
         // lowercase, so look the values up by their lowercase key.
         const valuesByUUID = new Map(
@@ -321,16 +183,30 @@ export class MetadataService {
             ]),
         );
         if (valuesByUUID.size === 0) return;
-        const linkTypes = await this.metadataTypeRepository.find({
-            where: {
-                uuid: In([...valuesByUUID.keys()]),
-                datatype: DataType.LINK,
-            },
-            select: { uuid: true, name: true },
+        const metadataTypes = await this.metadataTypeRepository.find({
+            where: { uuid: In([...valuesByUUID.keys()]) },
+            select: { uuid: true, name: true, datatype: true },
         });
-        for (const { uuid, name } of linkTypes) {
-            validateLink(valuesByUUID.get(uuid.toLowerCase()), name);
+
+        const errors: MetadataValueError[] = [];
+        const messages: string[] = [];
+        for (const { uuid, name, datatype } of metadataTypes) {
+            const value = valuesByUUID.get(uuid.toLowerCase());
+            const parsed = parseMetadataValue(name, datatype, value);
+            if (parsed.ok) continue;
+            messages.push(parsed.error);
+            errors.push({
+                field: uuid,
+                name,
+                error: getMetadataValueError(datatype, value) ?? parsed.error,
+            });
         }
+        if (errors.length === 0) return;
+
+        throw new UnprocessableEntityException({
+            message: messages.join('; '),
+            errors,
+        });
     }
 
     async replaceMissionMetadata(
@@ -401,9 +277,9 @@ export class MetadataService {
             );
         }
 
-        // Reject invalid links before anything is written, so a bad value
+        // Reject invalid values before anything is written, so a bad value
         // does not leave the mission with a partially replaced metadata set.
-        await this.validateLinks(Object.fromEntries(metadataToUpsert));
+        await this.validateValues(Object.fromEntries(metadataToUpsert));
 
         if (metadataToDelete.length > 0) {
             await this.metadataRepository.remove(metadataToDelete);

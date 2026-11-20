@@ -1,5 +1,5 @@
 <template>
-    <q-card-section>
+    <div>
         <ScopeSelector
             v-model:project-uuid="selectedProjectUuid"
             v-model:mission-uuid="selectedMissionUuid"
@@ -27,10 +27,10 @@
             <div class="drop-zone-icon">
                 <q-icon name="sym_o_upload_file" size="28px" />
             </div>
-            <div class="text-body1 text-grey-9">
+            <div class="text-body1 text-primary">
                 {{ dropZoneLabel }}
             </div>
-            <div class="text-caption text-grey-6">
+            <div class="text-caption text-secondary">
                 Accepts {{ acceptedExtensionsLabel }} · max
                 {{ MAX_FILE_SIZE_LABEL }} per file
             </div>
@@ -47,12 +47,12 @@
 
         <div v-if="entries.length > 0" class="q-mt-md">
             <div class="row items-center justify-between q-mb-sm">
-                <div class="text-caption text-grey-7">
+                <div class="text-caption text-secondary">
                     {{ entries.length }} file{{
                         entries.length === 1 ? '' : 's'
                     }}
                     · {{ formatSize(totalSize) }}
-                    <span v-if="invalidCount > 0" class="text-negative">
+                    <span v-if="invalidCount > 0" class="text-error">
                         · {{ invalidCount }} need{{
                             invalidCount === 1 ? 's' : ''
                         }}
@@ -84,6 +84,7 @@
                     <div class="col file-card-body">
                         <template v-if="entry.editing">
                             <q-input
+                                no-error-icon
                                 :model-value="entry.namePart"
                                 dense
                                 outlined
@@ -127,19 +128,19 @@
                                     v-if="entry.renamed"
                                     name="sym_o_edit"
                                     size="14px"
-                                    class="q-ml-xs text-grey-6"
+                                    class="q-ml-xs text-secondary"
                                 >
                                     <q-tooltip>
                                         Renamed from {{ entry.file.name }}
                                     </q-tooltip>
                                 </q-icon>
                             </div>
-                            <div class="text-caption text-grey-6">
+                            <div class="text-caption text-secondary">
                                 {{ formatSize(entry.file.size) }}
                             </div>
                             <div
                                 v-if="entry.errors.length > 0"
-                                class="text-caption text-negative"
+                                class="text-caption text-error"
                             >
                                 {{ entry.errors[0] }}
                             </div>
@@ -175,7 +176,7 @@
             </div>
         </div>
 
-        <div class="row items-center q-my-md text-grey-6 text-caption">
+        <div class="row items-center q-my-md text-secondary text-caption">
             <q-separator class="col" />
             <span class="q-px-sm">or</span>
             <q-separator class="col" />
@@ -185,6 +186,7 @@
 
         <q-input
             v-model="driveUrl"
+            no-error-icon
             outlined
             dense
             clearable
@@ -197,7 +199,7 @@
                     : ''
             "
         />
-    </q-card-section>
+    </div>
 </template>
 
 <script setup lang="ts">

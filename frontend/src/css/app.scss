@@ -131,6 +131,64 @@ textarea {
     display: none;
 }
 
+/////////////////////////////////////////////////////////////////
+// Keyboard focus: a visible ring, only for keyboard navigation
+// ($focus / $link-primary), mouse clicks look unchanged
+/////////////////////////////////////////////////////////////////
+
+.q-btn:focus-visible,
+.q-tab:focus-visible,
+.q-checkbox:focus-visible,
+.q-toggle:focus-visible,
+.q-radio:focus-visible,
+.q-chip:focus-visible {
+    outline: 2px solid $link-primary;
+    outline-offset: 2px;
+}
+
+/////////////////////////////////////////////////////////////////
+// Disabled main and danger buttons: solid grey like Carbon,
+// not Quasar's faded colour
+/////////////////////////////////////////////////////////////////
+
+.bg-button-primary.disabled,
+.bg-button-primary:disabled,
+.bg-button-danger.disabled,
+.bg-button-danger:disabled {
+    opacity: 1 !important;
+    color: $text-on-color !important;
+    background-color: $button-disabled !important;
+}
+
+/////////////////////////////////////////////////////////////////
+// Tabs inside dialogs: blue indicator, dark active label
+/////////////////////////////////////////////////////////////////
+
+.base-dialog .q-tab {
+    color: $text-secondary;
+}
+
+.base-dialog .q-tab--active {
+    color: $text-primary;
+}
+
+.base-dialog .q-tab__indicator {
+    color: $button-primary;
+}
+
+/*
+ * Tab panels of a dialog (with BaseDialog's fixed-height): all panels stay
+ * mounted, so a q-form around them validates every step, but only the
+ * active one is shown.
+ */
+.dialog-tab-panel {
+    display: none;
+}
+
+.dialog-tab-panel--active {
+    display: block;
+}
+
 .q-tab,
 .q-tab__content {
     padding: 0;
@@ -157,6 +215,15 @@ textarea {
 
 .q-field--outlined .q-field__control:after {
     color: $border-interactive;
+}
+
+/* An invalid field stays red, also while it has focus */
+.q-field--outlined.q-field--error .q-field__control:before {
+    border-color: $support-error;
+}
+
+.q-field--outlined.q-field--error .q-field__control:after {
+    color: $support-error;
 }
 
 .q-panel {
@@ -334,4 +401,105 @@ body.kk-col-resizing * {
     .q-field__control {
         background-color: $layer-01 !important;
     }
+}
+
+/////////////////////////////////////////////////////////////////
+// Dropdown options of q-select (role="option"): grey hover and
+// keyboard highlight; in single-choice selects the chosen option is
+// a light blue row with blue text instead of Quasar's red tint.
+// Multi-selects mark selection with a checkbox (item class
+// multi-option--selected), so they get no blue row.
+/////////////////////////////////////////////////////////////////
+
+.q-menu .q-item[role='option'] {
+    > .q-focus-helper {
+        display: none;
+    }
+
+    &.q-manual-focusable--focused,
+    &.q-focusable:focus-visible {
+        background-color: #e8e8e8;
+    }
+
+    @media (any-hover: hover) {
+        &.q-hoverable:hover {
+            background-color: #e8e8e8;
+        }
+    }
+
+    // $support-info text on a blue-10 row
+    &[aria-selected='true']:not(.multi-option--selected):not(
+            :has(.q-checkbox)
+        ) {
+        color: #0043ce !important;
+        background-color: #edf5ff;
+
+        .q-item__label,
+        .q-icon {
+            color: inherit !important;
+        }
+
+        &.q-manual-focusable--focused,
+        &.q-focusable:focus-visible {
+            background-color: #d0e2ff;
+        }
+
+        @media (any-hover: hover) {
+            &.q-hoverable:hover {
+                background-color: #d0e2ff;
+            }
+        }
+    }
+}
+
+/*
+ * The current item of a menu (the page you are on, the chosen speed) looks
+ * like a selected option, not like Quasar's red `primary`.
+ */
+.q-menu .q-item.q-item--active,
+.q-menu .q-item.q-router-link--active {
+    color: #0043ce; // $support-info
+    background-color: #edf5ff; // blue-10
+
+    .q-item__label,
+    .q-icon {
+        color: inherit;
+    }
+
+    @media (any-hover: hover) {
+        &.q-hoverable:hover {
+            background-color: #d0e2ff;
+        }
+    }
+}
+
+/*
+ * Wraps a disabled dialog button so its q-tooltip (the reason it is
+ * disabled) still shows: a disabled button gets no hover events.
+ */
+.disabled-reason {
+    display: inline-flex;
+}
+
+/////////////////////////////////////////////////////////////////
+// Form fields in dialogs: label 4px above its input, hint or error
+// 4px below it and aligned with it, 24px to the next field's label
+/////////////////////////////////////////////////////////////////
+
+.base-dialog__content label {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.base-dialog__content .q-field__bottom {
+    padding: 4px 0 0;
+}
+
+.base-dialog__content .q-field + label,
+.base-dialog__content .q-field + .q-field,
+.base-dialog__content .q-field + .q-toggle,
+.base-dialog__content .q-field + .field-group,
+.base-dialog__content .field-group + .field-group,
+.base-dialog__content .field-group + label {
+    margin-top: 24px;
 }

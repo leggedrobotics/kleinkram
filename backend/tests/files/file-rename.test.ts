@@ -123,6 +123,48 @@ describe('File Rename Bug Verification', () => {
         expect(error.message).toContain('File ending must be one of');
     }, 30_000);
 
+    test('should return 409 when renaming onto a name the mission already has', async () => {
+        const { user, missionUuid } = await setupTestEnvironment(
+            'test-rename-duplicate@leggedrobotics.com',
+            'Rename User',
+            UserRole.ADMIN,
+        );
+
+        await uploadFile(user, 'file1.bag', missionUuid);
+        await uploadFile(user, 'file2.bag', missionUuid);
+
+        const fileRepo = database.getRepository(FileEntity);
+        const file = await fileRepo.findOneOrFail({
+            where: { filename: 'file2.bag' },
+        });
+
+        const headers = new HeaderCreator(user);
+        headers.addHeader('Content-Type', 'application/json');
+
+        const renameResponse = await fetch(
+            `${DEFAULT_URL}/files/${file.uuid}`,
+            {
+                method: 'PUT',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    uuid: file.uuid,
+                    date: file.date,
+                    filename: 'file1.bag',
+                }),
+            },
+        );
+
+        expect(renameResponse.status).toBe(409);
+        const error = (await renameResponse.json()) as { message: string };
+        expect(error.message).toContain(
+            'already contains a file with the same name',
+        );
+        const unchanged = await fileRepo.findOneOrFail({
+            where: { uuid: file.uuid },
+        });
+        expect(unchanged.filename).toBe('file2.bag');
+    }, 30_000);
+
     test('should allow .yaml <-> .yml rename but fail for others', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
             'test-yaml-yml-swap@leggedrobotics.com',

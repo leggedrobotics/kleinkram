@@ -25,6 +25,9 @@ There are four types of access groups:
 
 See [Base Concepts](./base-concepts.md#access-groups) for how affiliation groups, primary groups and public projects work.
 
+When you search for users to add, you see a user's full email address only if you are both active members of the same
+affiliation group, or if you typed their exact address. Otherwise you see a masked hint such as `d•••••@ethz.ch`.
+
 ## Membership Expiry
 
 When you add a user to a custom access group, you can let the membership expire: after one week, one month, six months,

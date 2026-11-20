@@ -1,69 +1,92 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title>
-            Are you sure you want to delete the following
-            {{ filenames.length }}
-            {{ filenames.length === 1 ? 'file' : 'files' }}?
-        </template>
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="running"
+        size="sm"
+        :submit-disabled="!confirmed || running"
+        @submit="confirm"
+    >
+        <template #title>{{ actionLabel }}</template>
 
         <template #content>
-            <div>
-                <p style="font-size: 16pt" />
-                <ul>
-                    <li
-                        v-for="filename in filenames.slice(0, 5)"
-                        :key="filename"
-                    >
-                        {{ filename }}
-                    </li>
-                    <li v-if="filenames.length > 6">...</li>
-                    <li v-if="filenames.length >= 6">
-                        {{ filenames.slice(-1)[0] }}
-                    </li>
-                </ul>
-                <p class="q-mt-md">
-                    Please confirm by entering:
-                    <b>delete {{ filenames.length }} files</b>
-                </p>
-                <q-input
-                    v-model="confirmationInput"
-                    outlined
-                    :placeholder="`delete ${filenames.length} files`"
-                    autofocus
-                    dense
-                />
-            </div>
+            <ul class="q-mt-none">
+                <li v-for="filename in filenames.slice(0, 5)" :key="filename">
+                    {{ filename }}
+                </li>
+                <li v-if="filenames.length > 6">...</li>
+                <li v-if="filenames.length >= 6">
+                    {{ filenames.slice(-1)[0] }}
+                </li>
+            </ul>
+            <label :for="inputId" class="confirm-label">
+                Type <b>{{ confirmationText }}</b> to confirm. This can't be
+                undone.
+            </label>
+            <q-input
+                v-model="confirmationInput"
+                no-error-icon
+                :for="inputId"
+                outlined
+                autofocus
+                dense
+                autocomplete="off"
+            />
         </template>
 
         <template #actions>
-            <div class="flex justify-end">
-                <q-btn flat label="Cancel" @click="onDialogCancel" />
+            <span class="disabled-reason">
                 <q-btn
-                    unelevated
-                    :disable="
-                        confirmationInput !== `delete ${filenames.length} files`
-                    "
-                    label="Delete"
-                    color="negative"
-                    icon="sym_o_delete"
-                    @click="onDialogOK"
+                    flat
+                    no-caps
+                    :disable="!confirmed"
+                    :label="actionLabel"
+                    class="bg-button-danger"
+                    :loading="running"
+                    @click="confirm"
                 />
-            </div>
+                <q-tooltip v-if="!confirmed"
+                    >Type the text above to confirm</q-tooltip
+                >
+            </span>
         </template>
     </base-dialog>
 </template>
+
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
+import { useDialogAction } from 'src/composables/use-dialog-action';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { ref } from 'vue';
+import { computed, ref, useId } from 'vue';
 
-const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
+const { running, errorMessage, run } = useDialogAction(onDialogOK);
+const confirm = (): Promise<void> => run(action);
 
-const { filenames } = defineProps<{
+const { filenames, action } = defineProps<{
+    /** The request to run on confirm; the dialog closes when it succeeds */
+    action: () => Promise<unknown>;
     filenames: string[];
 }>();
 
+const inputId = `confirm-delete-${useId()}`;
 const confirmationInput = ref('');
+const confirmationText = computed(
+    () => `delete ${String(filenames.length)} files`,
+);
+const confirmed = computed(
+    () => confirmationInput.value === confirmationText.value,
+);
+const actionLabel = computed(() =>
+    filenames.length === 1
+        ? 'Delete File'
+        : `Delete ${String(filenames.length)} Files`,
+);
 </script>
 
-<style scoped></style>
+<style scoped>
+.confirm-label {
+    display: block;
+    margin-bottom: 4px;
+}
+</style>

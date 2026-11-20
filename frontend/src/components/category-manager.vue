@@ -2,6 +2,8 @@
     <div>
         <q-input
             v-model="filter"
+            type="search"
+            no-error-icon
             outlined
             dense
             clearable
@@ -13,7 +15,7 @@
             </template>
         </q-input>
 
-        <div v-if="categories.length === 0" class="q-pa-md text-grey">
+        <div v-if="categories.length === 0" class="q-pa-md text-secondary">
             No categories in this project yet.
         </div>
 
@@ -21,15 +23,12 @@
             <q-item v-for="category in categories" :key="category.uuid">
                 <q-item-section>
                     <div>
-                        <q-chip
-                            dense
-                            :color="hashUUIDtoColor(category.uuid)"
-                            style="color: white"
-                        >
+                        <q-chip dense :style="categoryTagStyle(category.uuid)">
                             {{ category.name }}
                         </q-chip>
                     </div>
                     <q-input
+                        no-error-icon
                         :model-value="descriptionOf(category)"
                         outlined
                         dense
@@ -63,7 +62,7 @@
             </q-item>
         </q-list>
 
-        <div v-if="!canEdit" class="q-pa-sm text-caption text-grey">
+        <div v-if="!canEdit" class="q-pa-sm text-caption text-secondary">
             Editing category descriptions requires write access on the project.
         </div>
     </div>
@@ -78,7 +77,7 @@ import {
     usePermissionsQuery,
 } from 'src/hooks/query-hooks';
 import { getErrorMessage } from 'src/services/error-handling';
-import { hashUUIDtoColor } from 'src/services/generic';
+import { categoryTagStyle } from 'src/services/generic';
 import { updateCategoryDescription } from 'src/services/mutations/categories';
 import { computed, ref, Ref } from 'vue';
 

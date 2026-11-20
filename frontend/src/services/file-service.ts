@@ -23,6 +23,7 @@ import pLimit from 'p-limit';
 import { Dialog, Notify } from 'quasar';
 import SparkMD5 from 'spark-md5';
 import RenameFilesDialog from 'src/components/rename-files-dialog.vue';
+import { getErrorMessage } from 'src/services/error-handling';
 import {
     cancelUploads,
     confirmUpload,
@@ -248,31 +249,62 @@ async function _createFileAction(
                     responseData.message === 'Validation failed'
                 ) {
                     try {
-                        const renameMap: Record<string, string> =
-                            await new Promise((resolve, reject) => {
+                        // the dialog retries with the new names itself and
+                        // stays open (showing the errors) until it succeeds
+                        temporaryCredentials = await new Promise(
+                            (resolve, reject) => {
+                                let retried:
+                                    TemporaryFileAccessesDto | undefined;
                                 Dialog.create({
                                     component: RenameFilesDialog,
                                     componentProps: {
                                         invalidFiles: responseData.errors,
+                                        action: async (
+                                            renameMap: Record<string, string>,
+                                        ) => {
+                                            const names = fileItems.map(
+                                                (item) =>
+                                                    renameMap[
+                                                        item.virtualName
+                                                    ] ?? item.virtualName,
+                                            );
+                                            retried =
+                                                await generateTemporaryCredentials(
+                                                    {
+                                                        filenames: names,
+                                                        missionUUID:
+                                                            selectedMission.uuid,
+                                                        fileSizes,
+                                                    },
+                                                );
+                                            for (const [
+                                                index,
+                                                item,
+                                            ] of fileItems.entries()) {
+                                                item.virtualName =
+                                                    names[index] ??
+                                                    item.virtualName;
+                                            }
+                                        },
                                     },
                                 })
-                                    .onOk(resolve)
-                                    .onCancel(reject)
-                                    .onDismiss(reject);
-                            });
-
-                        // Update virtual names
-                        for (const item of fileItems) {
-                            if (renameMap[item.virtualName]) {
-                                item.virtualName =
-                                    renameMap[item.virtualName] ??
-                                    item.virtualName;
-                            }
-                        }
+                                    .onOk(() => {
+                                        if (retried) resolve(retried);
+                                        else reject(new Error('No retry'));
+                                    })
+                                    .onCancel(reject);
+                            },
+                        );
                         handled = true;
-                        // Continue loop to retry
                     } catch {
-                        // User cancelled
+                        // the user closed the dialog instead of renaming
+                        Notify.create({
+                            message: 'Upload cancelled',
+                            color: 'grey',
+                            spinner: false,
+                            position: 'bottom',
+                            timeout: 3000,
+                        });
                         return;
                     }
                 }
@@ -472,14 +504,9 @@ async function _createFileAction(
                             md5Hash,
                         );
                     } catch (error: unknown) {
-                        let errorMessage = '';
-                        if (error instanceof Error) {
-                            errorMessage = error.message;
-                        }
-
                         newFileUploadReference.value.canceled = true;
                         Notify.create({
-                            message: `Upload of File ${file.name} failed: ${errorMessage}`,
+                            message: `Upload of File ${file.name} failed: ${getErrorMessage(error)}`,
                             color: 'negative',
                             spinner: false,
                             timeout: 0,

@@ -1,17 +1,13 @@
 <template>
-    <div class="text-caption text-weight-medium text-grey-8 q-mt-lg q-mb-sm">
+    <div class="text-caption text-weight-medium text-secondary q-mt-lg q-mb-sm">
         GENERAL ACCESS
     </div>
 
-    <div
-        class="row items-center no-wrap q-pa-md general-access"
-        :class="{ 'general-access--public': isPublic }"
-    >
+    <div class="row items-center no-wrap q-pa-md general-access">
         <q-icon
             :name="current.icon"
             size="20px"
             class="q-mr-md general-access__avatar"
-            :class="{ 'general-access__avatar--public': isPublic }"
         />
 
         <div class="col column items-start">
@@ -31,14 +27,11 @@
                         v-close-popup
                         clickable
                         :active="option.isPublic === isPublic"
-                        active-class="bg-grey-2 text-black"
+                        active-class="general-access__option--selected"
                         @click="() => (isPublic = option.isPublic)"
                     >
                         <q-item-section avatar>
-                            <q-icon
-                                :name="option.icon"
-                                :color="option.isPublic ? 'green-8' : 'grey-8'"
-                            />
+                            <q-icon :name="option.icon" />
                         </q-item-section>
                         <q-item-section>
                             <q-item-label class="text-weight-medium">
@@ -51,10 +44,10 @@
                     </q-item>
                 </q-list>
             </q-btn-dropdown>
-            <span class="text-caption text-grey-8 q-mt-xs">
+            <span class="text-caption text-secondary q-mt-xs">
                 {{ current.description }}
             </span>
-            <span v-if="disable" class="text-caption text-grey-8">
+            <span v-if="disable" class="text-caption text-secondary">
                 Only users with delete rights on the project can change general
                 access.
             </span>
@@ -63,10 +56,9 @@
         <q-chip
             v-if="isPublic"
             square
-            outline
-            color="grey-8"
-            icon-right="sym_o_lock"
-            class="text-weight-medium q-ml-md"
+            text-color="primary"
+            icon="sym_o_public"
+            class="text-weight-medium q-ml-md general-access__tag"
             :label="getAccessRightDescription(AccessGroupRights.READ)"
         >
             <q-tooltip>
@@ -114,19 +106,22 @@ const current = computed(() => options[isPublic.value ? 1 : 0]!);
     border-radius: 4px;
 }
 
-.general-access--public {
-    border-color: #bfe3c9;
-    background: #f6fbf7;
-}
-
+/* all icons $icon-primary; no green, it is not a status */
 .general-access__avatar {
-    background: #eeeeee;
+    background: #e0e0e0;
     border-radius: 50%;
     padding: 6px;
+    color: #161616;
 }
 
-.general-access__avatar--public {
-    background: #dff3e4;
-    color: #1b7a3a;
+/* read-only public access: a neutral grey tag ($tag-background-gray) */
+.general-access__tag {
+    background: #e0e0e0;
+}
+
+/* the selected option: light blue row like single-choice dropdowns */
+.general-access__option--selected {
+    background: #edf5ff;
+    color: #0043ce;
 }
 </style>

@@ -1,7 +1,5 @@
 import type { ProjectAccessDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { isAxiosError } from 'axios';
-import { Notify } from 'quasar';
 import { updateProjectAccessRights } from 'src/services/mutations/access';
 import { Ref, unref } from 'vue';
 
@@ -27,24 +25,12 @@ export const useUpdateAccessRightsMutation = (
             await queryClient.invalidateQueries({
                 predicate: (query) => query.queryKey[0] === 'AccessGroup',
             });
-        },
-        onError: (error: unknown) => {
-            let errorMessage = 'An unknown error occurred';
-
-            if (isAxiosError(error)) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                errorMessage =
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                    error.response?.data?.message ??
-                    'No error message provided';
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-
-            Notify.create({
-                message: `Failed to change access rights:  ${errorMessage}`,
-                color: 'negative',
-                position: 'bottom',
+            // the project (and project lists) carry `isPublic`, shown as the
+            // Public chip on the project page
+            await queryClient.invalidateQueries({
+                predicate: (query) =>
+                    query.queryKey[0] === 'projects' ||
+                    query.queryKey[0] === 'project',
             });
         },
     });

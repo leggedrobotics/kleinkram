@@ -248,7 +248,8 @@ const signOut = async (session: SessionDto): Promise<void> => {
     }
 };
 
-const { mutate: revokeOthers, isPending: isRevokingOthers } = useMutation({
+// a failure is shown in the confirm dialog, which stays open
+const { mutateAsync: revokeOthers, isPending: isRevokingOthers } = useMutation({
     mutationFn: revokeMyOtherSessions,
     onSuccess: () => {
         Notify.create({
@@ -257,7 +258,6 @@ const { mutate: revokeOthers, isPending: isRevokingOthers } = useMutation({
             position: 'bottom',
         });
     },
-    onError: notifyError,
     onSettled: () =>
         queryClient.invalidateQueries({ queryKey: ['my-sessions'] }),
 });
@@ -265,9 +265,10 @@ const { mutate: revokeOthers, isPending: isRevokingOthers } = useMutation({
 const confirmRevokeOthers = (): void => {
     Dialog.create({
         component: SignOutOtherSessionsDialog,
-        componentProps: { count: otherSessions.value.length },
-    }).onOk(() => {
-        revokeOthers();
+        componentProps: {
+            count: otherSessions.value.length,
+            action: () => revokeOthers(),
+        },
     });
 };
 </script>

@@ -163,6 +163,41 @@ describe('Project required metadata types', () => {
         expect(response.status).toBe(400);
     });
 
+    test('POST adds a required metadata type and keeps the existing ones', async () => {
+        const { user, projectUuid, metadataTypeUuid } = await setup();
+        const otherTypeUuid = await createMetadataTypeUsingPost(
+            { type: DataType.NUMBER, name: `mdt_other_${String(Date.now())}` },
+            user,
+        );
+
+        const response = await fetch(
+            `${DEFAULT_URL}/projects/${projectUuid}/metadata-types?metadataTypeUUID=${otherTypeUuid}`,
+            { method: 'POST', headers: getAuthHeaders(user) },
+        );
+        expect(response.status).toBeLessThan(300);
+
+        const required = await getRequiredMetadataTypeUuids(user, projectUuid);
+        expect(required).toHaveLength(2);
+        expect(required).toEqual(
+            expect.arrayContaining([metadataTypeUuid, otherTypeUuid]),
+        );
+    });
+
+    test('DELETE removes a required metadata type', async () => {
+        const { user, projectUuid, metadataTypeUuid } = await setup();
+
+        // any spelling of the uuid matches, as everywhere else
+        const response = await fetch(
+            `${DEFAULT_URL}/projects/${projectUuid}/metadata-types/${metadataTypeUuid.toUpperCase()}`,
+            { method: 'DELETE', headers: getAuthHeaders(user) },
+        );
+        expect(response.status).toBeLessThan(300);
+
+        expect(await getRequiredMetadataTypeUuids(user, projectUuid)).toEqual(
+            [],
+        );
+    });
+
     // `requiredTags` is the deprecated name of `requiredMetadataTypes`; old
     // clients use it until 1.0, both in requests and in responses.
     test('project responses contain the deprecated requiredTags alias', async () => {

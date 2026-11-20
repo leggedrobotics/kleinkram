@@ -1,12 +1,21 @@
 <template>
-    <base-dialog ref="dialogRef">
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="isPending"
+        :dirty="dirty"
+        :submit-disabled="!canSubmit || isPending"
+        @submit="submit"
+    >
         <template #title>
-            Move or copy
             {{
                 files.length === 1
-                    ? files[0]?.filename
-                    : `${files.length} files`
+                    ? 'Move or Copy File'
+                    : `Move or Copy ${files.length} Files`
             }}
+        </template>
+        <template v-if="files.length === 1" #subtitle>
+            {{ files[0]?.filename }}
         </template>
 
         <template #content>
@@ -259,28 +268,23 @@
             </div>
         </template>
 
+        <template #footer-start>
+            <span class="text-caption text-grey-7 self-center">
+                {{ includedFiles.length }}
+                {{ includedFiles.length === 1 ? 'file' : 'files' }} ·
+                {{ formatSize(includedSize) }}
+            </span>
+        </template>
         <template #actions>
-            <div class="row items-center full-width">
-                <span class="text-caption text-grey-7">
-                    {{ includedFiles.length }}
-                    {{ includedFiles.length === 1 ? 'file' : 'files' }} ·
-                    {{ formatSize(includedSize) }}
-                </span>
-                <q-space />
-                <q-btn
-                    label="Cancel"
-                    flat
-                    class="q-mr-sm button-border"
-                    @click="onDialogCancel"
-                />
-                <q-btn
-                    :label="submitLabel"
-                    class="bg-button-primary"
-                    :loading="isPending"
-                    :disable="!canSubmit || isPending"
-                    @click="submit"
-                />
-            </div>
+            <q-btn
+                flat
+                no-caps
+                :label="submitLabel"
+                class="bg-button-primary"
+                :loading="isPending"
+                :disable="!canSubmit"
+                @click="submit"
+            />
         </template>
     </base-dialog>
 </template>
@@ -305,6 +309,7 @@ import { Notify, useDialogPluginComponent } from 'quasar';
 import { useScopeSelection } from 'src/composables/use-scope-selection';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { canCreateMission, usePermissionsQuery } from 'src/hooks/query-hooks';
+import { getDialogErrorMessage } from 'src/services/error-handling';
 import { formatSize } from 'src/services/general-formatting';
 import { copyFiles, moveFiles } from 'src/services/mutations/file';
 import { createMission } from 'src/services/mutations/mission';
@@ -343,10 +348,11 @@ const props = defineProps<{
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
-const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const queryClient = useQueryClient();
 
 const mode = ref<Mode>('move');
+const errorMessage = ref('');
 const targetProjectUuid = ref<string | undefined>(props.mission.project.uuid);
 const targetMissionUuid = ref<string | undefined>(props.mission.uuid);
 
@@ -415,6 +421,14 @@ const finalName = (file: FileWithTopicDto): string => {
     const resolution = resolutionOf(file);
     return resolution.action === 'rename' ? resolution.name : file.filename;
 };
+
+/** Something was chosen that closing the dialog would discard */
+const dirty = computed(
+    () =>
+        mode.value === 'copy' ||
+        targetMissionUuid.value !== props.mission.uuid ||
+        props.files.some((file) => resolutionOf(file).action !== 'keep'),
+);
 
 const isSameMission = computed(
     () => !isNewMission.value && targetMissionUuid.value === props.mission.uuid,
@@ -693,18 +707,7 @@ const { mutate: submitMutation, isPending } = useMutation({
         onDialogOK();
     },
     onError(error: unknown) {
-        const message =
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            (error as { response?: { data?: { message?: string } } })?.response
-                ?.data?.message ?? 'Unknown error occurred';
-        Notify.create({
-            group: false,
-            message: `Error: ${message}`,
-            color: 'negative',
-            spinner: false,
-            position: 'bottom',
-            timeout: 10_000,
-        });
+        errorMessage.value = getDialogErrorMessage(error);
     },
 });
 
@@ -714,6 +717,8 @@ const submit = (): void => {
     const missionUuid = targetMissionUuid.value;
     const projectUuid = targetProjectUuid.value;
     if (!missionUuid || !projectUuid) return;
+    if (!canSubmit.value || isPending.value) return;
+    errorMessage.value = '';
     submitMutation({
         mode: mode.value,
         missionUuid,
@@ -736,7 +741,6 @@ const submit = (): void => {
 
 <style scoped>
 .transfer-dialog {
-    max-width: 640px;
     gap: 16px;
 }
 

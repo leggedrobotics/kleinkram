@@ -44,7 +44,6 @@ const moveFiles = (): void => {
             mission: mission,
             files: files,
         },
-        persistent: true,
     });
 };
 </script>

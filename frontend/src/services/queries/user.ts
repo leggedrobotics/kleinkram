@@ -2,21 +2,23 @@ import type { PermissionsDto } from '@kleinkram/api-dto/types/permissions.dto';
 import type { ApiKeysDto } from '@kleinkram/api-dto/types/user/api-keys.dto';
 import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
 import type { SessionsDto } from '@kleinkram/api-dto/types/user/session.dto';
-import type { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
+import type { UserSearchResultsDto } from '@kleinkram/api-dto/types/user/user-search.dto';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
-export const searchUsers = async (search: string): Promise<UsersDto> => {
+export const searchUsers = async (
+    search: string,
+): Promise<UserSearchResultsDto> => {
     if (search === '') {
         return {
             users: [],
             count: 0,
         };
     }
-    const response: AxiosResponse<UsersDto> = await axios.get<UsersDto>(
-        '/users/search',
-        { params: { search } },
-    );
+    const response: AxiosResponse<UserSearchResultsDto> =
+        await axios.get<UserSearchResultsDto>('/users/search', {
+            params: { search },
+        });
     return response.data;
 };
 

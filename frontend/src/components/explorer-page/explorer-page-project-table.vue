@@ -208,7 +208,7 @@
                                     >
                                         <q-item v-ripple clickable>
                                             <q-item-section>
-                                                Enforce Metadata
+                                                Required Metadata
                                             </q-item-section>
                                         </q-item>
                                     </ConfigureMetadataTypesDialogOpener>
@@ -316,7 +316,7 @@
                                 >
                                     <q-item v-ripple clickable>
                                         <q-item-section>
-                                            Enforce Metadata
+                                            Required Metadata
                                         </q-item-section>
                                     </q-item>
                                 </ConfigureMetadataTypesDialogOpener>

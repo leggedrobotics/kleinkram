@@ -26,6 +26,8 @@
                 outlined
                 dense
                 multiple
+                color="button-primary"
+                options-selected-class="multi-option--selected"
                 use-chips
                 :options="filteredTopics"
                 use-input
@@ -35,7 +37,26 @@
                 class="col-grow topics-select"
                 @filter="filterTopics"
                 @clear="clearTopics"
-            />
+            >
+                <template #option="scope">
+                    <q-item v-bind="scope.itemProps">
+                        <q-item-section side class="multi-option__check">
+                            <q-checkbox
+                                :model-value="scope.selected"
+                                dense
+                                size="sm"
+                                color="button-primary"
+                                tabindex="-1"
+                                aria-hidden="true"
+                                class="no-pointer-events"
+                            />
+                        </q-item-section>
+                        <q-item-section class="multi-option__label">
+                            {{ scope.opt }}
+                        </q-item-section>
+                    </q-item>
+                </template>
+            </q-select>
         </div>
     </div>
 </template>
@@ -88,3 +109,14 @@ function clearTopics() {
     selectedTopicsReference.value = [];
 }
 </script>
+
+<style scoped>
+.multi-option__check {
+    padding-right: 8px;
+}
+
+/* the selection shows in the checkbox, the label keeps its colour */
+.multi-option__label {
+    color: #161616;
+}
+</style>
