@@ -137,8 +137,18 @@ describe('Actions and Triggers of Deleted Missions', () => {
             ),
         ).not.toContain(actionUuid);
 
-        const detail = await send(user, 'GET', `/actions/${actionUuid}`);
-        expect(detail.status).toBe(404);
+        // the test user is an administrator: hidden for every read route
+        for (const path of ['', '/logs', '/script', '/state-history']) {
+            const read = await send(
+                user,
+                'GET',
+                `/actions/${actionUuid}${path}`,
+            );
+            expect({ path, status: read.status }).toEqual({
+                path,
+                status: 404,
+            });
+        }
     });
 
     test('should delete the triggers of a deleted mission', async () => {

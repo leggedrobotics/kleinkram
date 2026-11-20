@@ -482,6 +482,14 @@ export class MissionService {
         }
 
         await this.missionRepository.manager.transaction(async (manager) => {
+            // Exclusive lock: an action being submitted holds a shared lock
+            // on the mission while it saves, so it is either counted below
+            // or sees afterwards that the mission is gone.
+            await manager.findOne(MissionEntity, {
+                where: { uuid },
+                select: { uuid: true },
+                lock: { mode: 'pessimistic_write' },
+            });
             // a running action would keep working on a deleted mission
             const running = await manager.count(ActionEntity, {
                 where: {

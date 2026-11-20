@@ -19,6 +19,7 @@ import {
     ConflictException,
     Injectable,
     Logger,
+    NotFoundException,
     OnModuleDestroy,
     OnModuleInit,
 } from '@nestjs/common';
@@ -163,23 +164,39 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
             );
         }
 
-        let action = this.actionRepository.create({
-            mission,
-            creator,
-            state: ActionState.PENDING,
-            template,
-            triggerSource,
-            triggerUuid,
-            scriptObject: overrides.scriptObject,
-            maxRuntimeHours: overrides.maxRuntimeHours,
-        });
-
-        action = await this.actionRepository.save(action);
-        await transitionAction(this.actionRepository.manager, action.uuid, {
-            state: ActionState.PENDING,
-            cause: { code: ActionStateCause.SUBMITTED },
-            actorUuid: creator.uuid,
-        });
+        // Deleting a mission locks it exclusively and refuses while an action
+        // runs. The shared lock here orders the two: either the deletion
+        // sees this action, or the action sees the mission is gone.
+        const action = await this.actionRepository.manager.transaction(
+            async (manager) => {
+                const liveMission = await manager.findOne(MissionEntity, {
+                    where: { uuid: mission.uuid },
+                    select: { uuid: true },
+                    lock: { mode: 'pessimistic_read' },
+                });
+                if (!liveMission) {
+                    throw new NotFoundException('Mission not found');
+                }
+                const saved = await manager.save(
+                    manager.create(ActionEntity, {
+                        mission,
+                        creator,
+                        state: ActionState.PENDING,
+                        template,
+                        triggerSource,
+                        triggerUuid,
+                        scriptObject: overrides.scriptObject,
+                        maxRuntimeHours: overrides.maxRuntimeHours,
+                    }),
+                );
+                await transitionAction(manager, saved.uuid, {
+                    state: ActionState.PENDING,
+                    cause: { code: ActionStateCause.SUBMITTED },
+                    actorUuid: creator.uuid,
+                });
+                return saved;
+            },
+        );
 
         try {
             const runtimeRequirements = {

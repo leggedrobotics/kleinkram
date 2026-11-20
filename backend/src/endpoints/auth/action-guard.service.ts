@@ -31,9 +31,6 @@ export class ActionGuardService {
             return false;
         }
 
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
         const action = await this.actionRepository.findOne({
             where: { uuid: actionUuid },
             relations: {
@@ -43,10 +40,15 @@ export class ActionGuardService {
             },
         });
 
-        if (!action) return false;
-        // the action's mission was deleted: the action is hidden with it
+        // admins pass for an unknown action as before, the handler answers
+        if (!action) return user.role === UserRole.ADMIN;
+        // the action's mission was deleted: the action is hidden with it, for
+        // every route (logs, script, ...) and administrators as well
         if (!action.mission?.project) {
             throw new NotFoundException('Action not found');
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
         }
 
         const canAccessProject =
