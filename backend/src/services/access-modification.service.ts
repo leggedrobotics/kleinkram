@@ -496,12 +496,50 @@ export class AccessModificationService {
                 AccessGroupEntity,
                 { where: { uuid } },
             );
+
+            // Lock the projects the group has access to (in a fixed order,
+            // so two deletions can't deadlock) the same way every project
+            // access change does, so the check below sees the final state.
+            const grants = await transaction.find(ProjectAccessEntity, {
+                where: { accessGroup: { uuid } },
+                relations: { project: true },
+            });
+            const projects: ProjectEntity[] = grants
+                .map((grant) => grant.project)
+                .filter((project) => project !== undefined);
+            // `toSorted` isn't available in this target; the array is new
+            // eslint-disable-next-line unicorn/no-array-sort
+            projects.sort((a, b) => a.uuid.localeCompare(b.uuid));
+            for (const project of projects) {
+                await this.lockProjectForAccessChange(
+                    transaction,
+                    project.uuid,
+                );
+            }
+
             await transaction.delete(ProjectAccessEntity, {
                 accessGroup: { uuid },
             });
             await transaction.delete(MissionAccessEntity, {
                 accessGroup: { uuid },
             });
+
+            // Every project keeps at least one group with delete rights,
+            // otherwise only an administrator could manage it again.
+            for (const project of projects) {
+                const remaining = await transaction.count(ProjectAccessEntity, {
+                    where: {
+                        rights: AccessGroupRights.DELETE,
+                        project: { uuid: project.uuid },
+                    },
+                });
+                if (remaining === 0) {
+                    throw new ConflictException(
+                        `"${accessGroup.name}" is the only group with delete rights on project "${project.name}". Give another group delete rights first.`,
+                    );
+                }
+            }
+
             await transaction.remove(accessGroup);
         });
     }

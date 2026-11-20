@@ -95,6 +95,43 @@ describe('Access Group Conflicts', () => {
         expect(lookup.status).toBeGreaterThanOrEqual(400);
     });
 
+    test('should not delete the only group with delete rights on a project', async () => {
+        const { user, projectUuid } = await setupTestEnvironment();
+        const created = await send(user, 'POST', '/access-groups', {
+            name: 'only-owners',
+        });
+        const groupUuid = (created.json as { uuid: string }).uuid;
+        // hand the project over: the new group becomes its only owner
+        const handover = await send(
+            user,
+            'POST',
+            `/projects/${projectUuid}/access`,
+            [
+                {
+                    uuid: groupUuid,
+                    name: 'only-owners',
+                    type: 'CUSTOM',
+                    memberCount: 1,
+                    rights: AccessGroupRights.DELETE,
+                },
+            ],
+        );
+        expect(handover.status).toBeLessThan(300);
+
+        const response = await send(
+            user,
+            'DELETE',
+            `/access-groups/${groupUuid}`,
+        );
+
+        expect(response.status).toBe(409);
+        expect((response.json as { message: string }).message).toContain(
+            'is the only group with delete rights',
+        );
+        const access = await projectAccess(user, projectUuid);
+        expect(access.some((entry) => entry.uuid === groupUuid)).toBe(true);
+    });
+
     test('should return 404 if the project access names a group that does not exist', async () => {
         const { user, projectUuid } = await setupTestEnvironment();
         const current = await projectAccess(user, projectUuid);

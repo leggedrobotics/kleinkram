@@ -112,7 +112,7 @@ describe('Action Template In Use', () => {
         expect(await findTemplate(user, 'trigger-removed')).toBeUndefined();
     });
 
-    test('should archive the template if only a trigger of a deleted mission uses it', async () => {
+    test('should delete the template and the dead trigger if only a trigger of a deleted mission uses it', async () => {
         const { user, projectUuid } = await setupTestEnvironment();
         const missionUuid = await createMissionUsingPost(
             {
@@ -134,8 +134,8 @@ describe('Action Template In Use', () => {
         const response = await deleteTemplate(user, templateUuid);
 
         expect(response.status).toBe(204);
-        const template = await findTemplate(user, 'orphan-trigger');
-        expect(template?.archived).toBe(true);
-        expect(template?.triggerCount).toBe(0);
+        // the dialog promised a deletion (no executions): it must not be
+        // archived because of a trigger that can never fire
+        expect(await findTemplate(user, 'orphan-trigger')).toBeUndefined();
     });
 });
