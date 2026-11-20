@@ -83,7 +83,8 @@ export class TriggerService implements OnModuleInit {
             .createQueryBuilder('trigger')
             .leftJoinAndSelect('trigger.template', 'template')
             .leftJoinAndSelect('trigger.creator', 'creator')
-            .leftJoin('trigger.mission', 'mission')
+            // inner join: triggers of deleted missions are hidden with them
+            .innerJoin('trigger.mission', 'mission')
             .leftJoin('mission.project', 'project');
 
         if (missionUuid) {
@@ -261,7 +262,9 @@ export class TriggerService implements OnModuleInit {
             },
         });
 
-        if (!trigger) {
+        // a trigger whose mission was deleted can't run any more (newer
+        // deletions remove the trigger with the mission)
+        if (!trigger?.mission) {
             throw new NotFoundException('Trigger not found');
         }
 

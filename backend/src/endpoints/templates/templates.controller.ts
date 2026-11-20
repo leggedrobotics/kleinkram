@@ -7,6 +7,7 @@ import {
     UpdateTemplateDto,
 } from '@kleinkram/api-dto';
 import {
+    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -76,8 +77,13 @@ export class TemplatesController {
     @ApiOperation({ summary: 'Check if a template name is available' })
     @ApiOkResponse({ type: ActionTemplateAvailabilityDto })
     async checkTemplateNameAvailability(
-        @Query('name') name: string,
+        @Query('name') name: string | undefined,
     ): Promise<ActionTemplateAvailabilityDto> {
+        // TypeORM can't compare with `undefined`; a missing name is the
+        // client's mistake, not a server error
+        if (typeof name !== 'string' || name.trim() === '') {
+            throw new BadRequestException('name is required');
+        }
         const available = await this.templateService.isNameAvailable(name);
         return { available };
     }

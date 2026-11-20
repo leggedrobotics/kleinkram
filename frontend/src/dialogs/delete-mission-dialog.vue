@@ -48,11 +48,11 @@
 
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query';
-import { AxiosError } from 'axios';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { useMission } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
+import { getErrorMessage } from 'src/services/error-handling';
 import { deleteMission } from 'src/services/mutations/mission';
 import { computed, ref, useId } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -76,22 +76,6 @@ const confirmed = computed(
     () => !!mission.value && missionNameCheck.value === mission.value.name,
 );
 
-function describeError(error: unknown): string {
-    if (error instanceof AxiosError) {
-        if (error.response) {
-            const status = error.response.status;
-            if (status === 403) return 'Mission access denied.';
-            if (status === 409) return 'Mission may contain files.';
-            return `Server responded with status: ${String(status)}`;
-        }
-
-        if (error.request) return 'Could not reach the server. Try again.';
-        return error.message;
-    }
-    if (error instanceof Error) return error.message;
-    return 'An unknown error occurred';
-}
-
 async function deleteMissionAction(): Promise<void> {
     if (!mission.value || !confirmed.value || deleting.value) return;
     const deleted = mission.value;
@@ -100,7 +84,9 @@ async function deleteMissionAction(): Promise<void> {
     try {
         await deleteMission(deleted);
     } catch (error: unknown) {
-        errorMessage.value = describeError(error);
+        // the server says why, e.g. that the mission still has files
+        // or running actions
+        errorMessage.value = getErrorMessage(error);
         return;
     } finally {
         deleting.value = false;
