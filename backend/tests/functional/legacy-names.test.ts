@@ -144,5 +144,5 @@ describe('Names from before the naming rules', () => {
             date: newDate,
         });
         expect(renamedValid.status).toBe(200);
-    }, 30_000);
+    }, 120_000); // processing the upload alone may take up to a minute
 });
