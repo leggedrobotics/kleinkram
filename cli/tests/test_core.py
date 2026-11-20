@@ -288,7 +288,8 @@ def test_update_file(mission):
 @pytest.mark.slow
 def test_update_non_existing_file():
     client = AuthenticatedClient()
-    with pytest.raises(kleinkram.errors.FileNotFound):
+    # the API answers 403 for unknown ids, so it does not reveal which files exist
+    with pytest.raises(kleinkram.errors.AccessDenied):
         kleinkram.core.update_file(client=client, file_id=uuid4(), new_name="x.bag")
 
 
