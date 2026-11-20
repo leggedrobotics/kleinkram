@@ -824,13 +824,18 @@ export class ProjectService {
         uuid: string,
         metadataTypeUUID: string,
     ): Promise<void> {
+        // the relation has to be loaded, or `requiredMetadataTypes` is
+        // undefined and saving would also drop the other required types
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
+            relations: { requiredMetadataTypes: true },
         });
         const metadataType = await this.metadataTypeRepository.findOneOrFail({
             where: { uuid: metadataTypeUUID },
         });
-        project.requiredMetadataTypes.push(metadataType);
+        const required = project.requiredMetadataTypes;
+        if (required.some((type) => type.uuid === metadataType.uuid)) return;
+        project.requiredMetadataTypes = [...required, metadataType];
         await this.projectRepository.save(project);
     }
 
@@ -860,6 +865,7 @@ export class ProjectService {
     ): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
+            relations: { requiredMetadataTypes: true },
         });
         project.requiredMetadataTypes = project.requiredMetadataTypes.filter(
             (metadataType) => metadataType.uuid !== metadataTypeUUID,
