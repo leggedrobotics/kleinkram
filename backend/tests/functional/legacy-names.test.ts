@@ -1,5 +1,9 @@
-import { FileEntity, ProjectEntity } from '@kleinkram/backend-common';
-import { UserRole } from '@kleinkram/shared';
+import {
+    FileEntity,
+    IngestionJobEntity,
+    ProjectEntity,
+} from '@kleinkram/backend-common';
+import { QueueState, UserRole } from '@kleinkram/shared';
 import { DEFAULT_URL } from '../auth/utilities';
 import { HeaderCreator, uploadFile } from '../utils/api-calls';
 import { database } from '../utils/database-utilities';
@@ -7,6 +11,23 @@ import {
     setupDatabaseHooks,
     setupTestEnvironment,
 } from '../utils/test-helpers';
+
+/**
+ * Waits until the queue consumer has finished processing an upload. It
+ * writes the recording time into the file's `date`, so a date set before it
+ * finishes is overwritten.
+ */
+const waitForProcessing = async (fileUuid: string): Promise<void> => {
+    const deadline = Date.now() + 60_000;
+    while (Date.now() < deadline) {
+        const job = await database
+            .getRepository(IngestionJobEntity)
+            .findOneBy({ identifier: fileUuid });
+        if (job && job.state >= QueueState.COMPLETED) return;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    throw new Error(`Processing of file ${fileUuid} didn't finish`);
+};
 
 const put = async (
     headers: HeaderCreator,
@@ -86,6 +107,7 @@ describe('Names from before the naming rules', () => {
         const file = await fileRepository.findOneByOrFail({
             filename: 'test.bag',
         });
+        await waitForProcessing(file.uuid);
         await fileRepository.update(
             { uuid: file.uuid },
             { filename: 'log(1).bag' },
