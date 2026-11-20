@@ -156,8 +156,8 @@ describe('File Rename Bug Verification', () => {
 
         expect(renameResponse.status).toBe(409);
         const error = (await renameResponse.json()) as { message: string };
-        expect(error.message).toBe(
-            'A file with this name already exists in this mission.',
+        expect(error.message).toContain(
+            'already contains a file with the same name',
         );
         const unchanged = await fileRepo.findOneOrFail({
             where: { uuid: file.uuid },

@@ -407,21 +407,27 @@ describe('Verify metadata type generation', () => {
         expect(metadataType.datatype).toBe(DataType.LINK);
     });
 
-    test('if internal user can add any metadata types', async () => {
+    // `ANY` only means "no type selected" (in the UI and as a search
+    // filter): a metadata type of type ANY couldn't hold any value
+    test('if a metadata type of type ANY is rejected', async () => {
         const { user } = await generateAndFetchDatabaseUser('internal', 'user');
 
-        const metadataTypeUuid = await createMetadataTypeUsingPost(
-            { type: DataType.ANY, name: 'test_metadata_any' },
-            user,
-        );
-
-        const metadataTypeRepo =
-            database.getRepository<MetadataTypeEntity>(MetadataTypeEntity);
-        const metadataType = await metadataTypeRepo.findOneOrFail({
-            where: { uuid: metadataTypeUuid },
+        const headers = new HeaderCreator(user);
+        headers.addHeader('Content-Type', 'application/json');
+        const response = await fetch(`${DEFAULT_URL}/metadata-types`, {
+            method: 'POST',
+            headers: headers.getHeaders(),
+            body: JSON.stringify({
+                name: 'test_metadata_any',
+                type: DataType.ANY,
+            }),
         });
-        expect(metadataType.name).toBe('test_metadata_any');
-        expect(metadataType.datatype).toBe(DataType.ANY);
+
+        expect(response.status).toBe(400);
+        const metadataTypes = await database
+            .getRepository<MetadataTypeEntity>(MetadataTypeEntity)
+            .find({ where: { name: 'test_metadata_any' } });
+        expect(metadataTypes).toHaveLength(0);
     });
 
     test('if internal user can not create metadata with the same name AND datatype', async () => {

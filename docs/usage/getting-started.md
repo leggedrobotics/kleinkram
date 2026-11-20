@@ -53,17 +53,24 @@ Kleinkram allows you to organize and search your data using metadata on missions
 
 #### Mission Level: Metadata
 
-You can add key-value pairs as metadata to missions. Each key is a **metadata type**, which defines the name and datatype (e.g. string, number, boolean, date, location, link) of a value; the value set on a mission is its **metadata**. This allows for powerful filtering and organization. Values are checked against their type when a mission is created or its metadata is saved:
+You can add key-value pairs as metadata to missions. Each key is a **metadata type**, which defines the name and datatype (e.g. string, number, boolean, date, location, link) of a value; the value set on a mission is its **metadata**. This allows for powerful filtering and organization.
 
-| Type     | Accepted value                                                   |
-| -------- | ---------------------------------------------------------------- |
-| link     | An absolute `http://` or `https://` URL                          |
-| location | `latitude, longitude` in decimal degrees, e.g. `47.3769, 8.5417` |
-| number   | A number, e.g. `12.5`                                            |
-| date     | A date, e.g. `2026-11-13`                                        |
-| boolean  | `true` or `false`, in any case (`True` from Python is fine)      |
+Values have to match their datatype. This matters most in metadata files for the CLI (`--metadata`), since the web UI
+uses a matching input for each type:
 
-Invalid values are rejected with `422` and a list of every invalid value: `{ "message": "…", "errors": [{ "field": "<metadata type uuid>", "name": "…", "error": "…" }] }`. A value that a mission already has and that is sent back unchanged is not checked again (links excepted), so a location stored as free text before this rule existed does not block other changes; it has to follow the format once it is edited.
+| Datatype | Accepted values                                             | Example               |
+| -------- | ----------------------------------------------------------- | --------------------- |
+| string   | Any text                                                    | `anymal-d`            |
+| number   | A number, decimals with a dot                               | `1.5`                 |
+| boolean  | `true` or `false`, in any case (`True` from Python is fine) | `true`                |
+| date     | An ISO 8601 date or date and time (`T` or a space between)  | `2024-05-13`          |
+| location | Any text                                                    | `Zurich`              |
+| link     | An absolute `http://` or `https://` URL                     | `https://example.com` |
+
+A request with values that don't match is rejected as a whole with `422` and lists every invalid value, e.g.
+`Metadata "recorded" must be a date like 2024-05-13`; nothing is created or changed. Besides the `message`, the
+response has an `errors` list with one entry per invalid value:
+`{ "field": "<metadata type uuid>", "name": "…", "error": "…" }`.
 
 - **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" metadata type for every mission). The server enforces this when a mission is created: a request without a value for every required metadata type is rejected with `409`, unless it sets `ignoreMissingMetadata` (`--ignore-missing-metadata` in the CLI). An empty value counts as missing.
 - **Usage**: Use this metadata to quickly find all missions performed by a specific robot or in a specific location.

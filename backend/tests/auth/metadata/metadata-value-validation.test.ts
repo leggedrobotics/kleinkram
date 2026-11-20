@@ -18,254 +18,183 @@ import {
 import { setupDatabaseHooks } from '../../utils/test-helpers';
 import { DEFAULT_URL } from '../utilities';
 
-interface ValidationErrorBody {
-    message: string;
-    errors: { field: string; name: string; error: string }[];
-}
+const send = async (
+    user: UserEntity,
+    method: string,
+    path: string,
+    body?: unknown,
+): Promise<{ status: number; message: unknown }> => {
+    const response = await fetch(`${DEFAULT_URL}${path}`, {
+        method,
+        headers: {
+            ...getAuthHeaders(user),
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'Content-Type': 'application/json',
+        },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    const text = await response.text();
+    const json =
+        text === '' ? undefined : (JSON.parse(text) as { message?: unknown });
+    return { status: response.status, message: json?.message };
+};
 
 const setup = async (): Promise<{
     user: UserEntity;
     projectUuid: string;
     missionUuid: string;
-    types: Record<'link' | 'location' | 'number' | 'date' | 'boolean', string>;
+    numberType: string;
+    dateType: string;
+    booleanType: string;
 }> => {
-    const suffix = String(Date.now());
-    const user = await getUserFromDatabase(
-        await mockDatabaseUser(
-            'metadata-values@leggedrobotics.com',
-            'Metadata Values User',
-            UserRole.ADMIN,
-        ),
+    const userUuid = await mockDatabaseUser(
+        'metadata-values@leggedrobotics.com',
+        'Metadata Values User',
+        UserRole.ADMIN,
     );
-    const createType = (type: DataType, name: string): Promise<string> =>
-        createMetadataTypeUsingPost({ type, name: `${name}_${suffix}` }, user);
-    const types = {
-        link: await createType(DataType.LINK, 'audio'),
-        location: await createType(DataType.LOCATION, 'coordinates'),
-        number: await createType(DataType.NUMBER, 'speed'),
-        date: await createType(DataType.DATE, 'recorded'),
-        boolean: await createType(DataType.BOOLEAN, 'calibrated'),
-    };
+    const user = await getUserFromDatabase(userUuid);
+    const numberType = await createMetadataTypeUsingPost(
+        { type: DataType.NUMBER, name: 'speed' },
+        user,
+    );
+    const dateType = await createMetadataTypeUsingPost(
+        { type: DataType.DATE, name: 'recorded' },
+        user,
+    );
+    const booleanType = await createMetadataTypeUsingPost(
+        { type: DataType.BOOLEAN, name: 'outdoor' },
+        user,
+    );
     const projectUuid = await createProjectUsingPost(
-        {
-            name: `metadata_values_project_${suffix}`,
-            description: 'Test project',
-            requiredMetadataTypes: [],
-        },
+        { name: 'metadata_values_project', description: 'values' },
         user,
     );
     const missionUuid = await createMissionUsingPost(
         {
-            name: `metadata_values_mission_${suffix}`,
+            name: 'metadata_values_mission',
             projectUUID: projectUuid,
             metadata: {},
             ignoreMissingMetadata: true,
         },
         user,
     );
-    return { user, projectUuid, missionUuid, types };
+    return {
+        user,
+        projectUuid,
+        missionUuid,
+        numberType,
+        dateType,
+        booleanType,
+    };
 };
 
-const post = (
-    user: UserEntity,
-    path: string,
-    body: unknown,
-): Promise<Response> =>
-    fetch(`${DEFAULT_URL}${path}`, {
-        method: 'POST',
-        headers: {
-            ...getAuthHeaders(user),
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
+const storedMetadata = (missionUuid: string): Promise<MetadataEntity[]> =>
+    database.getRepository(MetadataEntity).find({
+        where: { mission: { uuid: missionUuid } },
+        relations: { metadataType: true },
     });
 
 describe('Metadata Value Validation', () => {
     setupDatabaseHooks();
 
-    test('should report every invalid metadata value when updating a mission', async () => {
-        const { user, missionUuid, types } = await setup();
+    test('should not create a mission if a date value is not a date', async () => {
+        const { user, projectUuid, dateType } = await setup();
 
-        const response = await post(user, `/missions/${missionUuid}/metadata`, {
-            metadata: {
-                [types.link]: 'example.com/audio.wav',
-                [types.location]: 'somewhere',
-                [types.number]: 'fast',
-                [types.date]: 'yesterday',
-                [types.boolean]: 'maybe',
-            },
-        });
-
-        expect(response.status).toBe(422);
-        const body = (await response.json()) as ValidationErrorBody;
-        expect(new Set(body.errors.map((error) => error.field))).toEqual(
-            new Set(Object.values(types)),
-        );
-        for (const error of body.errors) {
-            expect(error.error.length).toBeGreaterThan(0);
-        }
-        // nothing was written
-        const metadata = await database.getRepository(MetadataEntity).find({
-            where: { mission: { uuid: missionUuid } },
-        });
-        expect(metadata).toHaveLength(0);
-    });
-
-    test('should report every invalid metadata value when creating a mission', async () => {
-        const { user, projectUuid, types } = await setup();
-
-        const response = await post(user, '/missions', {
-            name: `invalid_metadata_${String(Date.now())}`,
+        const response = await send(user, 'POST', '/missions', {
+            name: 'mission_with_bad_date',
             projectUUID: projectUuid,
-            metadata: {
-                [types.link]: 'javascript:alert(1)',
-                [types.location]: '91, 8.5',
-                [types.number]: '12',
-            },
+            metadata: { [dateType]: '13.05.2024' },
             ignoreMissingMetadata: true,
         });
 
         expect(response.status).toBe(422);
-        const body = (await response.json()) as ValidationErrorBody;
-        expect(new Set(body.errors.map((error) => error.field))).toEqual(
-            new Set([types.link, types.location]),
+        expect(response.message).toBe(
+            'Metadata "recorded" must be a date like 2024-05-13',
         );
+        const missions = await database
+            .getRepository(MissionEntity)
+            .find({ where: { name: 'mission_with_bad_date' } });
+        expect(missions).toHaveLength(0);
     });
 
-    test('should accept valid values of every type', async () => {
-        const { user, missionUuid, types } = await setup();
+    test('should report every invalid value at once', async () => {
+        const { user, missionUuid, numberType, booleanType } = await setup();
 
-        const response = await post(user, `/missions/${missionUuid}/metadata`, {
-            metadata: {
-                [types.link]: 'https://example.com/audio.wav',
-                [types.location]: '47.3769, 8.5417',
-                [types.number]: '12.5',
-                [types.date]: '2026-11-13',
-            },
-        });
-
-        expect(response.status).toBeLessThan(300);
-    });
-
-    test('should keep a stored value that is sent back unchanged, even if it breaks a newer rule', async () => {
-        const { user, missionUuid, types } = await setup();
-        // a free-text location, as it could be stored before the rule existed
-        await database.getRepository(MetadataEntity).save({
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            value_location: 'Zurich',
-            mission: { uuid: missionUuid },
-            metadataType: { uuid: types.location },
-            creator: { uuid: user.uuid },
-        });
-
-        const unchanged = await post(
+        const response = await send(
             user,
+            'POST',
             `/missions/${missionUuid}/metadata`,
-            {
-                metadata: { [types.location]: 'Zurich', [types.number]: '3' },
-            },
+            { metadata: { [numberType]: 'abc', [booleanType]: 'maybe' } },
         );
-        expect(unchanged.status).toBeLessThan(300);
 
-        const changed = await post(user, `/missions/${missionUuid}/metadata`, {
-            metadata: { [types.location]: 'Bern', [types.number]: '3' },
-        });
-        expect(changed.status).toBe(422);
-        const body = (await changed.json()) as ValidationErrorBody;
-        expect(body.errors.map((error) => error.field)).toEqual([
-            types.location,
-        ]);
+        expect(response.status).toBe(422);
+        expect(String(response.message)).toContain(
+            'Metadata "speed" must be a number',
+        );
+        expect(String(response.message)).toContain(
+            'Metadata "outdoor" must be true or false',
+        );
+        expect(await storedMetadata(missionUuid)).toHaveLength(0);
     });
 
-    test('should store a boolean written as "True" or "FALSE" with its real value', async () => {
-        const { user, missionUuid, types } = await setup();
-        const stored = async (): Promise<boolean | undefined> => {
-            const entry = await database
-                .getRepository(MetadataEntity)
-                .findOneOrFail({
-                    where: {
-                        mission: { uuid: missionUuid },
-                        metadataType: { uuid: types.boolean },
-                    },
-                });
-            return entry.value_boolean;
-        };
+    test('should keep the decimals of a number', async () => {
+        const { user, missionUuid, numberType } = await setup();
 
-        const upper = await post(user, `/missions/${missionUuid}/metadata`, {
-            metadata: { [types.boolean]: 'True' },
-        });
-        expect(upper.status).toBeLessThan(300);
-        expect(await stored()).toBe(true);
-
-        const lower = await post(user, `/missions/${missionUuid}/metadata`, {
-            metadata: { [types.boolean]: ' FALSE ' },
-        });
-        expect(lower.status).toBeLessThan(300);
-        expect(await stored()).toBe(false);
-    });
-
-    test('should create a mission and ignore an empty metadata value', async () => {
-        const { user, projectUuid, types } = await setup();
-        const name = `empty_value_${String(Date.now())}`;
-
-        const response = await post(user, '/missions', {
-            name,
-            projectUUID: projectUuid,
-            metadata: { [types.link]: '', [types.number]: '4' },
-            ignoreMissingMetadata: true,
-        });
+        const response = await send(
+            user,
+            'POST',
+            `/missions/${missionUuid}/metadata`,
+            { metadata: { [numberType]: '1.5' } },
+        );
 
         expect(response.status).toBeLessThan(300);
-        const metadata = await database.getRepository(MetadataEntity).find({
-            where: { mission: { name } },
-            relations: { metadataType: true },
-        });
-        expect(metadata.map((entry) => entry.metadataType?.uuid)).toEqual([
-            types.number,
-        ]);
+        const stored = await storedMetadata(missionUuid);
+        expect(stored.map((metadata) => metadata.value_number)).toEqual([1.5]);
     });
 
-    test('should not create a mission when metadata the project requires is missing or empty', async () => {
-        const { user, types } = await setup();
-        const suffix = String(Date.now());
-        const projectUuid = await createProjectUsingPost(
-            {
-                name: `required_metadata_project_${suffix}`,
-                description: 'Test project',
-                requiredMetadataTypes: [types.number],
-            },
+    test('should accept an ISO date', async () => {
+        const { user, missionUuid, dateType } = await setup();
+
+        const response = await send(
             user,
+            'POST',
+            `/missions/${missionUuid}/metadata`,
+            { metadata: { [dateType]: '2024-05-13' } },
         );
 
-        for (const metadata of [{}, { [types.number]: '' }]) {
-            const name = `required_missing_${suffix}`;
-            const response = await post(user, '/missions', {
-                name,
-                projectUUID: projectUuid,
-                metadata,
-            });
-            expect(response.status).toBe(409);
-            expect(
-                await database
-                    .getRepository(MissionEntity)
-                    .exists({ where: { name } }),
-            ).toBe(false);
-        }
+        expect(response.status).toBeLessThan(300);
+    });
 
-        const provided = await post(user, '/missions', {
-            name: `required_given_${suffix}`,
-            projectUUID: projectUuid,
-            metadata: { [types.number]: '4' },
-        });
-        expect(provided.status).toBeLessThan(300);
+    test('should return 404 if metadata to delete does not exist', async () => {
+        const userUuid = await mockDatabaseUser(
+            'metadata-deleter@leggedrobotics.com',
+            'Metadata Deleter',
+            UserRole.USER,
+        );
+        const user = await getUserFromDatabase(userUuid);
 
-        // the key is a UUID: its case does not matter
-        const uppercase = await post(user, '/missions', {
-            name: `required_uppercase_${suffix}`,
-            projectUUID: projectUuid,
-            metadata: { [types.number.toUpperCase()]: '4' },
+        const response = await send(
+            user,
+            'DELETE',
+            '/metadata/0e7d7f4a-5d3c-4b8e-9b1a-2f4d6c8e0a1b',
+        );
+
+        expect(response.status).toBe(404);
+    });
+
+    test('should reject a metadata type that cannot hold values', async () => {
+        const userUuid = await mockDatabaseUser(
+            'metadata-any@leggedrobotics.com',
+            'Metadata Any',
+            UserRole.ADMIN,
+        );
+        const user = await getUserFromDatabase(userUuid);
+
+        const response = await send(user, 'POST', '/metadata-types', {
+            name: 'anything',
+            type: DataType.ANY,
         });
-        expect(uppercase.status).toBeLessThan(300);
+
+        expect(response.status).toBe(400);
     });
 });

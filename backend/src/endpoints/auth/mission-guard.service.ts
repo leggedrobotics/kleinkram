@@ -5,7 +5,11 @@ import { MissionEntity } from '@kleinkram/backend-common/entities/mission/missio
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
 import { AccessGroupRights, UserRole } from '@kleinkram/shared';
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+    ConflictException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
 import { MoreThanOrEqual, Repository } from 'typeorm';
@@ -89,8 +93,10 @@ export class MissionGuardService {
             },
         });
 
-        if (metadata?.mission === undefined)
-            throw new Error('Metadata has no mission');
+        // e.g. deleted by a double click or another user
+        if (!metadata?.mission) {
+            throw new NotFoundException('Metadata not found');
+        }
 
         // All interactions with metadata except READ are considered WRITE on the mission
         let accessRights = AccessGroupRights.READ;
@@ -115,8 +121,10 @@ export class MissionGuardService {
             },
         });
 
-        if (metadata?.mission === undefined)
-            throw new Error('Metadata has no mission');
+        // e.g. deleted by a double click or another user
+        if (!metadata?.mission) {
+            throw new NotFoundException('Metadata not found');
+        }
         return this.canKeyAccessMission(apikey, metadata.mission.uuid, rights);
     }
 

@@ -247,22 +247,34 @@ export class StorageService implements OnModuleInit {
         throw new TypeError('S3 body is not a readable stream');
     }
 
+    /**
+     * Lists every object of the bucket, following the continuation token:
+     * `ListObjectsV2` returns at most 1000 objects per call.
+     */
     async listFiles(bucketName: string): Promise<StorageItem[]> {
-        const command = new ListObjectsV2Command({
-            Bucket: bucketName,
-        });
-        const response = await this.clients.internal.send(
-            command,
-            metadataRequestOptions(),
-        );
-        return (
-            response.Contents?.map((item) => ({
-                name: item.Key ?? '',
-                lastModified: item.LastModified ?? new Date(),
-                etag: item.ETag ?? '',
-                size: item.Size ?? 0,
-            })) ?? []
-        );
+        const items: StorageItem[] = [];
+        let continuationToken: string | undefined;
+        do {
+            const response = await this.clients.internal.send(
+                new ListObjectsV2Command({
+                    Bucket: bucketName,
+                    ContinuationToken: continuationToken,
+                }),
+                metadataRequestOptions(),
+            );
+            for (const item of response.Contents ?? []) {
+                items.push({
+                    name: item.Key ?? '',
+                    lastModified: item.LastModified ?? new Date(),
+                    etag: item.ETag ?? '',
+                    size: item.Size ?? 0,
+                });
+            }
+            continuationToken = response.IsTruncated
+                ? response.NextContinuationToken
+                : undefined;
+        } while (continuationToken);
+        return items;
     }
 
     async getFileInfo(
