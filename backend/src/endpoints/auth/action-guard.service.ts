@@ -3,7 +3,7 @@ import { ApiKeyEntity } from '@kleinkram/backend-common';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { AccessGroupRights, UserRole } from '@kleinkram/shared';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
@@ -44,10 +44,10 @@ export class ActionGuardService {
         });
 
         if (!action) return false;
-        if (action.mission === undefined)
-            throw new Error('Action has no mission');
-        if (action.mission.project === undefined)
-            throw new Error('Action has no mission');
+        // the action's mission was deleted: the action is hidden with it
+        if (!action.mission?.project) {
+            throw new NotFoundException('Action not found');
+        }
 
         const canAccessProject =
             await this.projectGuardService.canAccessProject(
@@ -85,8 +85,9 @@ export class ActionGuardService {
             return false;
         }
 
-        if (action.mission === undefined)
-            throw new Error('Apikey has no mission');
+        if (!action.mission) {
+            throw new NotFoundException('Action not found');
+        }
 
         return (
             apikey.mission.uuid === action.mission.uuid &&

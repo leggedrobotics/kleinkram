@@ -13,14 +13,16 @@ import {
     MissionsDto,
     MissionWithFilesDto,
 } from '@kleinkram/api-dto';
+import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
+import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/metadata-type.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import { UserRole } from '@kleinkram/shared';
+import { ActionState, UserRole } from '@kleinkram/shared';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Not, Repository } from 'typeorm';
+import { ILike, In, Not, Repository } from 'typeorm';
 import logger from '../logger';
 import { MetadataService } from './metadata.service';
 import { UserService } from './user.service';
@@ -86,6 +88,14 @@ const sortLikeIds = (
         (a, b) => (position.get(a.uuid) ?? 0) - (position.get(b.uuid) ?? 0),
     );
 };
+
+/** States of an action that hasn't finished yet. */
+const RUNNING_ACTION_STATES = [
+    ActionState.PENDING,
+    ActionState.STARTING,
+    ActionState.PROCESSING,
+    ActionState.STOPPING,
+];
 
 @Injectable()
 export class MissionService {
@@ -470,7 +480,31 @@ export class MissionService {
                 'Mission cannot be deleted because it contains files',
             );
         }
-        await this.missionRepository.softRemove(mission);
+
+        await this.missionRepository.manager.transaction(async (manager) => {
+            // a running action would keep working on a deleted mission
+            const running = await manager.count(ActionEntity, {
+                where: {
+                    mission: { uuid },
+                    state: In(RUNNING_ACTION_STATES),
+                },
+            });
+            if (running > 0) {
+                throw new ConflictException(
+                    running === 1
+                        ? '1 action is still running. Cancel it or wait until it finishes.'
+                        : `${running.toString()} actions are still running. Cancel them or wait until they finish.`,
+                );
+            }
+
+            // The triggers belong to the mission and can never fire again:
+            // they are deleted with it. Its actions stay as history and are
+            // hidden together with the mission.
+            await manager.softDelete(ActionTriggerEntity, {
+                mission: { uuid },
+            });
+            await manager.softRemove(mission);
+        });
     }
 
     async updateMetadata(

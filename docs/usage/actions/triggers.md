@@ -14,6 +14,8 @@ Kleinkram supports three types of triggers:
 | Webhook Triggers      | Event-based    | Run a verification action as soon as a new docker image version is pushed |
 | File Pattern Triggers | Data-based     | Run a post-processing action as soon as a new file is uploaded            |
 
+A trigger belongs to its mission: deleting the mission deletes its triggers.
+
 ## Cron Triggers
 
 Cron triggers allow you to schedule actions to run periodically at fixed times or intervals. This is useful for regular maintenance tasks, nightly reports, or periodic data synchronization.
@@ -60,6 +62,7 @@ The action runs with the access rights of the user who created the trigger.
 - `POST` requests are limited to 10 per minute per client IP address. Further requests are answered with `429 Too Many Requests`.
 - The response contains the ID of the new execution (`actionUUID`), the template ID (`templateUUID`), its state and
   creation time.
+- A trigger that was deleted, also together with its mission, answers `404 Not Found`.
 
 ## File Pattern Triggers
 

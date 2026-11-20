@@ -322,7 +322,8 @@ export class ActionService {
         if (search) this.applySearchFilter(qb, search);
 
         // State Filter (Replaces /running endpoint)
-        if (states) {
+        // an empty list means no state filter (`IN ()` isn't valid SQL)
+        if (states && states.length > 0) {
             qb.andWhere('action.state IN (:...states)', { states });
         }
 
@@ -384,6 +385,8 @@ export class ActionService {
                 worker: true,
             },
         });
+        // the mission was deleted: its actions are hidden with it
+        if (!action.mission) throw new NotFoundException('Action not found');
 
         const dto = actionEntityToDto(action);
 
@@ -664,13 +667,16 @@ export class ActionService {
     }
 
     private buildBaseActionQuery(): SelectQueryBuilder<ActionEntity> {
-        return this.actionRepository
-            .createQueryBuilder('action')
-            .leftJoinAndSelect('action.mission', 'mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('action.template', 'template')
-            .leftJoinAndSelect('template.creator', 'templateCreator')
-            .leftJoinAndSelect('action.creator', 'creator');
+        return (
+            this.actionRepository
+                .createQueryBuilder('action')
+                // inner join: actions of deleted missions are hidden with them
+                .innerJoinAndSelect('action.mission', 'mission')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('action.template', 'template')
+                .leftJoinAndSelect('template.creator', 'templateCreator')
+                .leftJoinAndSelect('action.creator', 'creator')
+        );
     }
 
     private applySearchFilter(

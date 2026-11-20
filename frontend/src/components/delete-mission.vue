@@ -15,9 +15,9 @@
 <script setup lang="ts">
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQueryClient } from '@tanstack/vue-query';
-import { AxiosError } from 'axios';
 import { Notify } from 'quasar';
 import ROUTES from 'src/router/routes';
+import { getErrorMessage } from 'src/services/error-handling';
 import { deleteMission } from 'src/services/mutations/mission';
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -67,29 +67,9 @@ const deleteMissionAction = async (): Promise<void> => {
                 }
             })
             .catch((error: unknown) => {
-                let errorMessage = '';
-
-                if (error instanceof AxiosError) {
-                    if (error.response) {
-                        const status = error.response.status;
-                        if (status === 403) {
-                            errorMessage = 'Mission access denied.';
-                        } else if (status === 409) {
-                            errorMessage = 'Mission may contain files.';
-                        } else {
-                            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                            errorMessage = `Server responded with status: ${status}`;
-                        }
-                    } else if (error.request) {
-                        errorMessage = 'No response received from the server';
-                    } else {
-                        errorMessage = error.message;
-                    }
-                } else if (error instanceof Error) {
-                    errorMessage = error.message;
-                } else {
-                    errorMessage = 'An unknown error occurred';
-                }
+                // the server says why, e.g. that the mission still has files
+                // or running actions
+                const errorMessage = getErrorMessage(error);
 
                 Notify.create({
                     message: `Error deleting mission: ${errorMessage}`,

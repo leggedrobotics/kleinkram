@@ -26,6 +26,7 @@ import {
     UserRole,
 } from '@kleinkram/shared';
 import {
+    BadRequestException,
     ForbiddenException,
     Injectable,
     OnModuleInit,
@@ -38,6 +39,15 @@ import {
     In,
     Repository,
 } from 'typeorm';
+
+/** Columns the API key list can be sorted by (the UI's sortable columns). */
+const API_KEY_SORT_FIELDS = [
+    'key_type',
+    'rights',
+    'createdAt',
+    'updatedAt',
+    'deletedAt',
+];
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -340,9 +350,17 @@ export class UserService implements OnModuleInit {
         sortBy?: string,
         sortOrder: SortOrder = SortOrder.DESC,
     ): Promise<ApiKeysDto> {
-        const order: Record<string, 'ASC' | 'DESC'> = {};
+        // only metadata columns: sorting by `apikey` would order the list by
+        // the secret keys
         const sortField = sortBy ?? 'createdAt';
-        order[sortField] = sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
+        if (!API_KEY_SORT_FIELDS.includes(sortField)) {
+            throw new BadRequestException(
+                `sortBy must be one of ${API_KEY_SORT_FIELDS.join(', ')}`,
+            );
+        }
+        const order: Record<string, 'ASC' | 'DESC'> = {
+            [sortField]: sortOrder === SortOrder.ASC ? 'ASC' : 'DESC',
+        };
 
         const [keys, count] = await this.apikeyRepository.findAndCount({
             withDeleted: true,
