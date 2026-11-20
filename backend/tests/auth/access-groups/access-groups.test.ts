@@ -484,7 +484,7 @@ describe('Verify Access Groups Internal User Access', () => {
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
                     uuid: groupUuid,
-                    userUuid: targetUser.uuid,
+                    userUuids: [targetUser.uuid],
                 }),
             },
         );
@@ -553,11 +553,18 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(externalUser);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
-                body: JSON.stringify({ rights: AccessGroupRights.READ }),
+                body: JSON.stringify({
+                    projects: [
+                        {
+                            projectUuid: projectUuid,
+                            rights: AccessGroupRights.READ,
+                        },
+                    ],
+                }),
             },
         );
         expect(response.status).toBe(403);
@@ -675,7 +682,7 @@ describe('Verify Access Groups Internal User Access', () => {
                 method: 'POST',
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
-                    userUuid: targetUser.uuid,
+                    userUuids: [targetUser.uuid],
                 }),
             },
         );
@@ -885,11 +892,18 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(readUser);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
-                body: JSON.stringify({ rights: AccessGroupRights.READ }),
+                body: JSON.stringify({
+                    projects: [
+                        {
+                            projectUuid: projectUuid,
+                            rights: AccessGroupRights.READ,
+                        },
+                    ],
+                }),
             },
         );
         expect(response.status).toBe(403);
@@ -931,11 +945,18 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(writeUser);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
-                body: JSON.stringify({ rights: AccessGroupRights.READ }),
+                body: JSON.stringify({
+                    projects: [
+                        {
+                            projectUuid: projectUuid,
+                            rights: AccessGroupRights.READ,
+                        },
+                    ],
+                }),
             },
         );
         // Guard allows the request (not 403). The endpoint returns 500 due to
@@ -1119,7 +1140,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
                 method: 'POST',
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
-                    userUuid: targetUser.uuid,
+                    userUuids: [targetUser.uuid],
                 }),
             },
         );
@@ -1151,7 +1172,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
                 method: 'POST',
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
-                    userUuid: newMember.uuid,
+                    userUuids: [newMember.uuid],
                 }),
             },
         );
@@ -1268,7 +1289,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
                 method: 'POST',
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
-                    userUuid: targetUser.uuid,
+                    userUuids: [targetUser.uuid],
                 }),
             },
         );
@@ -1327,11 +1348,18 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const headers = new HeaderCreator(admin);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
-                body: JSON.stringify({ rights: AccessGroupRights.READ }),
+                body: JSON.stringify({
+                    projects: [
+                        {
+                            projectUuid: projectUuid,
+                            rights: AccessGroupRights.READ,
+                        },
+                    ],
+                }),
             },
         );
         // Guard allows the request (not 403). The endpoint returns 500 due to
@@ -1682,7 +1710,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
                 method: 'POST',
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
-                    userUuid: targetUser.uuid,
+                    userUuids: [targetUser.uuid],
                 }),
             },
         );
@@ -1695,7 +1723,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
                 method: 'POST',
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
-                    userUuid: targetUser.uuid,
+                    userUuids: [targetUser.uuid],
                 }),
             },
         );

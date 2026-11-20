@@ -314,11 +314,13 @@ describe('Public projects', () => {
             expect(replace.status).toBe(409);
 
             const add = await fetch(
-                `${DEFAULT_URL}/access-groups/${PUBLIC_ACCESS_GROUP.uuid}/projects/${projectUuid}`,
+                `${DEFAULT_URL}/access-groups/${PUBLIC_ACCESS_GROUP.uuid}/projects`,
                 {
                     method: 'POST',
                     headers: jsonHeaders(owner),
-                    body: JSON.stringify({ rights }),
+                    body: JSON.stringify({
+                        projects: [{ projectUuid: projectUuid, rights }],
+                    }),
                 },
             );
             expect(add.status).toBe(409);
@@ -372,7 +374,7 @@ describe('Public projects', () => {
             {
                 method: 'POST',
                 headers: jsonHeaders(admin),
-                body: JSON.stringify({ userUuid: other.uuid }),
+                body: JSON.stringify({ userUuids: [other.uuid] }),
             },
         );
         expect(addUser.status).toBe(409);

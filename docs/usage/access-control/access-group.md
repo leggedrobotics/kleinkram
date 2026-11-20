@@ -12,6 +12,10 @@ The valid operations that can be performed on an access group are:
 | remove project | Remove a project from the Access Group | <Delete/>                                                                                                           |
 | delete         | Delete the Access Group                | <CanEdit/>                                                                                                          |
 
+You can add several users, or add the group to several projects, in one step. Kleinkram then adds all of them or none:
+if one user is already a member, or you lack the rights on one of the projects, nothing changes and the dialog shows
+the reason, so you can correct the selection and try again.
+
 ## Group Types
 
 There are four types of access groups:

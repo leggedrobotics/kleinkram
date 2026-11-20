@@ -137,8 +137,7 @@ import { Notify } from 'quasar';
 import { useUserSearch } from 'src/hooks/query-hooks';
 import { formatDate, parseDate } from 'src/services/date-formating';
 import { icon } from 'src/services/generic';
-import { addUserToAccessGroup } from 'src/services/mutations/access';
-import { runForEach } from 'src/services/run-for-each';
+import { addUsersToAccessGroup } from 'src/services/mutations/access';
 import { Ref, ref, watch } from 'vue';
 
 const properties = defineProps<{
@@ -200,25 +199,14 @@ const { mutateAsync } = useMutation({
             expireDateConverted = parseDate(customExpirationDate.value);
         }
 
-        const { failed, error } = await runForEach(selected.value, (user) =>
-            addUserToAccessGroup(
-                user.uuid,
-                properties.accessGroupUuid,
-                selectedRole.value,
-                expireDateConverted,
-            ),
+        // one request: either all users are added or none, so a failure
+        // leaves the selection as it is and can simply be retried
+        await addUsersToAccessGroup(
+            selected.value.map((user) => user.uuid),
+            properties.accessGroupUuid,
+            selectedRole.value,
+            expireDateConverted,
         );
-        if (failed.length === 0) return;
-
-        // keep only the users that were not added, so a retry sends just
-        // those, and show the ones that were
-        if (failed.length < selected.value.length) {
-            selected.value = failed;
-            await queryClient.invalidateQueries({
-                queryKey: ['AccessGroup', properties.accessGroupUuid],
-            });
-        }
-        throw error;
     },
     onSuccess: async () => {
         Notify.create({

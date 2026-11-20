@@ -32,8 +32,11 @@ export const createAccessGroup = async (name: string) => {
     return data;
 };
 
-export const addUserToAccessGroup = async (
-    userUuid: string,
+/**
+ * Adds all users in one request: either all of them are added or none.
+ */
+export const addUsersToAccessGroup = async (
+    userUuids: string[],
     accessGroupUUID: string,
     canEditGroup = false,
     expireDate?: Date | 'never',
@@ -41,7 +44,7 @@ export const addUserToAccessGroup = async (
     const { data } = await axios.post<AccessGroupDto>(
         `/access-groups/${accessGroupUUID}/users`,
         {
-            userUuid,
+            userUuids,
             canEditGroup,
             expireDate,
         },
@@ -49,15 +52,18 @@ export const addUserToAccessGroup = async (
     return data;
 };
 
-export const addAccessGroupToProject = async (
-    projectUUID: string,
+/**
+ * Adds the access group to all projects in one request: either it is added
+ * to all of them or to none.
+ */
+export const addAccessGroupToProjects = async (
     accessGroupUUID: string,
-    rights: AccessGroupRights,
+    projects: { projectUuid: string; rights: AccessGroupRights }[],
 ) => {
-    const { data } = await axios.post<ProjectDto>(
-        `/access-groups/${accessGroupUUID}/projects/${projectUUID}`,
+    const { data } = await axios.post<ProjectDto[]>(
+        `/access-groups/${accessGroupUUID}/projects`,
         {
-            rights,
+            projects,
         },
     );
     return data;
