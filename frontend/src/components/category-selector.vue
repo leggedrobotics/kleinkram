@@ -98,7 +98,7 @@ import {
 import { getErrorMessage } from 'src/services/error-handling';
 import { categoryTagStyle } from 'src/services/generic';
 import { createCategory } from 'src/services/mutations/categories';
-import { computed, ref, useId } from 'vue';
+import { computed, ref, useId, watch } from 'vue';
 
 /** uuid of the "+ Create …" option */
 const CREATE = '__create__';
@@ -110,7 +110,9 @@ const properties = defineProps<{
     projectUuid: string;
 }>();
 
-const emit = defineEmits(['update:selected']);
+// `update:creating`: a new category is being created and is not in
+// `selected` yet, so the parent must not save in the meantime
+const emit = defineEmits(['update:selected', 'update:creating']);
 
 const inputId = `category-selector-${useId()}`;
 const selectReference = ref<QSelect | undefined>();
@@ -156,9 +158,19 @@ const emptyMessage = computed(() => {
         : 'No categories yet. Type a name to create one.';
 });
 
-const { mutate: create, isPending: isCreating } = useMutation({
+// Several categories can be created at once; the mutation's own `isPending`
+// only follows the latest call, so the running ones are counted.
+const pendingCreations = ref(0);
+const isCreating = computed(() => pendingCreations.value > 0);
+const { mutate: create } = useMutation({
     mutationFn: (name: string) =>
         createCategory(name, properties.projectUuid) as Promise<CategoryDto>,
+    onMutate: () => {
+        pendingCreations.value++;
+    },
+    onSettled: () => {
+        pendingCreations.value--;
+    },
     onSuccess: async (category: CategoryDto) => {
         emit('update:selected', [...properties.selected, category]);
         await queryClient.invalidateQueries({
@@ -171,6 +183,10 @@ const { mutate: create, isPending: isCreating } = useMutation({
             color: 'negative',
             position: 'bottom',
         }),
+});
+
+watch(isCreating, (creating) => {
+    emit('update:creating', creating);
 });
 
 const selected = computed({

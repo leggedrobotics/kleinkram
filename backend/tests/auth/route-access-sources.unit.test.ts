@@ -85,7 +85,8 @@ const EXPECTED_ACCESS_SOURCES = new Map<string, AccessSource>([
 
     // --- access groups ---------------------------------------------------
     // `uuid` is the access group here, the project is `projectUuid`.
-    ['AccessController.addAccessGroupToProject', fromParameter('projectUuid')],
+    // `addAccessGroupToProjects` takes a list of projects in the body, which
+    // no guard reads: the service checks WRITE rights on each of them.
     [
         'AccessController.removeAccessGroupFromProject',
         fromParameter('projectUuid'),

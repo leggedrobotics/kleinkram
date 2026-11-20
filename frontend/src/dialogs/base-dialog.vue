@@ -41,6 +41,7 @@
             <div
                 v-if="$slots.content"
                 class="base-dialog__content"
+                :inert="busy"
                 @keydown.enter="onEnter"
                 @input="clearError"
             >
@@ -93,7 +94,8 @@
  * - `dirty`: the form has unsaved changes; closing it (Esc, backdrop, the
  *   close button, Cancel) asks before discarding them.
  * - `busy`: the dialog's request is running. Until it ends the dialog cannot
- *   be closed (Esc, backdrop, the close button, Cancel) and Enter does not
+ *   be closed (Esc, backdrop, the close button, Cancel), its content cannot
+ *   be changed (the request was built from what is shown) and Enter does not
  *   submit: the caller only hears about the result while the dialog is
  *   mounted. Pass the same flag the main button uses for `:loading`.
  * - `error` (use `v-model:error`): an error that belongs to no field, e.g.

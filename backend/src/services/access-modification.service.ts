@@ -24,7 +24,9 @@ import {
     AccessGroupType,
 } from '@kleinkram/shared';
 import {
+    BadRequestException,
     ConflictException,
+    ForbiddenException,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
@@ -33,6 +35,7 @@ import { EntityManager, In, Not, QueryFailedError, Repository } from 'typeorm';
 import logger from '../logger';
 import { AccessQueryService } from './access-query.service';
 import { notExpired } from './membership-filters';
+import { ProjectGuardService } from './project-guard.service';
 import {
     assertGrantableAccessRights,
     assertNotPublicAccessGroup,
@@ -63,6 +66,7 @@ export class AccessModificationService {
         private readonly entityManager: EntityManager,
         private readonly accessGroupAuditService: AccessGroupAuditService,
         private readonly accessQueryService: AccessQueryService,
+        private readonly projectGuardService: ProjectGuardService,
     ) {}
 
     async createAccessGroup(
@@ -205,95 +209,104 @@ export class AccessModificationService {
         });
     }
 
-    async addUserToAccessGroup(
+    /**
+     * Adds several users to an access group in one transaction: if one of
+     * them does not exist or is already a member (an expired membership
+     * counts), none is added.
+     */
+    async addUsersToAccessGroup(
         accessGroupUUID: string,
-        userUUID: string,
+        userUuids: string[],
         canEditGroup = false,
         expireDate?: Date | 'never',
         auth?: AuthHeader,
     ): Promise<AccessGroupEntity> {
         assertNotPublicAccessGroup(accessGroupUUID);
 
+        // PostgreSQL compares uuids case-insensitively, the checks below
+        // compare strings and counts
+        const uuids = userUuids.map((uuid) => uuid.toLowerCase());
+        if (uuids.length === 0) {
+            throw new BadRequestException('No users to add');
+        }
+        if (new Set(uuids).size !== uuids.length) {
+            throw new BadRequestException('Each user may only appear once');
+        }
+
         const result = await this.entityManager.transaction(
-            async (transactionalEntityManager) => {
-                const accessGroup =
-                    await transactionalEntityManager.findOneOrFail(
-                        AccessGroupEntity,
-                        {
-                            where: { uuid: accessGroupUUID },
-                            relations: {
-                                memberships: true,
-                            },
-                        },
-                    );
-                const user = await transactionalEntityManager.findOneOrFail(
-                    UserEntity,
-                    {
-                        where: { uuid: userUUID },
-                    },
-                );
+            async (transaction) => {
+                // locks the group, so two requests adding the same user
+                // cannot both pass the membership check below
+                await transaction.findOneOrFail(AccessGroupEntity, {
+                    where: { uuid: accessGroupUUID },
+                    lock: { mode: 'pessimistic_write' },
+                });
 
-                const existingMembership =
-                    await transactionalEntityManager.findOne(
-                        GroupMembershipEntity,
-                        {
-                            where: {
-                                accessGroup: { uuid: accessGroupUUID },
-                                user: { uuid: userUUID },
-                            },
-                        },
-                    );
-
-                if (existingMembership) {
-                    throw new ConflictException(
-                        'User is already a member of this access group',
+                const users = await transaction.find(UserEntity, {
+                    where: { uuid: In(uuids) },
+                    select: { uuid: true },
+                });
+                if (users.length !== uuids.length) {
+                    const missing = uuids.length - users.length;
+                    throw new NotFoundException(
+                        uuids.length === 1
+                            ? 'User not found'
+                            : `${missing.toString()} of the ${uuids.length.toString()} users were not found. No user was added.`,
                     );
                 }
 
-                // @ts-ignore
-                const agu = transactionalEntityManager.create(
+                const alreadyMembers = await transaction.count(
                     GroupMembershipEntity,
                     {
-                        expirationDate:
-                            expireDate === 'never' ? undefined : expireDate,
-                        canEditGroup,
-                    },
-                );
-                await transactionalEntityManager.save(agu);
-                await transactionalEntityManager
-                    .createQueryBuilder()
-                    .relation(AccessGroupEntity, 'memberships')
-                    .of(accessGroup)
-                    .add(agu);
-                await transactionalEntityManager
-                    .createQueryBuilder()
-                    .relation(UserEntity, 'memberships')
-                    .of(user)
-                    .add(agu);
-                return await transactionalEntityManager.findOneOrFail(
-                    AccessGroupEntity,
-                    {
-                        where: { uuid: accessGroupUUID },
-                        relations: {
-                            memberships: {
-                                user: true,
-                            },
+                        where: {
+                            accessGroup: { uuid: accessGroupUUID },
+                            user: { uuid: In(uuids) },
                         },
                     },
                 );
+                if (alreadyMembers > 0) {
+                    throw new ConflictException(
+                        uuids.length === 1
+                            ? 'User is already a member of this access group'
+                            : `${alreadyMembers.toString()} of the ${uuids.length.toString()} users are already members of this access group. No user was added.`,
+                    );
+                }
+
+                await transaction.insert(
+                    GroupMembershipEntity,
+                    uuids.map((uuid) => ({
+                        accessGroup: { uuid: accessGroupUUID },
+                        user: { uuid },
+                        canEditGroup,
+                        ...(expireDate === undefined || expireDate === 'never'
+                            ? {}
+                            : { expirationDate: expireDate }),
+                    })),
+                );
+
+                return await transaction.findOneOrFail(AccessGroupEntity, {
+                    where: { uuid: accessGroupUUID },
+                    relations: {
+                        memberships: {
+                            user: true,
+                        },
+                    },
+                });
             },
         );
 
-        this.accessGroupAuditService
-            .log(
-                accessGroupUUID,
-                AccessGroupEventType.ADD_USER,
-                { userUuid: userUUID, canEditGroup, expireDate },
-                auth?.user as unknown as UserEntity,
-            )
-            .catch((error: unknown) =>
-                logger.error(`Audit log failed: ${String(error)}`),
-            );
+        for (const userUuid of uuids) {
+            this.accessGroupAuditService
+                .log(
+                    accessGroupUUID,
+                    AccessGroupEventType.ADD_USER,
+                    { userUuid, canEditGroup, expireDate },
+                    auth?.user as unknown as UserEntity,
+                )
+                .catch((error: unknown) =>
+                    logger.error(`Audit log failed: ${String(error)}`),
+                );
+        }
 
         return result;
     }
@@ -369,71 +382,96 @@ export class AccessModificationService {
         return result;
     }
 
-    async addAccessGroupToProject(
-        projectUUID: string,
+    /**
+     * Adds an access group to several projects in one transaction: if one of
+     * them is rejected, the group is added to none.
+     *
+     * The caller needs WRITE rights on every project, the same check
+     * `@CanWriteProject()` runs for a single one (the route cannot use that
+     * guard, it reads one uuid from the request). A project the caller cannot
+     * write to and one that does not exist get the same answer.
+     *
+     * Rights are never lowered: where the group already has the given rights
+     * or higher ones, the entry stays as it is.
+     */
+    async addAccessGroupToProjects(
         accessGroupUUID: string,
-        rights: AccessGroupRights,
+        projects: { projectUuid: string; rights: AccessGroupRights }[],
         auth: AuthHeader,
-    ): Promise<ProjectDto> {
-        assertGrantableAccessRights(rights);
-        assertValidPublicAccessRights(accessGroupUUID, rights);
+    ): Promise<ProjectDto[]> {
+        // PostgreSQL compares uuids case-insensitively, the checks below
+        // compare strings
+        const entries = projects.map(({ projectUuid, rights }) => ({
+            projectUuid: projectUuid.toLowerCase(),
+            rights,
+        }));
+        const projectUuids = entries.map((entry) => entry.projectUuid);
+        if (entries.length === 0) {
+            throw new BadRequestException('No projects to add');
+        }
+        if (new Set(projectUuids).size !== projectUuids.length) {
+            throw new BadRequestException('Each project may only appear once');
+        }
+
+        for (const projectUuid of projectUuids) {
+            const canWrite = await this.projectGuardService.canAccessProject(
+                auth.user,
+                projectUuid,
+                AccessGroupRights.WRITE,
+            );
+            // the message a guard answers with
+            if (!canWrite) throw new ForbiddenException('Forbidden resource');
+        }
+
+        for (const { rights } of entries) {
+            assertGrantableAccessRights(rights);
+            assertValidPublicAccessRights(accessGroupUUID, rights);
+        }
 
         const accessGroup = await this.accessGroupRepository.findOneOrFail({
             where: { uuid: accessGroupUUID },
         });
 
-        const event = await this.entityManager.transaction(
-            async (transaction): Promise<AccessGroupEventType | undefined> => {
-                const project = await this.lockProjectForAccessChange(
-                    transaction,
-                    projectUUID,
-                );
+        const events = await this.entityManager.transaction(
+            async (transaction) => {
+                const changes: {
+                    event: AccessGroupEventType;
+                    projectUuid: string;
+                    rights: AccessGroupRights;
+                }[] = [];
 
-                const existingAccess = await transaction.findOne(
-                    ProjectAccessEntity,
-                    {
-                        where: {
-                            project: { uuid: projectUUID },
-                            accessGroup: { uuid: accessGroupUUID },
-                        },
-                    },
-                );
+                // lock all projects in one fixed order first, so two requests
+                // with overlapping lists cannot deadlock
+                await transaction
+                    .createQueryBuilder(ProjectEntity, 'project')
+                    .where('project.uuid IN (:...projectUuids)', {
+                        projectUuids,
+                    })
+                    .orderBy('project.uuid', 'ASC')
+                    .setLock('pessimistic_write')
+                    .getMany();
 
-                // this endpoint never lowers rights: an existing entry with
-                // higher rights stays as it is, so only the new rights need
-                // to be covered
-                await this.assertCanChangeProjectRights(
-                    transaction,
-                    projectUUID,
-                    auth,
-                    accessGroupUUID,
-                    rights,
-                );
-
-                if (existingAccess) {
-                    if (existingAccess.rights >= rights) return undefined;
-                    existingAccess.rights = rights;
-                    await transaction.save(existingAccess);
-                    return AccessGroupEventType.UPDATE_PROJECT_ACCESS;
-                }
-
-                await transaction.save(
-                    transaction.create(ProjectAccessEntity, {
-                        rights,
+                for (const { projectUuid, rights } of entries) {
+                    const event = await this.grantProjectAccess(
+                        transaction,
+                        projectUuid,
                         accessGroup,
-                        project,
-                    }),
-                );
-                return AccessGroupEventType.ADD_PROJECT;
+                        rights,
+                        auth,
+                    );
+                    if (event !== undefined)
+                        changes.push({ event, projectUuid, rights });
+                }
+                return changes;
             },
         );
 
-        if (event !== undefined) {
+        for (const { event, projectUuid, rights } of events) {
             this.accessGroupAuditService
                 .log(
                     accessGroup.uuid,
                     event,
-                    { projectUuid: projectUUID, rights },
+                    { projectUuid, rights },
                     auth.user,
                 )
                 .catch((error: unknown) =>
@@ -441,15 +479,73 @@ export class AccessModificationService {
                 );
         }
 
-        const fullProject = await this.projectRepository.findOneOrFail({
-            where: { uuid: projectUUID },
+        const fullProjects = await this.projectRepository.find({
+            where: { uuid: In(projectUuids) },
             relations: {
                 project_accesses: {
                     accessGroup: true,
                 },
             },
         });
-        return projectEntityToDto(fullProject);
+        const byUuid = new Map(
+            fullProjects.map((project) => [project.uuid, project]),
+        );
+        return projectUuids.flatMap((uuid) => {
+            const project = byUuid.get(uuid);
+            return project ? [projectEntityToDto(project)] : [];
+        });
+    }
+
+    /**
+     * Gives `accessGroup` the given rights on a project, inside the caller's
+     * transaction. An entry with the same or higher rights stays as it is.
+     *
+     * @returns what changed, `undefined` if nothing did
+     */
+    private async grantProjectAccess(
+        transaction: EntityManager,
+        projectUUID: string,
+        accessGroup: AccessGroupEntity,
+        rights: AccessGroupRights,
+        auth: AuthHeader,
+    ): Promise<AccessGroupEventType | undefined> {
+        const project = await this.lockProjectForAccessChange(
+            transaction,
+            projectUUID,
+        );
+
+        const existingAccess = await transaction.findOne(ProjectAccessEntity, {
+            where: {
+                project: { uuid: projectUUID },
+                accessGroup: { uuid: accessGroup.uuid },
+            },
+        });
+
+        // this never lowers rights: an existing entry with higher rights
+        // stays as it is, so only the new rights need to be covered
+        await this.assertCanChangeProjectRights(
+            transaction,
+            projectUUID,
+            auth,
+            accessGroup.uuid,
+            rights,
+        );
+
+        if (existingAccess) {
+            if (existingAccess.rights >= rights) return undefined;
+            existingAccess.rights = rights;
+            await transaction.save(existingAccess);
+            return AccessGroupEventType.UPDATE_PROJECT_ACCESS;
+        }
+
+        await transaction.save(
+            transaction.create(ProjectAccessEntity, {
+                rights,
+                accessGroup,
+                project,
+            }),
+        );
+        return AccessGroupEventType.ADD_PROJECT;
     }
 
     async removeAccessGroupFromProject(

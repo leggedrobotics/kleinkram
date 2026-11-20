@@ -23,7 +23,7 @@ import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
  * hold at least the rights the entry has before and after the change.
  * Covers all three endpoints that write project access:
  *  - POST /projects/:uuid/users
- *  - POST /access-groups/:uuid/projects/:projectUuid
+ *  - POST /access-groups/:uuid/projects
  *  - POST /projects/:uuid/access
  * Making a project public or restricted again needs DELETE rights.
  * Rights above DELETE (`_ADMIN`) are covered by
@@ -227,14 +227,21 @@ describe('Project Access Rights Escalation', () => {
         });
     });
 
-    describe('POST /access-groups/:uuid/projects/:projectUuid', () => {
+    describe('POST /access-groups/:uuid/projects', () => {
         test('should reject a writer granting delete rights', async () => {
             const { writer, projectUuid, writerGroup } = await setupProject();
 
             const response = await post(
                 writer,
-                `/access-groups/${writerGroup.uuid}/projects/${projectUuid}`,
-                { rights: AccessGroupRights.DELETE },
+                `/access-groups/${writerGroup.uuid}/projects`,
+                {
+                    projects: [
+                        {
+                            projectUuid: projectUuid,
+                            rights: AccessGroupRights.DELETE,
+                        },
+                    ],
+                },
             );
 
             expect(response.status).toBe(409);
@@ -253,8 +260,15 @@ describe('Project Access Rights Escalation', () => {
 
             const response = await post(
                 writer,
-                `/access-groups/${newcomerGroup.uuid}/projects/${projectUuid}`,
-                { rights: AccessGroupRights.WRITE },
+                `/access-groups/${newcomerGroup.uuid}/projects`,
+                {
+                    projects: [
+                        {
+                            projectUuid: projectUuid,
+                            rights: AccessGroupRights.WRITE,
+                        },
+                    ],
+                },
             );
 
             expect(response.status).toBe(201);
@@ -405,8 +419,15 @@ describe('Project Access Rights Escalation', () => {
             await membershipRepo.save(membership);
             const grantResponse = await post(
                 owner,
-                `/access-groups/${formerOwnersUuid}/projects/${projectUuid}`,
-                { rights: AccessGroupRights.DELETE },
+                `/access-groups/${formerOwnersUuid}/projects`,
+                {
+                    projects: [
+                        {
+                            projectUuid: projectUuid,
+                            rights: AccessGroupRights.DELETE,
+                        },
+                    ],
+                },
             );
             expect(grantResponse.status).toBe(201);
 
@@ -532,8 +553,15 @@ describe('Project Access Rights Escalation', () => {
 
             const response = await post(
                 writer,
-                `/access-groups/${PUBLIC_ACCESS_GROUP.uuid}/projects/${projectUuid}`,
-                { rights: AccessGroupRights.READ },
+                `/access-groups/${PUBLIC_ACCESS_GROUP.uuid}/projects`,
+                {
+                    projects: [
+                        {
+                            projectUuid: projectUuid,
+                            rights: AccessGroupRights.READ,
+                        },
+                    ],
+                },
             );
 
             expect(response.status).toBe(409);

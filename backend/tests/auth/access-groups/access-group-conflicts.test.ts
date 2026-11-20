@@ -71,8 +71,8 @@ describe('Access Group Conflicts', () => {
         const grant = await send(
             user,
             'POST',
-            `/access-groups/${groupUuid}/projects/${projectUuid}`,
-            { rights: AccessGroupRights.READ },
+            `/access-groups/${groupUuid}/projects`,
+            { projects: [{ projectUuid, rights: AccessGroupRights.READ }] },
         );
         expect(grant.status).toBeLessThan(300);
         const accessBefore = await projectAccess(user, projectUuid);
@@ -142,12 +142,9 @@ describe('Access Group Conflicts', () => {
             name: 'outlives-project',
         });
         const groupUuid = (created.json as { uuid: string }).uuid;
-        await send(
-            user,
-            'POST',
-            `/access-groups/${groupUuid}/projects/${projectUuid}`,
-            { rights: AccessGroupRights.READ },
-        );
+        await send(user, 'POST', `/access-groups/${groupUuid}/projects`, {
+            projects: [{ projectUuid, rights: AccessGroupRights.READ }],
+        });
         const projectDeletion = await send(
             user,
             'DELETE',
@@ -172,12 +169,9 @@ describe('Access Group Conflicts', () => {
                 name: `racing-group-${round.toString()}`,
             });
             const groupUuid = (created.json as { uuid: string }).uuid;
-            await send(
-                user,
-                'POST',
-                `/access-groups/${groupUuid}/projects/${projectUuid}`,
-                { rights: AccessGroupRights.READ },
-            );
+            await send(user, 'POST', `/access-groups/${groupUuid}/projects`, {
+                projects: [{ projectUuid, rights: AccessGroupRights.READ }],
+            });
             const current = await projectAccess(user, projectUuid);
 
             // the save locks the project and then needs the group, the
