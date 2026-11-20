@@ -186,7 +186,8 @@ function spansPerTopic(
  * Per topic, where the recording has data and where it conspicuously has none.
  *
  * Returns undefined when there is nothing to draw: no chunks, or a recording
- * without any duration.
+ * without any duration. `topics` is empty when any chunk lacks a message
+ * index, since coverage would then be partly unknown.
  */
 export function computeRecordingCoverage(
     chunks: RecordingChunk[],
@@ -224,8 +225,20 @@ export function computeRecordingCoverage(
         chunkSpans.map((span) => span.end - span.start),
     );
 
-    const counts = countMessages(channels);
+    // A chunk without a message index does not say which channels it holds,
+    // so a topic missing from it is unknown rather than absent. Drawn anyway,
+    // every unindexed stretch would look like a dropout of every topic.
     const topics: Record<string, TopicCoverage> = {};
+    if (!chunks.every((chunk) => chunk.hasMessageIndex)) {
+        return {
+            startTime: origin,
+            durationSeconds,
+            topics,
+            pauses: findPauses(chunkSpans),
+        };
+    }
+
+    const counts = countMessages(channels);
     for (const [topic, spans] of spansPerTopic(located, channels)) {
         const count = counts.get(topic);
         // A slow topic is absent from most chunks without anything being

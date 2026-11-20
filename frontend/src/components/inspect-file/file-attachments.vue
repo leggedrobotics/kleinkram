@@ -4,7 +4,7 @@
         <q-list bordered separator class="rounded-borders bg-white">
             <q-item
                 v-for="(attachment, index) in attachments"
-                :key="`${attachment.name}:${String(attachment.logTime)}`"
+                :key="`${String(index)}:${attachment.name}`"
                 class="column"
             >
                 <div class="row items-center no-wrap full-width">

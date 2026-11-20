@@ -209,8 +209,14 @@
         />
     </div>
 
-    <div v-if="file && activeTab === 'metadata'" class="q-my-lg">
-        <FileMetadataRecords :read="preview.readMetadata" />
+    <!-- Kept mounted once opened, so coming back to the tab neither reads
+         every record again nor folds the rows that were open. -->
+    <div
+        v-if="file && metadataOpenedFor === file.uuid"
+        v-show="activeTab === 'metadata'"
+        class="q-my-lg"
+    >
+        <FileMetadataRecords :key="file.uuid" :read="preview.readMetadata" />
     </div>
 
     <div v-if="file && activeTab === 'history'" class="q-mb-lg">
@@ -284,6 +290,17 @@ const activeTab = computed<FileTab>(() => {
     }
     return tab.value;
 });
+// The file whose metadata tab has been opened; another file starts closed.
+const metadataOpenedFor = ref<string | undefined>(undefined);
+watch(
+    activeTab,
+    (current) => {
+        if (current === 'metadata' && file.value) {
+            metadataOpenedFor.value = file.value.uuid;
+        }
+    },
+    { immediate: true },
+);
 const yamlContent = ref<string | undefined>(undefined);
 const tumContent = ref<string | undefined>(undefined);
 const textContent = ref<string | undefined>(undefined);

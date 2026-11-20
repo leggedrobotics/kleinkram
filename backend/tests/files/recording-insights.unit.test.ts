@@ -205,6 +205,22 @@ describe('computeRecordingCoverage', () => {
             { start: 40, end: 61 },
         ]);
     });
+    test('no topic coverage when some chunks have no message index', () => {
+        // The middle stretch was written without indexes: its chunks list no
+        // channels, which must not read as every topic dropping out there.
+        const chunks = recording(100, (second) =>
+            second >= 40 && second < 60 ? [] : [IMU, LIDAR],
+        ).map((each, second) =>
+            second >= 40 && second < 60
+                ? { ...each, hasMessageIndex: false }
+                : each,
+        );
+
+        const coverage = computeRecordingCoverage(chunks, channels);
+
+        expect(coverage?.durationSeconds).toBe(100);
+        expect(coverage?.topics).toEqual({});
+    });
 });
 
 describe('findPauses', () => {

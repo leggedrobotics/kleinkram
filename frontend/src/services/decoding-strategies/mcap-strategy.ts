@@ -12,7 +12,7 @@ import {
     summarizeStorage,
     UniversalHttpReader,
 } from '@kleinkram/shared';
-import { McapIndexedReader } from '@mcap/core';
+import { McapByteReader, McapIndexedReader, parseRecord } from '@mcap/core';
 import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
 import { mapInOrder } from './fetch-pool';
@@ -202,18 +202,24 @@ export class McapStrategy extends DecodingStrategy {
         index: number,
     ): Promise<Uint8Array | undefined> {
         const wanted = this.reader?.attachmentIndexes[index];
-        if (!this.reader || !wanted) return undefined;
+        if (!this.httpReader || !wanted) return undefined;
 
-        // Names need not be unique, so the log time narrows the read to the
-        // attachment that was asked for.
-        for await (const attachment of this.reader.readAttachments({
-            name: wanted.name,
-            startTime: wanted.logTime,
-            endTime: wanted.logTime,
-        })) {
-            return attachment.data;
+        // Read the record the index entry points at. Neither the name nor the
+        // log time has to be unique, so looking the attachment up by them can
+        // return a different one.
+        const bytes = await this.httpReader.read(wanted.offset, wanted.length);
+        const record = parseRecord(
+            new McapByteReader(
+                new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength),
+            ),
+            true,
+        );
+        if (record?.type !== 'Attachment') {
+            throw new Error(
+                `No attachment record at offset ${wanted.offset.toString()}`,
+            );
         }
-        return undefined;
+        return record.data;
     }
 
     override async readMetadata(): Promise<RecordingMetadata[]> {

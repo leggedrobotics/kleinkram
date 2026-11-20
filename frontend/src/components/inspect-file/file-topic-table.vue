@@ -240,8 +240,12 @@ const EXPANDED_VIEWS: { label: string; value: ExpandedView }[] = [
     { label: 'Definition', value: 'definition' },
 ];
 const expandedView = ref<Record<string, ExpandedView>>({});
+// The choice is kept per topic name, and a cached file can reuse this table
+// for a recording whose topic of the same name has no text definition.
 const viewOf = (topic: string): ExpandedView =>
-    expandedView.value[topic] ?? 'preview';
+    properties.insights?.schemasByTopic[topic]?.definition
+        ? (expandedView.value[topic] ?? 'preview')
+        : 'preview';
 const definitionOf = (topic: string): string | undefined =>
     properties.insights?.schemasByTopic[topic]?.definition;
 const definitionHtml = (topic: string): string => {
