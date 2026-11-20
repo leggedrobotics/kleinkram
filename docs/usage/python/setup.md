@@ -30,19 +30,16 @@ klein --help
 
 ## Authentication
 
-To use the CLI or the Python SDK, you must first log in. This is done exclusively using the CLI. The CLI has no
-built-in server: the first time, pass the address of your Kleinkram web app, the one you open in the browser:
+Log in with the CLI before you use the CLI or the Python SDK. The first time, pass the address of your Kleinkram web
+app, the address you open in the browser:
 
 ```bash
 klein login https://datasets.example.org
 ```
 
-The CLI looks up the API and storage addresses of that server (from `/.well-known/kleinkram.json` of the web app and
-`/cli/config` of the API), saves the server and makes it the active one. You can also pass the address of the API, a
-bare host name (`klein login datasets.example.org`) or a link to any page of the web app.
+A bare host name (`klein login datasets.example.org`) or a link to any page of the web app works too.
 
-The server must use https. The CLI refuses plain `http://` addresses, including API or storage addresses the
-server announces and redirects, except for `localhost` during local development.
+The server must use https. Plain `http://` addresses only work for `localhost`.
 
 The CLI then shows a short code such as `KQMX-TRBC` and opens the web app on the page `/cli/activate`. Sign in if
 needed, check that the page shows the same code and click **Authorize CLI**. The terminal finishes the login by itself.
@@ -97,8 +94,7 @@ export KLEINKRAM_S3_ENDPOINT=https://s3.datasets.example.org
 export KLEINKRAM_API_KEY=<API_KEY>
 ```
 
-All three are needed: the CLI no longer has a built-in server, so `KLEINKRAM_API_KEY` alone is not enough. Like
-inside actions, the variables are only used when there is no saved `~/.kleinkram.json`. `klein login <url>` prints
+All three are required; `KLEINKRAM_API_KEY` alone is not enough. Like inside actions, the variables are only used when there is no saved `~/.kleinkram.json`. `klein login <url>` prints
 both addresses, or open `<api address>/cli/config` in a browser.
 
 Inside an action you need none of this: the action container sets all three variables for you (see below).

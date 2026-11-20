@@ -6,7 +6,7 @@ Kleinkram is an open-source, self-hosted platform for managing and processing ro
 
 - **Organize**: Keep your data structured in a strict hierarchy of Projects and Missions.
 - **Store**: Securely store large robotics files like `.bag`, `.mcap`, and `.svo2`.
-- **Process**: Run automated actions to validate, convert, and analyze your data using Docker.
+- **Process**: Validate, convert, and analyze your data with custom actions.
 - **Collaborate**: Share data easily with your team through a centralized web interface.
 
 ![Landing Page](/assets/landingpage.png)
@@ -27,11 +27,9 @@ Project and mission names are used as identifiers in the CLI and SDK (for exampl
 
 - 3 to 100 characters long.
 - Only ASCII letters (`a-z`, `A-Z`), digits (`0-9`), dots (`.`), underscores (`_`) and hyphens (`-`). Spaces, slashes and accented characters are not allowed.
-- Must not start with a dot (it would be a hidden directory) or a hyphen (a command line would read it as an option).
-- Must not be a UUID, so a name can never be mistaken for an id.
+- Must not start with a dot or a hyphen.
+- Must not be a UUID.
 - Project names must be unique across the instance. Mission names must be unique within their project.
-
-Use `-` or `_` where you would use a space: `Field Testing 2024` becomes `field-testing-2024`. If a name is invalid, the web interface, the CLI and the API suggest a valid alternative. Access group, action template and trigger names follow the same rules.
 
 File names follow the same rules for the part before the extension, which is 3 to 50 characters long. The extension
 must be one of the [supported file types](./files/files.md), in lowercase: `run_01.mcap` and `calib.2024-05-14.bag`
