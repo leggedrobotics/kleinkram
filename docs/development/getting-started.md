@@ -111,11 +111,11 @@ machine. This is necessary for code completion and linting in your IDE.
 6. For installing the cli, you can use the following command:
 
     ```bash
-    cd kleinkram/cli
+    cd cli
 
     virtualenv -ppython3.10 .venv
     source .venv/bin/activate
-    pip install -e . -r requirements.txt
+    pip install -e . -r requirements.txt -r requirements-dev.txt
     ```
 
 ### Local Ports
@@ -167,20 +167,20 @@ Besides the services described in [Application Structure](./application-structur
 | `docker/`        | Dockerfiles of the services                                                                                                                                     |
 | `examples/`      | Source of the example actions in `examples/kleinkram-actions/`, including the image that runs `klein action run-script`                                         |
 
-### Enable Database Seeding
+### Database Seeding
 
-In order to seed the database with mock data, you can run the following command:
+The committed `.env` has `SEED=true`, so a fresh database is seeded with mock data on startup. To start over with a
+freshly seeded database, run:
 
 ```bash
 # This will remove the existing database
 docker compose down --volumes
 
-# enable seeding by changing SEED in the .env file to true
-sed -i 's/SEED=false/SEED=true/' .env
-
 # This will seed the database with mock data
 docker compose up --build --watch
 ```
+
+Set `SEED=false` in `.env` to start with an empty database instead.
 
 ### Seeded Entities
 

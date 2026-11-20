@@ -15,59 +15,84 @@ download or upload files directly.
 
 ## Structure
 
-Within the `api` directory, at the root level are the key configuration files for the API application. The `src`
-directory contains the source code for the application.
+The API lives in the `backend` directory. The `src` directory contains the source code; the entities, enums and
+environment variables are shared with the queue processor in the `packages/backend-common` workspace package.
 
 ### Configuration Files
 
 - `package.json` - Contains the dependencies and scripts for the application.
 - `tsconfig.json` - Contains the configuration for the TypeScript compiler.
-- `Dockerfile` - Contains the instructions to build the Docker image for the application.
+- `entrypoint.sh` - Starts the API in the container (watch mode and seeding in development builds).
+- `migration/` - The TypeORM migrations, see [Database Migration](../migrations/migrations.md).
+- The Docker image is built from `docker/backend.Dockerfile` in the repository root.
 
 ### Source Code
 
-The Source Code is structured into modules. Each module handles the logic for an entity. Each module is structured
-identically:
+| Directory               | Description                                                                                        |
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
+| `src/endpoints/<name>/` | One NestJS module per resource (`project`, `mission`, `file`, `action`, ...), with its controller. |
+| `src/endpoints/auth/`   | Login strategies (Google, GitHub, fake OAuth for development), JWT handling and the access guards. |
+| `src/services/`         | The business logic, shared by the controllers.                                                     |
+| `src/routing/`          | Middlewares, interceptors, exception filters and pipes that apply to every request.                |
+| `src/serialization/`    | Helpers that turn entities into the DTOs of `packages/api-dto`.                                    |
 
-- `module` - The module contains the configuration for the module.
-- `controller` - The controller handles the incoming requests and outgoing responses.
-- `service` - The service handles the business logic.
-- `entities/` - Contains .dto files for the data transfer objects. The entities are moved to the toplevel 'common'
-  folder as they are shared with the queue-processor.
+Each entity inherits from the `BaseEntity` class. This class adds basic fields like `uuid`, `createdAt`, `deletedAt`,
+and `updatedAt`.
 
-Each entity should inherit from the `BaseEntity` class. This class adds basic fields
-like `uuid`, `createdAt`, `deletedAt`, and `updatedAt`.
-::: warning
-The `deletedAt` field is used for soft deletes. The field is set to the current date when the entity is deleted. The
-entity is not removed from the database.
-Are we using this? Should we?
+::: info Soft deletes
+The `deletedAt` field is used for soft deletes: deleting an entity sets the field to the current date instead of
+removing the row, and TypeORM leaves such rows out of queries.
 :::
 
-Some functions were extracted into services. They are currently in the root of the `src` directory. Logger & Tracing
-handle the respective tasks.
-
 The storage system uses a bucket-based abstraction (`IStorageBucket`). Specific buckets (e.g., `DataStorageBucket`, `ArtifactStorageBucket`) are injected into services to handle object storage. This abstracts away the underlying provider (S3/SeaweedFS).
+
+### Middlewares
+
+Every request passes through these middlewares (`src/routing/middlewares/`):
+
+- `response-compression.ts` - Compresses responses, see `API_COMPRESSION_ENABLED` in the
+  [Environment Variables](../environment-variables.md).
+- `api-key-resolver-middleware.service.ts` - Resolves the API key of an action (cookie or `x-api-key` header) to its
+  user.
+- `audit-logger-middleware.service.ts` - Records the requests an action makes with its API key in the action's audit
+  log.
+- `version-checker-middleware.service.ts` - Rejects clients whose version is too old with `426 Upgrade Required`.
 
 ## Development
 
 The API should remain stateless (besides the database connections). This will allow parallelization and scaling of the
 API.
 
-The API should never handle files directly. These files can be to large and slow down the API. Instead, the API should
-use issue temporary credential for S3 so that files are directly uploaded to & downloaded from S3.
+The API should never handle files directly. These files can be too large and slow down the API. Instead, the API
+issues temporary credentials for S3 so that files are directly uploaded to & downloaded from S3.
 
-Similarly, the API should never do heavy processing. Tasks that require this should be offloaded to the QueingService.
-The QueingService will then schedule the task.
+Similarly, the API should never do heavy processing. Tasks that require this should be offloaded to the queue processor
+through the `QueueService`.
 
-Use the eslint and prettier to format the code. The code should be formatted before committing. The code should be
+Use ESLint and Prettier to format the code. The code should be formatted before committing. The code should be
 linted before pushing. The code should be tested before merging.
 
-::: warning
-How to log & trace
-:::
+### Logging and Tracing
+
+`src/logger.ts` is a Winston logger that writes to the console and sends the logs to Loki. `src/tracing.ts` sets up
+OpenTelemetry: traces are exported to Tempo over OTLP, metrics are exposed for Prometheus. See
+[Infrastructure](./infrastructure.md) for the observability stack.
 
 ## Authentication
 
-::: danger
-Documentation is missing
-:::
+Users log in with Google, GitHub or, in development, the fake OAuth provider (`src/endpoints/auth/*.strategy.ts`). The
+API then sets a session cookie; the CLI uses the same session through a device login. Actions authenticate with an
+API key (a cookie or the `x-api-key` header) that is only valid for their own mission while they run.
+
+Endpoints declare who may call them with the decorators from `src/endpoints/auth/guards/`, for example:
+
+| Decorator                                                        | Allows                                                             |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `@LoggedIn()`                                                    | Any logged-in user or action API key.                              |
+| `@UserOnly()`                                                    | Logged-in users, but not action API keys.                          |
+| `@AdminOnly()`                                                   | Admins.                                                            |
+| `@CanCreate()`                                                   | Users who may create projects (admins, affiliation group members). |
+| `@CanReadProject()`, `@CanWriteProject()`, `@CanDeleteProject()` | Users with that right on the project in the request.               |
+| `@CanReadMission()`, ...                                         | The same for missions, files, actions and access groups.           |
+
+See [Access Control](../access-control/base-concepts.md) for how the rights are computed.

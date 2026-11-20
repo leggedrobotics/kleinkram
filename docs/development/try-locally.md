@@ -31,16 +31,16 @@ The `--build` flag ensures that the Docker images are built before starting. For
 ::: tip Seeding
 By default, the application is seeded with example data (users, projects, files, and action templates) to help you explore the features immediately. This is controlled by the `SEED` variable in your `.env` file (default: `true`). To start with an empty database, set `SEED=false`.
 
-For a detailed list of what is seeded, see [Enable Database Seeding](./getting-started.md#enable-database-seeding).
+For a detailed list of what is seeded, see [Seeded Entities](./getting-started.md#seeded-entities).
 :::
 
 4. **Open the application**
 
-Wait until you see a log line that says `kleinkram-api-server | 👍 Finished Seeding`. This indicates that the seeding process has completed successfully and the application is fully started. You can now access the frontend at `http://localhost:8003`.
+Wait until the `kleinkram-api-server` container logs `Backend API ready on http://localhost:3000`. It is printed after the seeding has finished, so the application is then fully started. You can now access the frontend at `http://localhost:8003`.
 
 ::: tip Browser Compatibility
 Make sure to use Chrome or Firefox for the best experience with the local development server.
-There are some known iessues related to Safari when running Kleinkram locally.
+There are some known issues related to Safari when running Kleinkram locally.
 :::
 
 ::: details Can I Sign-In using GitHub or Google OAuth?

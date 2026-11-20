@@ -39,7 +39,7 @@ The operational containers are again split into publicly accessible and non-publ
 - [prometheus](application-structure/infrastructure.md#prometheus) - monitoring (for time series data)
 - [tempo](application-structure/infrastructure.md#tempo) - tracing
 - [loki](application-structure/infrastructure.md#loki) - logging
-- [grafana](application-structure/infrastructure.md#grafana) - visualization of the monitoring dat, logs, and traces
+- [grafana](application-structure/infrastructure.md#grafana) - visualization of the monitoring data, logs, and traces
 
 ## Infrastructure Overview
 
@@ -51,4 +51,5 @@ The above figure can be edited using https://drive.google.com/file/d/1w4JAuPfGML
 
 ## Git Workflow
 
-We use three designated branches `main`, `dev` and `staging`. To submit new code open a pull request to `staging`. Once enough features are present, we merge `staging` into `dev`. This will trigger our CI/CD pipeline and update the dev deployment. When we are happy with the stability of the dev deployment we merge into `main`.
+We work with two branches: pull requests go to `dev`, which updates the dev deployment, and `dev` is merged into
+`main` for a release. See [Contributing](contributing.md) for the details.
