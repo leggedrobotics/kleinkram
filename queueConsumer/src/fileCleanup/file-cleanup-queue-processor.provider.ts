@@ -15,6 +15,7 @@ import crypto from 'node:crypto';
 import Redlock from 'redlock';
 import { In, IsNull, LessThanOrEqual, Not, Repository } from 'typeorm';
 import logger from '../logger';
+import { reconcileStorage } from './storage-reconciliation';
 
 @Processor('file-cleanup')
 @Injectable()
@@ -107,6 +108,53 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
             })
             .catch(() => {
                 logger.debug("Couldn't acquire lock for hash repair");
+            });
+    }
+
+    /**
+     * Repairs the storage copy of each file's project, mission and name (the
+     * object tags) and marks files whose object is missing as LOST. Tags are
+     * written best effort when a file changes, so they can drift; see
+     * `reconcileStorage`.
+     */
+    @Cron(CronExpression.EVERY_DAY_AT_2AM)
+    async reconcileStorage(): Promise<void> {
+        await this.redlock
+            .using([`lock:storage-reconciliation`], 10_000, async () => {
+                const result = await reconcileStorage(
+                    this.dataStorage,
+                    this.fileRepository,
+                    logger,
+                ).catch((error: unknown) => {
+                    logger.error(
+                        `Storage reconciliation failed: ${String(error)}`,
+                    );
+                });
+                if (!result) return;
+                const summary = `Storage reconciliation: ${JSON.stringify(result)}`;
+                // anything repaired or suspicious is a warning, so it can be
+                // alerted on; a clean run is only debug output
+                if (result.lostCheckSkipped > 0) {
+                    logger.error(
+                        `${summary}. ${result.lostCheckSkipped.toString()} files look lost, too many to be plausible; none were marked. Check the storage.`,
+                    );
+                } else if (
+                    result.tagsRepaired +
+                        result.tagRepairsFailed +
+                        result.filesMarkedLost +
+                        result.objectsWithoutFile >
+                    0
+                ) {
+                    logger.warn(summary);
+                } else {
+                    logger.debug(summary);
+                }
+            })
+            .catch(() => {
+                // another queue consumer instance holds the lock
+                logger.debug(
+                    "Couldn't acquire lock for storage reconciliation",
+                );
             });
     }
 

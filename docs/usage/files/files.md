@@ -56,7 +56,7 @@ These states are typically only relevant for administrators or debugging purpose
 | ------------------------------------------------------------------------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------- |
 | —                                                                              | Converting | The `.mcap` that Kleinkram creates from an uploaded `.bag` is being written.                                            |
 | —                                                                              | Canceled   | The upload was canceled before it finished. Canceled uploads are removed after 24 hours.                                |
-| <span class="material-symbols-outlined" style="color: red">pulse_alert</span>  | Lost       | The file is in the database but cannot be found in the file storage. Contact an admin.                                  |
+| <span class="material-symbols-outlined" style="color: red">pulse_alert</span>  | Lost       | The file is in the database but cannot be found in the file storage (checked every night). Contact an admin.            |
 | <span class="material-symbols-outlined" style="color: green">helicopter</span> | Found      | The file was in the file storage but not in the database, and was restored. Older versions of Kleinkram set this state. |
 
 :::

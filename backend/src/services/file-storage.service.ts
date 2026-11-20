@@ -108,9 +108,22 @@ export class FileStorageService {
         return metrics;
     }
 
+    /**
+     * Rewrites the tags of every object. The nightly storage reconciliation
+     * in the queue consumer does the same automatically (and only for
+     * objects whose tags drifted); this is the manual version.
+     */
     async renameTags(): Promise<void> {
         const filesList = await this.dataStorage.listFiles();
 
+        // the listing is complete (not just the first 1000 objects), so the
+        // objects are tagged a few at a time instead of all at once
+        for (let start = 0; start < filesList.length; start += 20) {
+            await this.renameTagsOf(filesList.slice(start, start + 20));
+        }
+    }
+
+    private async renameTagsOf(filesList: StorageItem[]): Promise<void> {
         await Promise.all(
             filesList.map(async (file: StorageItem): Promise<void> => {
                 if (!file.name) {
