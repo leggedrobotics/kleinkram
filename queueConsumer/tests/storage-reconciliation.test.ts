@@ -222,6 +222,24 @@ describe('Storage Reconciliation', () => {
         expect(late.state).toBe(FileState.OK);
     });
 
+    test('should report a failed check instead of marking the file', async () => {
+        const unreachable = fakeFile('unreachable');
+        const storage = fakeStorage({});
+        jest.spyOn(storage, 'getFileInfo').mockRejectedValue(
+            new Error('timeout'),
+        );
+
+        const result = await reconcileStorage(
+            storage,
+            fakeRepository([unreachable]),
+            log,
+        );
+
+        expect(result.lostChecksFailed).toBe(1);
+        expect(result.filesMarkedLost).toBe(0);
+        expect(unreachable.state).toBe(FileState.OK);
+    });
+
     test('should skip keys that are not file uuids', async () => {
         const file = fakeFile('kept');
         const repository = fakeRepository([file]);

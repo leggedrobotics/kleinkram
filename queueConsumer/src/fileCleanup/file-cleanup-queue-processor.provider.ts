@@ -141,6 +141,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 } else if (
                     result.tagsRepaired +
                         result.tagRepairsFailed +
+                        result.lostChecksFailed +
                         result.filesMarkedLost +
                         result.objectsWithoutFile >
                     0

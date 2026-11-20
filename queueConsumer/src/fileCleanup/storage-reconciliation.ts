@@ -54,6 +54,8 @@ export interface ReconciliationResult {
     filesMarkedLost: number;
     /** Files that look lost but weren't marked, see `isPlausibleLoss`. */
     lostCheckSkipped: number;
+    /** Files whose object couldn't be checked again; left unchanged. */
+    lostChecksFailed: number;
 }
 
 /** The tags an object should carry, as `addTags` writes them. */
@@ -126,6 +128,7 @@ export const reconcileStorage = async (
         objectsWithoutFile: 0,
         filesMarkedLost: 0,
         lostCheckSkipped: 0,
+        lostChecksFailed: 0,
     };
 
     // Keys that aren't uuids (a test object, a folder marker) can't belong
@@ -189,8 +192,17 @@ export const reconcileStorage = async (
     // after it was taken. Ask the storage once more before marking a file.
     const lost: string[] = [];
     await forEachLimited(candidates, CONCURRENCY, async (uuid) => {
-        const info = await dataStorage.getFileInfo(uuid).catch(() => 'unknown');
-        if (info === undefined) lost.push(uuid);
+        try {
+            if ((await dataStorage.getFileInfo(uuid)) === undefined) {
+                lost.push(uuid);
+            }
+        } catch (error: unknown) {
+            // not checked, so not marked: reported instead of looking clean
+            result.lostChecksFailed++;
+            log.warn(
+                `Checking whether file ${uuid} is missing from the storage failed: ${String(error)}`,
+            );
+        }
     });
     for (let start = 0; start < lost.length; start += BATCH_SIZE) {
         const update = await fileRepository.update(
