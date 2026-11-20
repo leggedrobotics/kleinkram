@@ -26,8 +26,10 @@ import {
     UserRole,
 } from '@kleinkram/shared';
 import {
+    ConflictException,
     ForbiddenException,
     Injectable,
+    NotFoundException,
     OnModuleInit,
     UnauthorizedException,
 } from '@nestjs/common';
@@ -137,21 +139,44 @@ export class UserService implements OnModuleInit {
     }
 
     async promoteUser(usermail: string): Promise<UserDto> {
-        const user = await this.userRepository.findOneOrFail({
+        const user = await this.userRepository.findOne({
             where: { email: usermail },
         });
+        if (!user) throw new NotFoundException('User not found');
         user.role = UserRole.ADMIN;
         await this.userRepository.save(user);
         return userEntityToDto(user);
     }
 
-    async demoteUser(usermail: string) {
-        const user = await this.userRepository.findOneOrFail({
-            where: { email: usermail },
+    /**
+     * Demotes an admin to a regular user.
+     *
+     * The last admin can't be demoted: without an admin, `claimAdmin` lets
+     * any signed-in user make themselves admin. The admins are locked while
+     * checking, so two admins can't demote each other at the same time.
+     */
+    async demoteUser(usermail: string): Promise<UserDto> {
+        return this.userRepository.manager.transaction(async (manager) => {
+            const user = await manager.findOne(UserEntity, {
+                where: { email: usermail },
+            });
+            if (!user) throw new NotFoundException('User not found');
+
+            if (user.role === UserRole.ADMIN) {
+                const admins = await manager.find(UserEntity, {
+                    where: { role: UserRole.ADMIN },
+                    select: { uuid: true },
+                    lock: { mode: 'pessimistic_write' },
+                });
+                if (admins.length <= 1) {
+                    throw new ConflictException("Can't demote the last admin");
+                }
+            }
+
+            user.role = UserRole.USER;
+            await manager.save(user);
+            return userEntityToDto(user);
         });
-        user.role = UserRole.USER;
-        await this.userRepository.save(user);
-        return userEntityToDto(user);
     }
 
     async search(
