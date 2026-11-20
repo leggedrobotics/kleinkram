@@ -23,6 +23,15 @@ describe('Metadata Values', () => {
         });
     });
 
+    test.each([
+        '2024-02-29',
+        '2024-05-13T10:30',
+        '2024-05-13T10:30:00.000Z',
+        '2024-05-13T10:30:00+02:00',
+    ])('should accept the ISO date %s', (value) => {
+        expect(parseMetadataValue('m', DataType.DATE, value).ok).toBe(true);
+    });
+
     test('should accept an ISO date', () => {
         const parsed = parseMetadataValue('m', DataType.DATE, '2024-05-13');
         expect(parsed.ok && parsed.columns.value_date?.toISOString()).toBe(
@@ -37,6 +46,10 @@ describe('Metadata Values', () => {
         [DataType.BOOLEAN, 'maybe', 'true or false'],
         [DataType.BOOLEAN, 1, 'true or false'],
         [DataType.DATE, '13.05.2024', 'a date like 2024-05-13'],
+        [DataType.DATE, '05/13/2024', 'a date like 2024-05-13'],
+        [DataType.DATE, '2024-02-30', 'a date like 2024-05-13'],
+        [DataType.DATE, '2023-02-29', 'a date like 2024-05-13'],
+        [DataType.DATE, '2024-13-01', 'a date like 2024-05-13'],
         [DataType.DATE, '', 'a date like 2024-05-13'],
         [DataType.STRING, 5, 'text'],
         [

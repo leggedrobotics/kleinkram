@@ -24,6 +24,7 @@ import {
     EntityManager,
     ILike,
     Not,
+    QueryFailedError,
     Repository,
     SelectQueryBuilder,
 } from 'typeorm';
@@ -820,23 +821,36 @@ export class ProjectService {
         return projectEntityToDto(updatedProject);
     }
 
+    /**
+     * Adds one required metadata type. Only that row of the join table is
+     * written, so concurrent requests for other types can't undo each other
+     * (saving the whole list from an earlier read could).
+     */
     async addMetadataType(
         uuid: string,
         metadataTypeUUID: string,
     ): Promise<void> {
-        // the relation has to be loaded, or `requiredMetadataTypes` is
-        // undefined and saving would also drop the other required types
-        const project = await this.projectRepository.findOneOrFail({
-            where: { uuid },
-            relations: { requiredMetadataTypes: true },
-        });
+        await this.projectRepository.findOneOrFail({ where: { uuid } });
         const metadataType = await this.metadataTypeRepository.findOneOrFail({
             where: { uuid: metadataTypeUUID },
         });
-        const required = project.requiredMetadataTypes;
-        if (required.some((type) => type.uuid === metadataType.uuid)) return;
-        project.requiredMetadataTypes = [...required, metadataType];
-        await this.projectRepository.save(project);
+        try {
+            await this.projectRepository
+                .createQueryBuilder()
+                .relation(ProjectEntity, 'requiredMetadataTypes')
+                .of(uuid)
+                .add(metadataType.uuid);
+        } catch (error) {
+            // already required: adding it again changes nothing
+            if (
+                error instanceof QueryFailedError &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                error.driverError?.code === '23505'
+            ) {
+                return;
+            }
+            throw error;
+        }
     }
 
     async updateMetadataTypes(
@@ -859,18 +873,21 @@ export class ProjectService {
         await this.projectRepository.save(project);
     }
 
+    /**
+     * Removes one required metadata type, as a single row of the join table
+     * (see `addMetadataType`). The database compares the uuid, so any
+     * spelling of it matches.
+     */
     async removeMetadataType(
         uuid: string,
         metadataTypeUUID: string,
     ): Promise<void> {
-        const project = await this.projectRepository.findOneOrFail({
-            where: { uuid },
-            relations: { requiredMetadataTypes: true },
-        });
-        project.requiredMetadataTypes = project.requiredMetadataTypes.filter(
-            (metadataType) => metadataType.uuid !== metadataTypeUUID,
-        );
-        await this.projectRepository.save(project);
+        await this.projectRepository.findOneOrFail({ where: { uuid } });
+        await this.projectRepository
+            .createQueryBuilder()
+            .relation(ProjectEntity, 'requiredMetadataTypes')
+            .of(uuid)
+            .remove(metadataTypeUUID);
     }
 
     async deleteProject(uuid: string): Promise<void> {

@@ -42,10 +42,30 @@ const parseBoolean = (name: string, value: unknown): ParsedMetadataValue => {
     return { ok: true, columns: { value_boolean: bool } };
 };
 
+/**
+ * ISO 8601 date, optionally with a time and a zone: `2024-05-13`,
+ * `2024-05-13T10:30`, `2024-05-13T10:30:00.000Z`, `2024-05-13T10:30+02:00`.
+ */
+const ISO_DATE =
+    /^(\d{4})-(\d{2})-(\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;
+
 const parseDate = (name: string, value: unknown): ParsedMetadataValue => {
     const text = typeof value === 'string' ? value.trim() : '';
+    // rules out formats `new Date` would also read, like `05/13/2024`
+    const match = ISO_DATE.exec(text);
+    if (!match) return fail(name, 'a date like 2024-05-13');
+
+    // `new Date` rolls `2024-02-30` over into March: the calendar date must
+    // come back unchanged
+    const [year, month, day] = [match[1], match[2], match[3]].map(Number);
+    const calendar = new Date(Date.UTC(year, month - 1, day));
     const date = new Date(text);
-    if (text === '' || Number.isNaN(date.getTime())) {
+    if (
+        Number.isNaN(date.getTime()) ||
+        calendar.getUTCFullYear() !== year ||
+        calendar.getUTCMonth() !== month - 1 ||
+        calendar.getUTCDate() !== day
+    ) {
         return fail(name, 'a date like 2024-05-13');
     }
     // eslint-disable-next-line @typescript-eslint/naming-convention

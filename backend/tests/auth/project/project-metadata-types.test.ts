@@ -186,8 +186,9 @@ describe('Project required metadata types', () => {
     test('DELETE removes a required metadata type', async () => {
         const { user, projectUuid, metadataTypeUuid } = await setup();
 
+        // any spelling of the uuid matches, as everywhere else
         const response = await fetch(
-            `${DEFAULT_URL}/projects/${projectUuid}/metadata-types/${metadataTypeUuid}`,
+            `${DEFAULT_URL}/projects/${projectUuid}/metadata-types/${metadataTypeUuid.toUpperCase()}`,
             { method: 'DELETE', headers: getAuthHeaders(user) },
         );
         expect(response.status).toBeLessThan(300);
