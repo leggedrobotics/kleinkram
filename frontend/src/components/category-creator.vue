@@ -8,6 +8,7 @@
                 outlined
                 dense
                 placeholder="Add new category"
+                :readonly="isPending"
                 :error="!!nameError"
                 :error-message="nameError"
                 @update:model-value="clearNameError"
@@ -32,6 +33,7 @@
             autogrow
             input-style="min-height: 40px"
             placeholder="Description (optional)"
+            :readonly="isPending"
             hint="Explain what files belong into this category"
         />
     </div>
@@ -50,7 +52,10 @@ const queryClient = useQueryClient();
 
 const newCategory = ref('');
 const newDescription = ref('');
-// a taken name is shown on the name input, it's the field the user has to fix
+// a taken name is shown on the name input, it's the field the user has to fix.
+// Both inputs are read-only while the request runs, so the response always
+// belongs to what is shown: clearing on success can't drop newer edits, and a
+// conflict can't land on a name typed afterwards.
 const nameError = ref('');
 const clearNameError = (): void => {
     nameError.value = '';
