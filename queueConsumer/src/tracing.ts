@@ -101,7 +101,7 @@ export const traceWrapper =
                     ) {
                         span.setAttribute(
                             'queue_processor_job_id',
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                             argument?.id,
                         );
                     } else if (
@@ -110,7 +110,7 @@ export const traceWrapper =
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         !!argument?.uuid
                     ) {
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         span.setAttribute('queue_uuid', argument?.uuid);
                     }
                 });

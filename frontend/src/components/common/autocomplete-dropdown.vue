@@ -28,8 +28,9 @@
                     <q-item-label
                         :class="{ 'text-grey-6': suggestion.disabled }"
                     >
-                        <span class="text-grey-8">{{ suggestion.prefix }}</span
-                        >{{ suggestion.label }}
+                        <span class="text-grey-8">{{
+                            suggestion.prefix
+                        }}</span>{{ suggestion.label }}
                     </q-item-label>
                     <q-item-label
                         caption

@@ -9,6 +9,7 @@ from typing import Dict
 from typing import Generator
 from typing import Iterator
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -731,6 +732,31 @@ def _delete_files(client: AuthenticatedClient, file_ids: Sequence[UUID], mission
     }
     resp = client.delete(FILE_DELETE_MANY, json=payload)
     resp.raise_for_status()
+
+
+FILE_MOVE = "/files"
+FILE_COPY = "/files/copy"
+
+
+def _transfer_payload(file_ids: Sequence[UUID], mission_id: UUID, renames: Mapping[UUID, str]) -> Dict[str, Any]:
+    return {
+        "fileUUIDs": [str(file_id) for file_id in file_ids],
+        "missionUUID": str(mission_id),
+        "renames": {str(file_id): name for file_id, name in renames.items()},
+    }
+
+
+def _move_files(client: AuthenticatedClient, file_ids: Sequence[UUID], mission_id: UUID, renames: Mapping[UUID, str]) -> None:
+    resp = client.patch(FILE_MOVE, json=_transfer_payload(file_ids, mission_id, renames))
+    resp.raise_for_status()
+
+
+def _copy_files(
+    client: AuthenticatedClient, file_ids: Sequence[UUID], mission_id: UUID, renames: Mapping[UUID, str]
+) -> List[UUID]:
+    resp = client.post(FILE_COPY, json=_transfer_payload(file_ids, mission_id, renames))
+    resp.raise_for_status()
+    return [UUID(file_id) for file_id in resp.json()["fileUUIDs"]]
 
 
 MISSION_DELETE_ONE = "/missions/{}"

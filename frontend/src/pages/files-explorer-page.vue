@@ -175,6 +175,12 @@
                         label="Action Executions"
                         style="color: #222"
                     />
+                    <q-tab
+                        v-if="isPreviewEnabled"
+                        name="preview"
+                        label="Preview"
+                        style="color: #222"
+                    />
                 </q-tabs>
             </template>
         </title-section>
@@ -200,6 +206,15 @@
             <q-tab-panel name="actions" class="q-pa-none">
                 <MissionActions />
             </q-tab-panel>
+
+            <q-tab-panel
+                v-if="isPreviewEnabled"
+                name="preview"
+                class="q-pa-none"
+            >
+                <!-- keyed: moving to another mission starts a fresh preview -->
+                <MissionPreview :key="missionUuid" />
+            </q-tab-panel>
         </q-tab-panels>
 
         <MissionMetadataDrawer
@@ -220,15 +235,17 @@ import MissionActions from 'components/explorer-page/mission-actions.vue';
 import MissionFiles from 'components/explorer-page/mission-files.vue';
 import MissionInfo from 'components/explorer-page/mission-info.vue';
 import MissionMetadataDrawer from 'components/explorer-page/mission-metadata-drawer.vue';
+import MissionPreview from 'components/explorer-page/mission-preview.vue';
 import TitleSection from 'components/title-section.vue';
 import { copyToClipboard, Notify, useQuasar } from 'quasar';
+import { useFoxglovePreviewEnabled } from 'src/composables/use-foxglove-preview';
 import { useMissionReadme } from 'src/composables/use-mission-readme';
 import {
     registerNoPermissionErrorHandler,
     useMission,
 } from 'src/hooks/query-hooks';
 import { useMissionUUID } from 'src/hooks/router-hooks';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const $router = useRouter();
@@ -236,6 +253,23 @@ const $route = useRoute();
 const $q = useQuasar();
 
 const missionUuid = useMissionUUID();
+const { isEnabled: isPreviewEnabled, isDisabled: isPreviewDisabled } =
+    useFoxglovePreviewEnabled(missionUuid);
+
+// A bookmarked preview of a project (or instance) that turned it off opens
+// the file list instead.
+watch(
+    [isPreviewDisabled, () => $route.params.tab],
+    ([disabled, tab]) => {
+        if (!disabled || tab !== 'preview') return;
+        void $router.replace({
+            params: { ...$route.params, tab: 'files' },
+            query: {},
+        });
+    },
+    { immediate: true },
+);
+
 const isMetadataDrawerOpen = ref(false);
 
 /**

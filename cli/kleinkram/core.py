@@ -36,6 +36,7 @@ import httpx
 from tqdm import tqdm
 
 import kleinkram.api.file_transfer
+import kleinkram.api.mcap_summary
 import kleinkram.api.routes
 import kleinkram.errors
 from kleinkram.api.client import AuthenticatedClient
@@ -233,6 +234,22 @@ def download(
         on_file_progress_cb=on_file_progress_cb,
         on_message_cb=on_message_cb,
     )
+
+
+def inspect_file(
+    *,
+    client: AuthenticatedClient,
+    file: kleinkram.models.File,
+    metadata: bool = False,
+) -> kleinkram.api.mcap_summary.McapInfo:
+    """\
+    reads the header and summary section of a remote `.mcap` through range
+    requests: topics, message counts, time range, schemas, attachments and how
+    the chunks are stored; the messages themselves are not transferred
+
+    `metadata` also reads the metadata records, one request each
+    """
+    return kleinkram.api.file_transfer.read_mcap_info(client, file=file, metadata=metadata)
 
 
 def upload(
@@ -715,6 +732,42 @@ def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> 
 
     for mission_id, ids_ in missions_to_files.items():
         kleinkram.api.routes._delete_files(client, file_ids=ids_, mission_id=mission_id)
+
+
+def move_files(
+    *,
+    client: AuthenticatedClient,
+    file_ids: Collection[UUID],
+    mission_id: UUID,
+    renames: Optional[Mapping[UUID, str]] = None,
+) -> None:
+    """\
+    moves files into another mission, which may belong to another project
+
+    `renames` gives files a new name in the target mission. the move is
+    all-or-nothing: on a name conflict the API refuses it and no file moves
+    """
+    if not file_ids:
+        return
+    kleinkram.api.routes._move_files(client, list(file_ids), mission_id, renames or {})
+
+
+def copy_files(
+    *,
+    client: AuthenticatedClient,
+    file_ids: Collection[UUID],
+    mission_id: UUID,
+    renames: Optional[Mapping[UUID, str]] = None,
+) -> List[UUID]:
+    """\
+    copies files into another mission, the originals stay where they are
+
+    the data is copied on the server. returns the ids of the copies in the
+    order of `file_ids`
+    """
+    if not file_ids:
+        return []
+    return kleinkram.api.routes._copy_files(client, list(file_ids), mission_id, renames or {})
 
 
 def delete_mission(*, client: AuthenticatedClient, mission_id: UUID) -> None:
