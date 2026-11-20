@@ -504,9 +504,11 @@ export class AccessModificationService {
                 where: { accessGroup: { uuid } },
                 relations: { project: true },
             });
+            // a grant on a deleted project loads its project as null: it is
+            // removed with the group, but there is nothing to lock or check
             const projects: ProjectEntity[] = grants
                 .map((grant) => grant.project)
-                .filter((project) => project !== undefined);
+                .filter((project): project is ProjectEntity => !!project);
             // `toSorted` isn't available in this target; the array is new
             // eslint-disable-next-line unicorn/no-array-sort
             projects.sort((a, b) => a.uuid.localeCompare(b.uuid));

@@ -1,6 +1,6 @@
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { AccessGroupRights } from '@kleinkram/shared';
-import { getAuthHeaders } from '../../utils/api-calls';
+import { createProjectUsingPost, getAuthHeaders } from '../../utils/api-calls';
 import {
     setupDatabaseHooks,
     setupTestEnvironment,
@@ -130,6 +130,38 @@ describe('Access Group Conflicts', () => {
         );
         const access = await projectAccess(user, projectUuid);
         expect(access.some((entry) => entry.uuid === groupUuid)).toBe(true);
+    });
+
+    test('should delete a group that still has access to a deleted project', async () => {
+        const { user } = await setupTestEnvironment();
+        const projectUuid = await createProjectUsingPost(
+            { name: 'short_lived_project', description: 'deleted later' },
+            user,
+        );
+        const created = await send(user, 'POST', '/access-groups', {
+            name: 'outlives-project',
+        });
+        const groupUuid = (created.json as { uuid: string }).uuid;
+        await send(
+            user,
+            'POST',
+            `/access-groups/${groupUuid}/projects/${projectUuid}`,
+            { rights: AccessGroupRights.READ },
+        );
+        const projectDeletion = await send(
+            user,
+            'DELETE',
+            `/projects/${projectUuid}`,
+        );
+        expect(projectDeletion.status).toBeLessThan(300);
+
+        const response = await send(
+            user,
+            'DELETE',
+            `/access-groups/${groupUuid}`,
+        );
+
+        expect(response.status).toBeLessThan(300);
     });
 
     test('should return 404 if the project access names a group that does not exist', async () => {
