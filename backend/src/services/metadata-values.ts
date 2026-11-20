@@ -45,9 +45,11 @@ const parseBoolean = (name: string, value: unknown): ParsedMetadataValue => {
 /**
  * ISO 8601 date, optionally with a time and a zone: `2024-05-13`,
  * `2024-05-13T10:30`, `2024-05-13T10:30:00.000Z`, `2024-05-13T10:30+02:00`.
+ * A space may separate date and time (RFC 3339): older CLI versions send
+ * YAML timestamps as `str(datetime)`, e.g. `2024-05-13 10:30:00+00:00`.
  */
 const ISO_DATE =
-    /^(\d{4})-(\d{2})-(\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;
+    /^(\d{4})-(\d{2})-(\d{2})(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;
 
 const parseDate = (name: string, value: unknown): ParsedMetadataValue => {
     const text = typeof value === 'string' ? value.trim() : '';
