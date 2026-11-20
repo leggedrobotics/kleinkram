@@ -70,6 +70,7 @@ At the file level, you can label files with **categories**. Categories belong to
 project can use them, and a file can have several.
 
 - **Usage**: Label files as `Raw Data`, `Processed`, `Calibration`, or `Validated`. This helps in distinguishing between different types of data within the same mission.
+- **Names**: Category names are unique within a project and case-sensitive. Creating a category whose name is already taken in the project is rejected (HTTP `409 Conflict`), so pick the existing category instead.
 - **Description**: Each category can carry an optional description explaining which files belong into it. Descriptions are shown when selecting categories and as a tooltip on the category chips, and can be edited at any time in the _Manage Categories_ tab of the category dialog.
 
 ## Next Steps: Uploading Data
