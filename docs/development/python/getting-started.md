@@ -51,6 +51,23 @@ python -m kleinkram
 klein # same as above
 ```
 
+## Server Discovery
+
+`klein login <url>` needs only the address of the web app. `kleinkram/discovery.py` finds the rest:
+
+1. It normalizes the address: a missing scheme means https (http for `localhost`), and any path is dropped, so a link
+   to any page of the web app works.
+2. It reads `<web app>/.well-known/kleinkram.json`, which names the API (`apiUrl`). The web app's build writes this
+   file from `BACKEND_URL` (see the `kleinkram-well-known` plugin in `frontend/quasar.config.ts`).
+3. It reads `GET <api>/cli/config` (`backend/src/endpoints/cli/cli.controller.ts`), which returns the web app, API and
+   S3 addresses, the server and minimum CLI version and the login options. If step 2 found nothing, the given address
+   is tried as the API address.
+4. It saves the server in `~/.kleinkram.json` and makes it the active one.
+
+Every address it uses must be https, including the ones the server announces and redirects to; plain http is only
+accepted for `localhost`. Servers older than 0.67 have no `/cli/config`; add them with
+`klein endpoint <name> <api-url> <s3-url>`.
+
 ## Project Structure
 
 The `/cli` folder is structured as a python package using the [flat layout](https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/).

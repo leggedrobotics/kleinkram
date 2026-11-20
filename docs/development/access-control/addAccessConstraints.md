@@ -23,6 +23,4 @@ const [projects, count] = await query.getManyAndCount();
 
 ::: warning
 The helpers refer to the entities by the aliases `project`, `mission` and `file`, so the query must use these aliases.
-`addAccessConstraintsToProjectQuery` sets its condition with `where`, which replaces conditions added before it: call
-it first and add your own conditions with `andWhere`. The other helpers use `andWhere`.
 :::
