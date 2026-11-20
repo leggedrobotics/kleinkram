@@ -7,50 +7,19 @@
 </template>
 
 <script setup lang="ts">
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import AppCreateButton from 'components/common/app-create-button.vue';
-import { Notify, useQuasar } from 'quasar';
+import { useQuasar } from 'quasar';
 import CreateAccessGroupDialog from 'src/dialogs/create-access-group-dialog.vue';
 import { canCreateProject, usePermissionsQuery } from 'src/hooks/query-hooks';
-import { createAccessGroup } from 'src/services/mutations/access';
-import { computed, unref } from 'vue';
+import { computed } from 'vue';
 
 const { data: permissions } = usePermissionsQuery();
 const canCreate = computed(() => canCreateProject(permissions.value));
-const queryClient = useQueryClient();
 
 const $q = useQuasar();
 
-const { mutate: _createAccessGroup } = useMutation({
-    mutationFn: (name: string) => createAccessGroup(unref(name)),
-    onSuccess: async () => {
-        await queryClient.invalidateQueries({
-            predicate: (query) => {
-                return query.queryKey[0] === 'accessGroups';
-            },
-        });
-        Notify.create({
-            message: 'Access Group Created',
-            color: 'positive',
-            position: 'bottom',
-            timeout: 2000,
-        });
-    },
-    onError: () => {
-        Notify.create({
-            message: 'Error creating Access Group',
-            color: 'negative',
-            position: 'bottom',
-            timeout: 2000,
-        });
-    },
-});
-
+// the dialog creates the group itself, so it can show a taken name inline
 const createAccessGroupDialog = (): void => {
-    $q.dialog({
-        component: CreateAccessGroupDialog,
-    }).onOk((name: string) => {
-        _createAccessGroup(name);
-    });
+    $q.dialog({ component: CreateAccessGroupDialog });
 };
 </script>

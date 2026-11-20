@@ -8,7 +8,9 @@ import {
     UpdateTemplateDto,
 } from '@kleinkram/api-dto';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
+import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserRole } from '@kleinkram/shared';
 import {
     isImageInDockerNamespace,
@@ -23,7 +25,37 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, QueryFailedError, Repository } from 'typeorm';
+import {
+    Brackets,
+    ObjectLiteral,
+    QueryFailedError,
+    Repository,
+    SelectQueryBuilder,
+} from 'typeorm';
+
+/**
+ * Correlated sub-query counting the triggers that run any version of the
+ * template named like the outer `template` row. Triggers of deleted missions
+ * are left out: they can never fire and nobody can see or delete them.
+ */
+const countActiveTriggers = (
+    subQuery: SelectQueryBuilder<ObjectLiteral>,
+): SelectQueryBuilder<ObjectLiteral> =>
+    subQuery
+        .select('COUNT(trigger.uuid)', 'count')
+        .from(ActionTriggerEntity, 'trigger')
+        .innerJoin(ActionTemplateEntity, 't', 't.uuid = trigger.templateUuid')
+        .innerJoin(
+            MissionEntity,
+            'mission',
+            'mission.uuid = trigger.missionUuid AND mission.deletedAt IS NULL',
+        )
+        .where('t.name = template.name');
+
+const parseCount = (value: unknown): number =>
+    typeof value === 'string' || typeof value === 'number'
+        ? Math.trunc(Number(value))
+        : 0;
 
 @Injectable()
 export class TemplateService {
@@ -36,6 +68,8 @@ export class TemplateService {
         private actionTemplateRepository: Repository<ActionTemplateEntity>,
         @InjectRepository(ActionEntity)
         private actionRepository: Repository<ActionEntity>,
+        @InjectRepository(ActionTriggerEntity)
+        private triggerRepository: Repository<ActionTriggerEntity>,
     ) {}
 
     async create(
@@ -223,6 +257,7 @@ export class TemplateService {
                 .leftJoin('action.template', 't')
                 .where('t.name = template.name');
         }, 'executionCount');
+        qb.addSelect(countActiveTriggers, 'triggerCount');
 
         const { entities, raw } = await qb.getRawAndEntities();
         const count = await qb.getCount();
@@ -235,7 +270,12 @@ export class TemplateService {
                   Number.parseInt(rawRow.executionCount, 10)
                 : 0;
 
-            return actionTemplateEntityToDto(entity, execCount);
+            return actionTemplateEntityToDto(
+                entity,
+                execCount,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                parseCount(rawRow?.triggerCount),
+            );
         });
 
         return {
@@ -279,13 +319,38 @@ export class TemplateService {
     ): Promise<DeleteTemplateResponseDto> {
         const { name } = await this.findModifiableTemplate(uuid, auth);
 
+        // A trigger is automation someone set up on a mission. Deleting or
+        // archiving its template would silently break it, so the trigger
+        // has to be deleted or pointed at another template first.
+        const activeTriggerCount = await this.triggerRepository
+            .createQueryBuilder('trigger')
+            .innerJoin('trigger.template', 'template')
+            .innerJoin('trigger.mission', 'mission')
+            .where('template.name = :name', { name })
+            .getCount();
+        if (activeTriggerCount > 0) {
+            throw new ConflictException(
+                activeTriggerCount === 1
+                    ? 'Used by 1 trigger. Delete or change it first.'
+                    : `Used by ${activeTriggerCount.toString()} triggers. Delete or change them first.`,
+            );
+        }
+
         const totalExecutionCount = await this.actionRepository
             .createQueryBuilder('action')
             .innerJoin('action.template', 'template')
             .where('template.name = :name', { name })
             .getCount();
 
-        if (totalExecutionCount > 0) {
+        // triggers of deleted missions still reference the template, so it
+        // can only be archived, not deleted
+        const orphanTriggerCount = await this.triggerRepository
+            .createQueryBuilder('trigger')
+            .innerJoin('trigger.template', 'template')
+            .where('template.name = :name', { name })
+            .getCount();
+
+        if (totalExecutionCount > 0 || orphanTriggerCount > 0) {
             await this.actionTemplateRepository.update(
                 { name },
                 { isArchived: true },
@@ -326,6 +391,7 @@ export class TemplateService {
                     .leftJoin('action.template', 't')
                     .where('t.uuid = template.uuid');
             }, 'executionCount')
+            .addSelect(countActiveTriggers, 'triggerCount')
             .where('template.name = :name', { name: current.name })
             .orderBy('template.version', 'DESC')
             .skip(skip)
@@ -342,7 +408,12 @@ export class TemplateService {
                   Number.parseInt(rawRow.executionCount, 10)
                 : 0;
 
-            return actionTemplateEntityToDto(entity, execCount);
+            return actionTemplateEntityToDto(
+                entity,
+                execCount,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                parseCount(rawRow?.triggerCount),
+            );
         });
 
         return {

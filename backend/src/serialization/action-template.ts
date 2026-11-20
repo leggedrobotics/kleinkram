@@ -5,6 +5,7 @@ import { userEntityToDto } from './index';
 export const actionTemplateEntityToDto = (
     actionTemplate: ActionTemplateEntity,
     executionCount = 0,
+    triggerCount = 0,
 ): ActionTemplateDto => {
     return {
         uuid: actionTemplate.uuid,
@@ -30,5 +31,6 @@ export const actionTemplateEntityToDto = (
             : undefined,
 
         executionCount: executionCount,
+        triggerCount: triggerCount,
     };
 };

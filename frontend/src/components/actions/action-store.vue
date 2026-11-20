@@ -206,8 +206,7 @@ import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-
 import ButtonGroup from 'components/buttons/button-group.vue';
 import AppCreateButton from 'components/common/app-create-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
-import { Dialog, Notify } from 'quasar';
-import { useDeleteTemplate } from 'src/composables/use-action-mutations';
+import { Dialog } from 'quasar';
 import { useTemplateList } from 'src/composables/use-actions-queries';
 import { DEFAULT_PAGINATION_SIZE } from 'src/constants';
 import DeleteActionTemplateDialog from 'src/dialogs/delete-action-template-dialog.vue';
@@ -279,9 +278,6 @@ const { data: templatesResult, isLoading } = useTemplateList(
         includeArchived: showArchived.value,
     })),
 );
-
-// Delete mutation
-const { mutateAsync: removeTemplate } = useDeleteTemplate();
 
 // --- Client-Side Filtering & Grouping ---
 const templates = computed(() => templatesResult.value?.data ?? []);
@@ -378,35 +374,14 @@ const emptyState = computed(() => {
 });
 
 // --- Delete Handler ---
-// --- Delete Handler ---
-const executeDelete = async (template: ActionTemplateDto): Promise<void> => {
-    try {
-        await removeTemplate(template.uuid);
-        Notify.create({
-            message: 'Action template deleted or archived successfully',
-            color: 'positive',
-            icon: 'sym_o_delete',
-        });
-    } catch (error: unknown) {
-        const message =
-            error instanceof Error ? error.message : 'Unknown error occurred';
-        Notify.create({
-            message: `Failed to delete action: ${message}`,
-            color: 'negative',
-            icon: 'sym_o_error',
-        });
-    }
-};
-
 const confirmDelete = (template: ActionTemplateDto): void => {
     Dialog.create({
         component: DeleteActionTemplateDialog,
         componentProps: {
             template: template,
         },
-    }).onOk(() => {
-        void executeDelete(template);
     });
+    // the dialog deletes (or archives) the template and reports the result
 };
 </script>
 

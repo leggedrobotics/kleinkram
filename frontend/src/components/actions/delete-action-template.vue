@@ -1,5 +1,12 @@
 <template>
-    <q-card-section class="q-pa-md">
+    <q-card-section v-if="isBlocked" class="q-pa-md">
+        <q-banner dense rounded class="bg-orange-1 text-orange-10">
+            Used by <b>{{ template.triggerCount }}</b>
+            {{ template.triggerCount === 1 ? 'trigger' : 'triggers' }}. Delete
+            or change {{ template.triggerCount === 1 ? 'it' : 'them' }} first.
+        </q-banner>
+    </q-card-section>
+    <q-card-section v-else class="q-pa-md">
         <p v-if="isArchiving">
             This action template has
             <b>{{ template.executionCount }}</b> executions. It cannot be
@@ -28,6 +35,7 @@
 import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
 import { Notify } from 'quasar';
 import { useDeleteTemplate } from 'src/composables/use-action-mutations';
+import { getErrorMessage } from 'src/services/error-handling';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
@@ -38,9 +46,11 @@ const nameCheck = ref('');
 const { mutateAsync: removeTemplate } = useDeleteTemplate();
 
 const isArchiving = computed(() => props.template.executionCount > 0);
+// triggers keep running a template, so it can't go away while one uses it
+const isBlocked = computed(() => props.template.triggerCount > 0);
 
 async function executeAction(): Promise<void> {
-    if (nameCheck.value !== props.template.name) {
+    if (isBlocked.value || nameCheck.value !== props.template.name) {
         return;
     }
 
@@ -56,10 +66,8 @@ async function executeAction(): Promise<void> {
             position: 'bottom',
         });
     } catch (error: unknown) {
-        const message =
-            error instanceof Error ? error.message : 'Unknown error occurred';
         Notify.create({
-            message: `Error: ${message}`,
+            message: `Failed to delete template: ${getErrorMessage(error)}`,
             color: 'negative',
             position: 'bottom',
         });
@@ -70,5 +78,6 @@ defineExpose({
     executeAction,
     nameCheck,
     isArchiving,
+    isBlocked,
 });
 </script>

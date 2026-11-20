@@ -14,6 +14,7 @@ import {
     AccessGroupEntity,
 } from '@kleinkram/backend-common';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
+import { MissionAccessEntity } from '@kleinkram/backend-common/entities/auth/mission-access.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
@@ -22,9 +23,13 @@ import {
     AccessGroupRights,
     AccessGroupType,
 } from '@kleinkram/shared';
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+    ConflictException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, Not, Repository } from 'typeorm';
+import { EntityManager, In, Not, QueryFailedError, Repository } from 'typeorm';
 import logger from '../logger';
 import { AccessQueryService } from './access-query.service';
 import { notExpired } from './membership-filters';
@@ -35,6 +40,9 @@ import {
     isPublicAccessGroup,
     PUBLIC_ACCESS_MANAGE_RIGHTS,
 } from './public-access';
+
+const accessGroupNameTaken = (name: string): ConflictException =>
+    new ConflictException(`A group named "${name}" already exists`);
 
 @Injectable()
 export class AccessModificationService {
@@ -62,6 +70,12 @@ export class AccessModificationService {
             where: { uuid: auth.user.uuid },
         });
 
+        // group names are unique among all groups, personal and affiliation
+        // groups included (`unique_access_group_name`)
+        if (await this.accessGroupRepository.exists({ where: { name } })) {
+            throw accessGroupNameTaken(name);
+        }
+
         const newGroup = this.accessGroupRepository.create({
             name,
             type: AccessGroupType.CUSTOM,
@@ -74,7 +88,20 @@ export class AccessModificationService {
             creator: user,
         });
 
-        const savedGroup = await this.accessGroupRepository.save(newGroup);
+        let savedGroup: AccessGroupEntity;
+        try {
+            savedGroup = await this.accessGroupRepository.save(newGroup);
+        } catch (error) {
+            // a concurrent request took the name after the check above
+            if (
+                error instanceof QueryFailedError &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                error.driverError?.code === '23505'
+            ) {
+                throw accessGroupNameTaken(name);
+            }
+            throw error;
+        }
 
         this.accessGroupAuditService
             .log(
@@ -460,12 +487,23 @@ export class AccessModificationService {
     async deleteAccessGroup(uuid: string): Promise<void> {
         assertNotPublicAccessGroup(uuid);
 
-        const accessGroup = await this.accessGroupRepository.findOneOrFail({
-            where: { uuid },
+        // The group's project and mission access belongs to the group: it is
+        // removed together with it, in one transaction, so a failure can't
+        // leave a group without its access or access without its group.
+        // Memberships and audit events cascade in the database.
+        await this.entityManager.transaction(async (transaction) => {
+            const accessGroup = await transaction.findOneOrFail(
+                AccessGroupEntity,
+                { where: { uuid } },
+            );
+            await transaction.delete(ProjectAccessEntity, {
+                accessGroup: { uuid },
+            });
+            await transaction.delete(MissionAccessEntity, {
+                accessGroup: { uuid },
+            });
+            await transaction.remove(accessGroup);
         });
-
-        await this.accessGroupRepository.remove(accessGroup);
-        return;
     }
 
     private async uncheckedProjectAccessTransactionalUpdate(
@@ -678,6 +716,15 @@ export class AccessModificationService {
         for (const access of newProjectAccess) {
             assertGrantableAccessRights(access.rights);
             assertValidPublicAccessRights(access.uuid, access.rights);
+        }
+
+        // e.g. a group deleted while the access dialog was open
+        const groupUuids = [...new Set(newProjectAccess.map((a) => a.uuid))];
+        const existingGroups = await this.accessGroupRepository.count({
+            where: { uuid: In(groupUuids) },
+        });
+        if (existingGroups !== groupUuids.length) {
+            throw new NotFoundException('Access group not found');
         }
 
         await this.entityManager.transaction(
