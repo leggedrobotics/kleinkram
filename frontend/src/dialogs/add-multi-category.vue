@@ -6,7 +6,7 @@
         fixed-height
         size="lg"
         :dirty="selected.length > 0"
-        :submit-disabled="selected.length === 0 || isPending"
+        :submit-disabled="selected.length === 0 || creating || isPending"
         @submit="addCategories"
     >
         <template #title>Add Categories</template>
@@ -34,6 +34,7 @@
                         :selected="selected"
                         :project-uuid="projectUuid"
                         @update:selected="updateSelected"
+                        @update:creating="updateCreating"
                     />
                 </div>
                 <div
@@ -54,7 +55,7 @@
                     label="Add Categories"
                     class="bg-button-primary"
                     :disable="selected.length === 0"
-                    :loading="isPending"
+                    :loading="isPending || creating"
                     @click="addCategories"
                 />
                 <q-tooltip v-if="selected.length === 0"
@@ -94,6 +95,13 @@ const updateSelected = (value: CategoryDto[]): void => {
     selected.value = value;
 };
 
+// a category typed in the selector is still being created: saving now
+// would leave it out
+const creating = ref(false);
+const updateCreating = (value: boolean): void => {
+    creating.value = value;
+};
+
 const { mutate, isPending } = useMutation({
     mutationFn: () =>
         addManyCategories(
@@ -118,7 +126,8 @@ const { mutate, isPending } = useMutation({
 });
 
 const addCategories = (): void => {
-    if (selected.value.length === 0 || isPending.value) return;
+    if (selected.value.length === 0 || isPending.value || creating.value)
+        return;
     errorMessage.value = '';
     mutate();
 };

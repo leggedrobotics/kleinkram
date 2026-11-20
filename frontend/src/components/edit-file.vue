@@ -5,7 +5,7 @@
         :busy="isPending"
         fixed-height
         :dirty="dirty"
-        :submit-disabled="isPending"
+        :submit-disabled="isPending || creatingCategory"
         @submit="saveFile"
     >
         <template #title>Edit File</template>
@@ -67,6 +67,7 @@
                         v-if="editableFile"
                         :file="editableFile"
                         @update:selected="onSelectionUpdate"
+                        @update:creating="onCreatingUpdate"
                     />
                 </div>
             </div>
@@ -77,7 +78,7 @@
                 no-caps
                 label="Save File"
                 class="bg-button-primary"
-                :loading="isPending"
+                :loading="isPending || creatingCategory"
                 @click="saveFile"
             />
         </template>
@@ -240,7 +241,7 @@ const { mutateAsync: updateFileMutation, isPending } = useMutation({
 });
 
 async function saveFile(): Promise<void> {
-    if (isPending.value) return;
+    if (isPending.value || creatingCategory.value) return;
     // shows what is missing or wrong, on the first tab
     if (!(await formReference.value?.validate())) {
         tab.value = 'name';
@@ -281,6 +282,13 @@ async function saveFile(): Promise<void> {
         }
     }
 }
+
+// a category typed in the selector is still being created: saving now
+// would leave it out
+const creatingCategory = ref(false);
+const onCreatingUpdate = (creating: boolean): void => {
+    creatingCategory.value = creating;
+};
 
 const onSelectionUpdate = ($event: CategoryDto[]): void => {
     if (editableFile.value) {
