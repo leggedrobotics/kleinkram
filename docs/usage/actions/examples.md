@@ -1,6 +1,9 @@
 # Example Action Templates
 
-Kleinkram comes with a set of example actions that cover common use cases:
+We publish a set of example action images that cover common use cases. Only **Script Runner** is set up as a template
+on every instance; to use one of the others, create a template with its image name (see
+[Using Kleinkram Actions](use-actions.md)). The sources are in
+[`examples/kleinkram-actions`](https://github.com/leggedrobotics/kleinkram/tree/dev/examples/kleinkram-actions).
 
 | Action                | Image Name                               | Description                                                  | Input           | Output             |
 | :-------------------- | :--------------------------------------- | :----------------------------------------------------------- | :-------------- | :----------------- |

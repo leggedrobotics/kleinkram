@@ -22,9 +22,9 @@ Actions run in isolated Docker containers, this ensures security and reproducibi
 base image, as long as they meet the requirements for interacting with the Kleinkram platform.
 
 ::: warning Docker Image Accessibility
-Make sure that your Docker image containing the action code is either publicly accessible (e.g., on Docker Hub) or that
-your Kleinkram instance is configured to access your private registry. See
-the [Push Actions to Docker Hub](#push-actions-to-docker-hub) section for more details.
+Make sure that your Docker image containing the action code is publicly accessible on Docker Hub, or that it is a
+private Docker Hub repository the Docker Hub account of your Kleinkram instance can pull. Other registries are not
+supported. See the [Push Actions to Docker Hub](#push-actions-to-docker-hub) section for more details.
 :::
 
 ### Storage and Memory Model
@@ -79,10 +79,11 @@ Actions have certain limitations to for resource management, scheduling, and sec
 
 | Limitation              | Description                                                                                                                                                                               |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Execution Time          | Actions have a maximum runtime.                                                                                                                                                           |
+| Execution Time          | Actions have a maximum runtime, set on the template.                                                                                                                                      |
 | Memory Limits           | Actions are allocated a specific memory quota.                                                                                                                                            |
 | GPU Acceleration        | GPU acceleration is available via [NVIDIA Docker Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html).                                           |
-| Access Scoping          | Actions are confined to the project they are executed within.                                                                                                                             |
+| Access Scoping          | Actions are confined to the mission they are executed on: their API key only reaches that mission.                                                                                        |
+| Process Limit           | A container can run at most 256 processes and threads at once.                                                                                                                            |
 | Network Isolation       | In production, actions run on an isolated bridge network namespace. They cannot access host loopback services or other private compose networks, and can only access the public internet. |
 | Dropped Capabilities    | All default Linux capabilities are dropped (`CapDrop = ['ALL']`). Actions cannot execute low-level host kernel operations.                                                                |
 | No Privilege Escalation | Enforces `no-new-privileges`, preventing container processes from gaining elevated permissions via `setuid` or `setgid` binaries.                                                         |
@@ -170,7 +171,7 @@ The state of an action comes from the exit code of its container. Kleinkram capt
 | `127`     | FAILED | `ERROR`   | Command not found.                                        |
 | `137`     | FAILED | `ERROR`   | Container killed (SIGKILL). Exceeded memory or CPU limit. |
 | `139`     | FAILED | `ERROR`   | Container crashed (SIGSEGV). Invalid memory access.       |
-| `143`     | FAILED | `ERROR`   | Container stopped (SIGTERM). Time limit approached.       |
+| `143`     | FAILED | `ERROR`   | Container stopped (SIGTERM), or time limit exceeded.      |
 
 ::: warning Exit code 75 is reserved
 Exit code `75` (`EX_TEMPFAIL` from `sysexits.h`) means "completed with warnings". If a tool in your image happens to
@@ -280,18 +281,18 @@ Actions from before codes existed may have no code.
 
 ## Container Termination
 
-In some cases, the system may forcefully terminate your action container. This typically results in an exit code of
-`137` (SIGKILL) or `143` (SIGTERM). Common reasons include:
+In some cases, the system may forcefully terminate your action container. Common reasons include:
 
-- **Time Limit Exceeded**: The action ran longer than the configured `max_runtime` (default: 2 hours).
-- **Resource Limits**: The container consumed more memory or CPU than allocated (OOMKilled).
-- **Scheduler Interruption**: If the Action Runner service is updated or restarted, it may terminate containers running
-  from previous instances to ensure system consistency. This is reported with the status cause "Interrupted by new
-  Runner Instance".
+- **Time Limit Exceeded**: The action ran longer than the maximum runtime of its template. The container is killed
+  without warning, and the action fails with the cause `TIME_LIMIT_EXCEEDED` and exit code `143`. The web app sets the
+  maximum runtime in hours (default: 2 hours); `klein template create --max-runtime` takes minutes (default: 60).
+- **Resource Limits**: The container consumed more memory than allocated (OOMKilled). This results in exit code `137`
+  and the cause `OUT_OF_MEMORY`.
+- **Runner Replaced**: If the action runner became inactive, for example because the service was updated or restarted,
+  its containers are stopped and the action fails with the cause `RUNNER_REPLACED`.
 
 :::tip
-If you see "Interrupted by new Runner Instance", simply retry the action later. If the issue persists, contact your
-administrator.
+If an action failed with `RUNNER_REPLACED`, simply retry it later. If the issue persists, contact your administrator.
 :::
 
 ## Environment Variables
@@ -306,6 +307,15 @@ The following environment variables are available within the Docker container du
 | `KLEINKRAM_ACTION_UUID`  | UUID of the currently running action             |
 | `KLEINKRAM_API_ENDPOINT` | Endpoint of the Kleinkram API                    |
 | `KLEINKRAM_S3_ENDPOINT`  | Endpoint of the Kleinkram S3 storage             |
+| `KLEINKRAM_SCRIPT_URL`   | Download URL of the script, for script actions   |
+
+Kleinkram masks `KLEINKRAM_API_KEY` and `KLEINKRAM_SCRIPT_URL` in the action logs.
+
+::: warning The command is not run by a shell
+Kleinkram splits the command of a template at each space and runs it directly. Quotes, pipes, `&&` and variables such
+as `$KLEINKRAM_MISSION_UUID` are not interpreted. To use shell features, put them in a script inside your image and
+call that script.
+:::
 
 ## Push Actions to Docker Hub
 
@@ -313,10 +323,12 @@ Kleinkram actions run inside Docker containers. For the Kleinkram platform to be
 Docker image must be hosted on a public registry like Docker Hub. This ensures that the image is accessible to the
 worker nodes executing the actions.
 
-::: details Restricting Allowed Registries (For Administrators)
-Administrators can restrict which Docker registries or namespaces are allowed for actions. This is configured via
-environment variables. See the [Developer Configuration](/development/getting-started.md#configuration) for more
-details.
+::: details Restricting Allowed Images (For Administrators)
+Administrators can restrict actions to images of one Docker Hub namespace by setting `VITE_DOCKER_HUB_NAMESPACE`, for
+example to `rslethz`. Images must then start with `rslethz/`, so `rslethzevil/x` or `docker.io/rslethz/x` are refused. A
+value that is not a single Docker Hub namespace, such as `evil.io/org` or `localhost`, refuses every image. To pull
+private images, set `DOCKER_HUB_USERNAME` and `DOCKER_HUB_PASSWORD`. See the
+[Environment Variables](/development/environment-variables.md) for more details.
 :::
 
 To publish your action:

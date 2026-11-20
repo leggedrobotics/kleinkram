@@ -8,20 +8,26 @@ and with the [Python SDK](../python/sdk.md#kleinkram-actions).
 
 Kleinkram supports three types of triggers:
 
-| Trigger Type          | Description    | Example Use Case                                                          |
-| --------------------- | -------------- | ------------------------------------------------------------------------- |
-| Cron Triggers         | Schedule-based | Generate a report with summary statistics daily at midnight.              |
-| Webhook Triggers      | Event-based    | Run a verification action as soon as a new docker image version is pushed |
-| File Pattern Triggers | Data-based     | Run a post-processing action as soon as a new file is uploaded            |
+| Trigger Type (in the web app) | Description    | Example Use Case                                                          |
+| ----------------------------- | -------------- | ------------------------------------------------------------------------- |
+| Time Schedule (Cron)          | Schedule-based | Generate a report with summary statistics daily at midnight.              |
+| Webhook                       | Event-based    | Run a verification action as soon as a new docker image version is pushed |
+| File Watcher                  | Data-based     | Run a post-processing action as soon as a new file is uploaded            |
 
-## Cron Triggers
+Every trigger belongs to one action template and one mission: the action always runs on that mission, with the
+access rights of the user who created the trigger.
+
+To create a trigger, open the **Actions** page, go to the **Triggers** tab and click **New Trigger**. Give the trigger a
+name, pick the mission and the action template, then choose the trigger type and fill in its configuration.
+
+## Time Schedule (Cron) Triggers
 
 Cron triggers allow you to schedule actions to run periodically at fixed times or intervals. This is useful for regular maintenance tasks, nightly reports, or periodic data synchronization.
 
 To set up a cron trigger:
 
-1. From your action's settings, go to the **Triggers** tab.
-2. Click **New Trigger** and select **Cron** for the Trigger Type.
+1. On the **Triggers** tab of the **Actions** page, click **New Trigger**.
+2. Enter a name, pick the mission and the action template, and select **Time Schedule (Cron)** as the Trigger Type.
 3. Enter a valid cron expression (e.g., `0 0 * * *` for daily at midnight).
 4. Click **Create Trigger**.
 
@@ -29,6 +35,7 @@ The action will now run automatically based on the scheduled cron expression.
 
 ::: tip Cron Syntax
 Kleinkram uses standard cron syntax. You can use sites like [crontab.guru](https://crontab.guru/) to help generate expressions.
+Kleinkram checks the schedules once a minute, in the time zone of the server (usually UTC).
 :::
 
 ## Webhook Triggers
@@ -37,8 +44,8 @@ Webhook triggers allow external systems to trigger Kleinkram actions via HTTP re
 
 To set up a webhook trigger:
 
-1. From your action's settings, go to the **Triggers** tab.
-2. Click **New Trigger** and select **Webhook** for the Trigger Type.
+1. On the **Triggers** tab of the **Actions** page, click **New Trigger**.
+2. Enter a name, pick the mission and the action template, and select **Webhook** as the Trigger Type.
 3. Click **Create Trigger**.
 
 Kleinkram will generate a unique **Webhook URL** for this trigger. You can now send a `POST` request to this URL to trigger the action.
@@ -61,18 +68,22 @@ The action runs with the access rights of the user who created the trigger.
 - The response contains the ID of the new execution (`actionUUID`), the template ID (`templateUUID`), its state and
   creation time.
 
-## File Pattern Triggers
+## File Watcher Triggers
 
-File pattern triggers allow you to automatically run an action when a file matching a specific pattern is uploaded or modified within a mission. This is perfect for processing pipelines, such as automatically converting new bag files or analyzing newly uploaded images.
+File watcher triggers allow you to automatically run an action when a file matching a pattern arrives in the trigger's
+mission. This is perfect for processing pipelines, such as automatically converting new bag files or analyzing newly
+uploaded images.
 
-To set up a file pattern trigger:
+To set up a file watcher trigger:
 
-1. From your action's settings, go to the **Triggers** tab.
-2. Click **New Trigger** and select **File Pattern** for the Trigger Type.
-3. Enter a **glob pattern** to match files.
+1. On the **Triggers** tab of the **Actions** page, click **New Trigger**.
+2. Enter a name, pick the mission to watch and the action template, and select **File Watcher** as the Trigger Type.
+3. Enter one or more **glob patterns** (press Enter after each). A file only needs to match one of them.
 4. Click **Create Trigger**.
 
-The action will now trigger automatically whenever a matching file is uploaded to any mission the action has access to.
+The action now runs on the trigger's mission whenever a matching file is uploaded to it, copied or moved into it, or
+renamed within it. Files in other missions do not start the trigger; create one trigger per mission you want to watch.
+Without a pattern, every file starts the action.
 
 ### Glob Pattern Examples
 
@@ -86,5 +97,7 @@ Kleinkram flattens all uploaded files, meaning **filenames do not contain folder
 | `mission-10-?.mcap` | Matches files like `mission-10-A.mcap` or `mission-10-1.mcap` using the `?` single-character wildcard. |
 
 ::: tip
-You can use `*` to match any character sequence and `?` to match a single character.
+Patterns use [minimatch](https://github.com/isaacs/minimatch) syntax: `*` matches any character sequence, `?` a single
+character, `{bag,mcap}` one of several alternatives and `[0-9]` one character from a set. Patterns also match files
+whose name starts with a dot.
 :::

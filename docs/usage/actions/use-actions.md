@@ -40,8 +40,9 @@ entrypoint/command. You can create your own custom action templates or use the p
 
 ::: tip How to Create Custom Action Templates
 Please refer to the [Writing Custom Actions](write-actions.md) guide for detailed instructions on creating your own
-action templates. By default, Kleinkram comes with several pre-defined action templates that you can use
-out of the box to try out the functionality of the Kleinkram Actions system.
+action templates. To try out the Kleinkram Actions system, register one of the
+[example action images](examples.md) as a template. Every instance already has the `script-runner` template, which
+runs a single Python file (see [Run a Script](run-script.md)).
 :::
 
 ::: info Who Can Launch an Action
