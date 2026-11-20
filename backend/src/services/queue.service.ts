@@ -70,7 +70,10 @@ export const parseQueueStateFilter = (
 ): number[] | undefined => {
     if (!stateFilter) return undefined;
 
-    const states = stateFilter.split(',').map((state) => Number(state.trim()));
+    const entries = stateFilter.split(',').map((state) => state.trim());
+    // `Number('')` is 0, a valid state: an empty entry (`10,`) must not
+    // silently select waiting uploads
+    const states = entries.map((state) => (state === '' ? NaN : Number(state)));
     if (!states.every((state) => QUEUE_STATES.has(state))) {
         throw new BadRequestException(
             `stateFilter must be a comma-separated list of queue states: ${[

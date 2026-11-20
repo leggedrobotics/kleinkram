@@ -1,6 +1,7 @@
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { FileState } from '@kleinkram/shared';
+import { randomUUID } from 'node:crypto';
 import { FindOperator, Repository } from 'typeorm';
 import {
     expectedTags,
@@ -20,12 +21,22 @@ interface FakeFile {
 
 const DAY = 24 * 60 * 60 * 1000;
 
+/** A stable uuid per readable test name: objects are named by uuid. */
+const ids = new Map<string, string>();
+const id = (name: string): string => {
+    const existing = ids.get(name);
+    if (existing) return existing;
+    const created = randomUUID();
+    ids.set(name, created);
+    return created;
+};
+
 const fakeFile = (
-    uuid: string,
+    name: string,
     overrides: Partial<FakeFile> = {},
 ): FakeFile => ({
-    uuid,
-    filename: `${uuid}.bag`,
+    uuid: id(name),
+    filename: `${name}.bag`,
     state: FileState.OK,
     createdAt: new Date(Date.now() - DAY),
     missionUuid: 'mission-a',
@@ -76,10 +87,23 @@ const fakeRepository = (files: FakeFile[]): Repository<FileEntity> => {
 
 const fakeStorage = (
     tagsByObject: Record<string, Record<string, string>>,
+    /** objects that arrive after the listing was taken */
+    lateObjects: string[] = [],
 ): IStorageBucket & { written: string[] } => {
     const written: string[] = [];
     return {
         written,
+        getFileInfo: (name: string) =>
+            Promise.resolve(
+                name in tagsByObject || lateObjects.includes(name)
+                    ? {
+                          size: 1,
+                          etag: '',
+                          lastModified: new Date(),
+                          metaData: {},
+                      }
+                    : undefined,
+            ),
         listFiles: () =>
             Promise.resolve(
                 Object.keys(tagsByObject).map((name) => ({
@@ -111,8 +135,8 @@ describe('Storage Reconciliation', () => {
         const moved = fakeFile('moved', { missionUuid: 'mission-b' });
         const current = fakeFile('current');
         const storage = fakeStorage({
-            moved: { ...tagsOf(moved), missionUuid: 'mission-a' },
-            current: tagsOf(current),
+            [moved.uuid]: { ...tagsOf(moved), missionUuid: 'mission-a' },
+            [current.uuid]: tagsOf(current),
         });
 
         const result = await reconcileStorage(
@@ -121,7 +145,7 @@ describe('Storage Reconciliation', () => {
             log,
         );
 
-        expect(storage.written).toEqual(['moved']);
+        expect(storage.written).toEqual([moved.uuid]);
         expect(result).toMatchObject({ objectsChecked: 2, tagsRepaired: 1 });
     });
 
@@ -131,7 +155,7 @@ describe('Storage Reconciliation', () => {
         const files = [present, missing];
 
         const result = await reconcileStorage(
-            fakeStorage({ present: tagsOf(present) }),
+            fakeStorage({ [present.uuid]: tagsOf(present) }),
             fakeRepository(files),
             log,
         );
@@ -177,12 +201,50 @@ describe('Storage Reconciliation', () => {
     });
 
     test('should count objects without a file and leave them alone', async () => {
-        const storage = fakeStorage({ orphan: {} });
+        const storage = fakeStorage({ [id('orphan')]: {} });
 
         const result = await reconcileStorage(storage, fakeRepository([]), log);
 
         expect(result.objectsWithoutFile).toBe(1);
         expect(storage.written).toEqual([]);
+    });
+
+    test('should not mark a file LOST whose upload finished after the listing', async () => {
+        const late = fakeFile('late');
+
+        const result = await reconcileStorage(
+            fakeStorage({}, [late.uuid]),
+            fakeRepository([late]),
+            log,
+        );
+
+        expect(result.filesMarkedLost).toBe(0);
+        expect(late.state).toBe(FileState.OK);
+    });
+
+    test('should skip keys that are not file uuids', async () => {
+        const file = fakeFile('kept');
+        const repository = fakeRepository([file]);
+        const find = jest.spyOn(repository, 'find');
+
+        const result = await reconcileStorage(
+            fakeStorage({
+                'test/': {},
+                'notes.txt': {},
+                [file.uuid]: tagsOf(file),
+            }),
+            repository,
+            log,
+        );
+
+        expect(result.objectsWithoutFile).toBe(2);
+        expect(result.objectsChecked).toBe(1);
+        const queried = (
+            find.mock.calls[0]?.[0] as unknown as {
+                where: { uuid: FindOperator<string[]> };
+            }
+        ).where.uuid.value;
+        expect(queried).toEqual([file.uuid]);
     });
 
     test('should compare tag values the way they are stored', () => {

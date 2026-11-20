@@ -111,9 +111,17 @@ describe('File Upload Errors', () => {
             '/files/queue?startDate=2020-01-01T00:00:00.000Z&stateFilter=10,20',
         );
 
+        const emptyEntry = await send(
+            user,
+            'GET',
+            '/files/queue?startDate=2020-01-01T00:00:00.000Z&stateFilter=10,',
+        );
+
         expect(invalid.status).toBe(400);
         expect(String(messageOf(invalid.json))).toContain('stateFilter');
         expect(valid.status).toBe(200);
+        // an empty entry would otherwise become 0 (waiting uploads)
+        expect(emptyEntry.status).toBe(400);
     });
 
     test('should return 400 if a metadata filter value does not match its type', async () => {
@@ -137,10 +145,19 @@ describe('File Upload Errors', () => {
             `/files?metadataByTypeUuid=${filter('1.5')}`,
         );
 
+        // JavaScript reads `0x10` as 16, Postgres can't: the converted
+        // value must be what reaches the query
+        const hex = await send(
+            user,
+            'GET',
+            `/files?metadataByTypeUuid=${filter('0x10')}`,
+        );
+
         expect(invalid.status).toBe(400);
         expect(messageOf(invalid.json)).toBe(
             'Metadata "speed" must be a number',
         );
         expect(valid.status).toBe(200);
+        expect(hex.status).toBe(200);
     });
 });

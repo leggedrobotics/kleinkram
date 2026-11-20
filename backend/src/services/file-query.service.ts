@@ -76,50 +76,49 @@ const FIND_MANY_SORT_KEYS = {
 };
 
 /**
- * Rejects a metadata filter value that the metadata type's column can't hold,
- * e.g. `abc` for a NUMBER. Postgres would otherwise fail the whole query.
- * The web UI uses typed inputs, so this only catches API and CLI requests.
+ * Converts a metadata filter value to what the metadata type's column holds,
+ * or rejects it, e.g. `abc` for a NUMBER. The converted value is what goes
+ * into the query: Postgres can't read every string JavaScript accepts as a
+ * number or date (`0x10`, `1715600000000`), so the original must not be
+ * passed on. The web UI uses typed inputs, so this only catches API and CLI
+ * requests.
  */
-const assertMetadataFilterValue = (
+const toMetadataFilterValue = (
     name: string,
     datatype: DataType,
     value: unknown,
-): void => {
+): unknown => {
     const text = typeof value === 'string' ? value.trim() : value;
-    let valid = true;
-    let expected = '';
+    const reject = (expected: string): never => {
+        throw new BadRequestException(`Metadata "${name}" must be ${expected}`);
+    };
     switch (datatype) {
         case DataType.NUMBER: {
-            valid =
-                (typeof text === 'number' || typeof text === 'string') &&
-                text !== '' &&
-                Number.isFinite(Number(text));
-            expected = 'a number';
-            break;
+            const number =
+                typeof text === 'number' ||
+                (typeof text === 'string' && text !== '')
+                    ? Number(text)
+                    : NaN;
+            if (!Number.isFinite(number)) reject('a number');
+            return number;
         }
         case DataType.DATE: {
-            valid =
-                (typeof text === 'number' || typeof text === 'string') &&
-                text !== '' &&
-                !Number.isNaN(new Date(text).getTime());
-            expected = 'a date';
-            break;
+            const date =
+                typeof text === 'number' ||
+                (typeof text === 'string' && text !== '')
+                    ? new Date(text)
+                    : new Date(NaN);
+            if (Number.isNaN(date.getTime())) reject('a date');
+            return date;
         }
         case DataType.BOOLEAN: {
-            valid =
-                text === true ||
-                text === false ||
-                text === 'true' ||
-                text === 'false';
-            expected = 'true or false';
-            break;
+            if (text === true || text === 'true') return true;
+            if (text === false || text === 'false') return false;
+            return reject('true or false');
         }
         default: {
-            break;
+            return value;
         }
-    }
-    if (!valid) {
-        throw new BadRequestException(`Metadata "${name}" must be ${expected}`);
     }
 };
 
@@ -934,15 +933,14 @@ export class FileQueryService {
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const value = metadataByTypeUuid[uuid];
-            assertMetadataFilterValue(
+            const converted = toMetadataFilterValue(
                 metadataType.name,
                 metadataType.datatype,
                 value,
             );
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const [column, processedValue] = this._getMetadataColumnAndValue(
                 metadataType.datatype,
-                value,
+                converted,
             );
 
             if (!column) {

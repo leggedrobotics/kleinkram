@@ -23,6 +23,9 @@ const LOST_GRACE_PERIOD_MS = 60 * 60 * 1000;
 /** Objects whose tags are read and written at the same time. */
 const CONCURRENCY = 10;
 
+/** File objects are named by their file's uuid. */
+const UUID = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i;
+
 /** Objects looked up in the database per query. */
 const BATCH_SIZE = 500;
 
@@ -125,7 +128,10 @@ export const reconcileStorage = async (
         lostCheckSkipped: 0,
     };
 
-    const names = [...objectNames];
+    // Keys that aren't uuids (a test object, a folder marker) can't belong
+    // to a file, and Postgres would reject the whole query with them.
+    const names = [...objectNames].filter((name) => UUID.test(name));
+    result.objectsWithoutFile += objectNames.size - names.length;
     for (let start = 0; start < names.length; start += BATCH_SIZE) {
         const batch = names.slice(start, start + BATCH_SIZE);
         const files = await fileRepository.find({
@@ -171,13 +177,21 @@ export const reconcileStorage = async (
         },
         select: { uuid: true },
     });
-    const lost = filesThatNeedAnObject
+    const candidates = filesThatNeedAnObject
         .map((file) => file.uuid)
         .filter((uuid) => !objectNames.has(uuid));
-    if (!isPlausibleLoss(lost.length, filesThatNeedAnObject.length)) {
-        result.lostCheckSkipped = lost.length;
+    if (!isPlausibleLoss(candidates.length, filesThatNeedAnObject.length)) {
+        result.lostCheckSkipped = candidates.length;
         return result;
     }
+
+    // The listing is a snapshot: an upload reserved long ago can finish
+    // after it was taken. Ask the storage once more before marking a file.
+    const lost: string[] = [];
+    await forEachLimited(candidates, CONCURRENCY, async (uuid) => {
+        const info = await dataStorage.getFileInfo(uuid).catch(() => 'unknown');
+        if (info === undefined) lost.push(uuid);
+    });
     for (let start = 0; start < lost.length; start += BATCH_SIZE) {
         const update = await fileRepository.update(
             {
