@@ -1,4 +1,8 @@
-import { MetadataEntity, UserEntity } from '@kleinkram/backend-common';
+import {
+    MetadataEntity,
+    MissionEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
 import { DataType, UserRole } from '@kleinkram/shared';
 import {
     createMetadataTypeUsingPost,
@@ -199,5 +203,61 @@ describe('Metadata Value Validation', () => {
         });
         expect(lower.status).toBeLessThan(300);
         expect(await stored()).toBe(false);
+    });
+
+    test('should create a mission and ignore an empty metadata value', async () => {
+        const { user, projectUuid, types } = await setup();
+        const name = `empty_value_${String(Date.now())}`;
+
+        const response = await post(user, '/missions', {
+            name,
+            projectUUID: projectUuid,
+            metadata: { [types.link]: '', [types.number]: '4' },
+            ignoreMissingMetadata: true,
+        });
+
+        expect(response.status).toBeLessThan(300);
+        const metadata = await database.getRepository(MetadataEntity).find({
+            where: { mission: { name } },
+            relations: { metadataType: true },
+        });
+        expect(metadata.map((entry) => entry.metadataType?.uuid)).toEqual([
+            types.number,
+        ]);
+    });
+
+    test('should not create a mission when metadata the project requires is missing or empty', async () => {
+        const { user, types } = await setup();
+        const suffix = String(Date.now());
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: `required_metadata_project_${suffix}`,
+                description: 'Test project',
+                requiredMetadataTypes: [types.number],
+            },
+            user,
+        );
+
+        for (const metadata of [{}, { [types.number]: '' }]) {
+            const name = `required_missing_${suffix}`;
+            const response = await post(user, '/missions', {
+                name,
+                projectUUID: projectUuid,
+                metadata,
+            });
+            expect(response.status).toBe(409);
+            expect(
+                await database
+                    .getRepository(MissionEntity)
+                    .exists({ where: { name } }),
+            ).toBe(false);
+        }
+
+        const provided = await post(user, '/missions', {
+            name: `required_given_${suffix}`,
+            projectUUID: projectUuid,
+            metadata: { [types.number]: '4' },
+        });
+        expect(provided.status).toBeLessThan(300);
     });
 });

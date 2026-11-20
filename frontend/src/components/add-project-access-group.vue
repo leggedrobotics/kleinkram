@@ -123,6 +123,7 @@ import { accessGroupRightsList } from 'src/enums/access-group-rights-list';
 import { useFilteredProjects } from 'src/hooks/query-hooks';
 import { getAccessRightDescription } from 'src/services/generic';
 import { addAccessGroupToProject } from 'src/services/mutations/access';
+import { runForEach } from 'src/services/run-for-each';
 import { computed, ref, Ref, watch } from 'vue';
 
 const properties = defineProps<{
@@ -207,16 +208,27 @@ const onRemoveProject = (project: SelectedProject): void => {
 };
 
 const { mutateAsync } = useMutation({
-    mutationFn: () => {
-        return Promise.all(
-            selectedProjects.value.map(async (project) => {
-                return addAccessGroupToProject(
+    mutationFn: async () => {
+        const { failed, error } = await runForEach(
+            selectedProjects.value,
+            (project) =>
+                addAccessGroupToProject(
                     project.uuid,
                     properties.accessGroupUuid,
                     project.rights,
-                );
-            }),
+                ),
         );
+        if (failed.length === 0) return;
+
+        // keep only the projects that were not added, so a retry sends just
+        // those, and show the ones that were
+        if (failed.length < selectedProjects.value.length) {
+            selectedProjects.value = failed;
+            await queryClient.invalidateQueries({
+                queryKey: ['AccessGroup', properties.accessGroupUuid],
+            });
+        }
+        throw error;
     },
     onSuccess: async () => {
         selectedProjects.value = [];

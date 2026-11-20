@@ -138,6 +138,7 @@ import { useUserSearch } from 'src/hooks/query-hooks';
 import { formatDate, parseDate } from 'src/services/date-formating';
 import { icon } from 'src/services/generic';
 import { addUserToAccessGroup } from 'src/services/mutations/access';
+import { runForEach } from 'src/services/run-for-each';
 import { Ref, ref, watch } from 'vue';
 
 const properties = defineProps<{
@@ -190,7 +191,7 @@ function onExpirationSelectionUpdate(
 }
 
 const { mutateAsync } = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
         let expireDateConverted: Date | 'never' = 'never';
         if (
             expirationShortcutState.value !== 'never' &&
@@ -199,16 +200,25 @@ const { mutateAsync } = useMutation({
             expireDateConverted = parseDate(customExpirationDate.value);
         }
 
-        return Promise.all(
-            selected.value.map(async (user) => {
-                return addUserToAccessGroup(
-                    user.uuid,
-                    properties.accessGroupUuid,
-                    selectedRole.value,
-                    expireDateConverted,
-                );
-            }),
+        const { failed, error } = await runForEach(selected.value, (user) =>
+            addUserToAccessGroup(
+                user.uuid,
+                properties.accessGroupUuid,
+                selectedRole.value,
+                expireDateConverted,
+            ),
         );
+        if (failed.length === 0) return;
+
+        // keep only the users that were not added, so a retry sends just
+        // those, and show the ones that were
+        if (failed.length < selected.value.length) {
+            selected.value = failed;
+            await queryClient.invalidateQueries({
+                queryKey: ['AccessGroup', properties.accessGroupUuid],
+            });
+        }
+        throw error;
     },
     onSuccess: async () => {
         Notify.create({

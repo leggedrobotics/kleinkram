@@ -1,5 +1,5 @@
 import { FileEntity, UserEntity } from '@kleinkram/backend-common';
-import { FileType } from '@kleinkram/shared';
+import { FileState, FileType } from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -35,6 +35,7 @@ const insertFile = async (options: {
     creator: UserEntity;
     type: FileType;
     size: number;
+    state?: FileState;
     createdAgo?: string;
     deletedAgo?: string;
 }): Promise<void> => {
@@ -47,6 +48,7 @@ const insertFile = async (options: {
             date: new Date(),
             type: options.type,
             size: options.size,
+            state: options.state ?? FileState.OK,
         }),
     );
     await database.query(
@@ -192,5 +194,68 @@ describe('Storage Insights', () => {
             { missionUuid: missionA, bytes: 300 },
             { missionUuid: missionB, bytes: 50 },
         ]);
+    });
+
+    test('should not count uploads that have not finished or were cancelled', async () => {
+        const { user } = await generateAndFetchDatabaseUser(
+            'internal',
+            'admin',
+        );
+        const suffix = String(Date.now());
+        const project = await createProjectUsingPost(
+            {
+                name: `insights_states_${suffix}`,
+                description: 'Storage insights test',
+                requiredMetadataTypes: [],
+            },
+            user,
+        );
+        const mission = await createMissionUsingPost(
+            {
+                name: `mission_states_${suffix}`,
+                projectUUID: project,
+                metadata: {},
+                ignoreMissingMetadata: true,
+            },
+            user,
+        );
+        const file = {
+            missionUuid: mission,
+            creator: user,
+            type: FileType.BAG,
+        };
+        await insertFile({ ...file, size: 100 });
+        await insertFile({ ...file, size: 50, state: FileState.ERROR });
+        // rows reserved for an upload hold no data yet
+        await insertFile({ ...file, size: 0, state: FileState.UPLOADING });
+        await insertFile({ ...file, size: 0, state: FileState.CANCELED });
+
+        const response = await fetch(`${DEFAULT_URL}/files/storage/insights`, {
+            headers: getAuthHeaders(user),
+        });
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as InsightsBody;
+        expect(body.totals).toEqual({
+            bytes: 150,
+            fileCount: 2,
+            projectCount: 1,
+        });
+        expect(body.last30Days.fileCount).toBe(2);
+        expect(body.byType).toEqual([
+            expect.objectContaining({
+                type: FileType.BAG,
+                bytes: 150,
+                fileCount: 2,
+            }),
+        ]);
+
+        const uploaders = await fetch(
+            `${DEFAULT_URL}/files/storage/insights/uploaders`,
+            { headers: getAuthHeaders(user) },
+        );
+        const { uploaders: rows } = (await uploaders.json()) as {
+            uploaders: { uuid: string; fileCount: number }[];
+        };
+        expect(rows.find((row) => row.uuid === user.uuid)?.fileCount).toBe(2);
     });
 });

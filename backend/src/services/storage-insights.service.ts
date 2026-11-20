@@ -12,7 +12,7 @@ import {
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import { UserRole } from '@kleinkram/shared';
+import { FileState, UserRole } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -64,11 +64,22 @@ const toNumber = (value: Numeric): number => Number(value ?? 0);
  * aggregated in SQL over the files' recorded sizes.
  *
  * Only existing files (`deletedAt IS NULL`) count, except for the monthly
- * history, which also counts files deleted after the end of a month.
+ * history, which also counts files deleted after the end of a month. A row
+ * reserved for an upload that has not finished or was cancelled is not a
+ * stored file and never counts.
  *
  * Admins see everything; everyone else only the files of projects and
  * missions they can read, the same rule as the file lists.
  */
+/**
+ * An upload reserves its file row (size 0) before any data exists; the row
+ * stays until the upload finishes or the nightly cleanup removes it.
+ */
+const FINISHED_UPLOAD = `f.state NOT IN ('${FileState.UPLOADING}', '${FileState.CANCELED}')`;
+
+/** A file that exists and counts in the statistics */
+const STORED_FILE = `f."deletedAt" IS NULL AND ${FINISHED_UPLOAD}`;
+
 @Injectable()
 export class StorageInsightsService {
     constructor(
@@ -122,7 +133,7 @@ export class StorageInsightsService {
                    MAX(f."createdAt") AS "lastUploadAt"
             FROM file_entity f
             JOIN "user" u ON u.uuid = f."creatorUuid"
-            WHERE f."deletedAt" IS NULL
+            WHERE ${STORED_FILE}
             GROUP BY u.uuid, u.name
             ORDER BY bytes DESC, u.name
         `)) as {
@@ -212,7 +223,7 @@ export class StorageInsightsService {
                    COUNT(DISTINCT m."projectUuid") AS "projectCount"
             FROM file_entity f
             JOIN mission m ON m.uuid = f."missionUuid"
-            WHERE f."deletedAt" IS NULL ${scope.fileFilter}
+            WHERE ${STORED_FILE} ${scope.fileFilter}
         `,
             scope.parameters,
         )) as { bytes: Numeric; fileCount: Numeric; projectCount: Numeric }[];
@@ -244,7 +255,7 @@ export class StorageInsightsService {
                     WHERE f."createdAt" > NOW() - INTERVAL '90 days')
                     AS files90
             FROM file_entity f
-            WHERE f."deletedAt" IS NULL ${scope.fileFilter}
+            WHERE ${STORED_FILE} ${scope.fileFilter}
         `,
             scope.parameters,
         )) as Record<'bytes30' | 'files30' | 'bytes90' | 'files90', Numeric>[];
@@ -290,6 +301,7 @@ export class StorageInsightsService {
                 ON f."createdAt" < months.month_end
                 AND (f."deletedAt" IS NULL
                      OR f."deletedAt" >= months.month_end)
+                AND ${FINISHED_UPLOAD}
                 ${scope.fileFilter}
             GROUP BY months.month_start
             ORDER BY months.month_start
@@ -317,7 +329,7 @@ export class StorageInsightsService {
             FROM file_entity f
             JOIN mission m ON m.uuid = f."missionUuid"
             JOIN project p ON p.uuid = m."projectUuid"
-            WHERE f."deletedAt" IS NULL ${scope.fileFilter}
+            WHERE ${STORED_FILE} ${scope.fileFilter}
             GROUP BY p.uuid, p.name
             ORDER BY bytes DESC, p.name
         `,
@@ -343,7 +355,7 @@ export class StorageInsightsService {
             ${withClause(scope)}
             SELECT f.type, SUM(f.size) AS bytes, COUNT(*) AS "fileCount"
             FROM file_entity f
-            WHERE f."deletedAt" IS NULL ${scope.fileFilter}
+            WHERE ${STORED_FILE} ${scope.fileFilter}
             GROUP BY f.type
             ORDER BY bytes DESC, f.type
         `,
@@ -369,7 +381,7 @@ export class StorageInsightsService {
             FROM file_entity f
             JOIN mission m ON m.uuid = f."missionUuid"
             JOIN project p ON p.uuid = m."projectUuid"
-            WHERE f."deletedAt" IS NULL ${scope.fileFilter}
+            WHERE ${STORED_FILE} ${scope.fileFilter}
             GROUP BY m.uuid, m.name, p.uuid, p.name
             ORDER BY bytes DESC, m.name
             LIMIT ${String(TOP_MISSIONS)}

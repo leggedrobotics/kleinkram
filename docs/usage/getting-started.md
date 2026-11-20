@@ -65,7 +65,7 @@ You can add key-value pairs as metadata to missions. Each key is a **metadata ty
 
 Invalid values are rejected with `422` and a list of every invalid value: `{ "message": "…", "errors": [{ "field": "<metadata type uuid>", "name": "…", "error": "…" }] }`. A value that a mission already has and that is sent back unchanged is not checked again (links excepted), so a location stored as free text before this rule existed does not block other changes; it has to follow the format once it is edited.
 
-- **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" metadata type for every mission).
+- **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" metadata type for every mission). The server enforces this when a mission is created: a request without a value for every required metadata type is rejected with `409`, unless it sets `ignoreMissingMetadata` (`--ignore-missing-metadata` in the CLI). An empty value counts as missing.
 - **Usage**: Use this metadata to quickly find all missions performed by a specific robot or in a specific location.
 
 ::: tip Example: GrandTourDataset
