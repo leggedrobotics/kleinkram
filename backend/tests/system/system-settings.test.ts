@@ -1,6 +1,16 @@
-import { UserEntity } from '@kleinkram/backend-common';
+import {
+    AccessGroupEntity,
+    MissionAccessEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
+import { AccessGroupRights } from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
-import { createProjectUsingPost, getAuthHeaders } from '../utils/api-calls';
+import {
+    createMissionUsingPost,
+    createProjectUsingPost,
+    getAuthHeaders,
+} from '../utils/api-calls';
+import { database } from '../utils/database-utilities';
 import { setupDatabaseHooks } from '../utils/test-helpers';
 
 interface Settings {
@@ -106,6 +116,19 @@ describe('System Settings', () => {
             foxglovePreviewEnabled: true,
         });
     });
+
+    test('should return 400 Bad Request for null', async () => {
+        const { user: admin } = await generateAndFetchDatabaseUser(
+            'internal',
+            'admin',
+        );
+
+        const response = await putSettings(admin, {
+            foxglovePreviewEnabled: null,
+        });
+
+        expect(response.status).toBe(400);
+    });
 });
 
 const getProject = async (
@@ -126,6 +149,21 @@ const isPreviewEnabled = async (
     const project = await getProject(user, projectUuid);
     return project.foxglovePreviewEnabled;
 };
+
+const putProject = async (
+    user: UserEntity,
+    projectUuid: string,
+    body: unknown,
+): Promise<Response> =>
+    fetch(`${DEFAULT_URL}/projects/${projectUuid}`, {
+        method: 'PUT',
+        headers: {
+            ...getAuthHeaders(user),
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+    });
 
 describe('Project Foxglove Preview Setting', () => {
     setupDatabaseHooks();
@@ -189,5 +227,80 @@ describe('Project Foxglove Preview Setting', () => {
 
         expect(response.status).toBe(200);
         expect(await isPreviewEnabled(user, projectUuid)).toBe(false);
+    });
+
+    test.each([
+        ['null', null],
+        ['a string', 'false'],
+    ])(
+        'should return 400 Bad Request if an update sets the preview to %s',
+        async (_, value) => {
+            const { user } = await generateAndFetchDatabaseUser(
+                'internal',
+                'admin',
+            );
+            const name = `foxglove_preview_${String(Date.now())}`;
+            const projectUuid = await createProjectUsingPost(
+                { name, description: 'Test project' },
+                user,
+            );
+
+            const response = await putProject(user, projectUuid, {
+                name,
+                description: 'Test project',
+                foxglovePreviewEnabled: value,
+            });
+
+            expect(response.status).toBe(400);
+            expect(await isPreviewEnabled(user, projectUuid)).toBe(true);
+        },
+    );
+
+    test('should return the project switch with the mission to a user who may read only the mission', async () => {
+        const { user: admin } = await generateAndFetchDatabaseUser(
+            'internal',
+            'admin',
+        );
+        const { user: reader } = await generateAndFetchDatabaseUser(
+            'external',
+            'user',
+        );
+        const name = `foxglove_preview_${String(Date.now())}`;
+        const projectUuid = await createProjectUsingPost(
+            {
+                name,
+                description: 'Test project',
+                foxglovePreviewEnabled: false,
+            },
+            admin,
+        );
+        const missionUuid = await createMissionUsingPost(
+            { name: 'mission_only', projectUUID: projectUuid, metadata: {} },
+            admin,
+        );
+        const readerGroup = await database
+            .getRepository(AccessGroupEntity)
+            .findOneOrFail({ where: { name: reader.name } });
+        await database.getRepository(MissionAccessEntity).save({
+            rights: AccessGroupRights.READ,
+            accessGroup: { uuid: readerGroup.uuid },
+            mission: { uuid: missionUuid },
+        });
+
+        const projectResponse = await fetch(
+            `${DEFAULT_URL}/projects/${projectUuid}`,
+            { headers: getAuthHeaders(reader) },
+        );
+        const missionResponse = await fetch(
+            `${DEFAULT_URL}/missions/${missionUuid}`,
+            { headers: getAuthHeaders(reader) },
+        );
+
+        expect(projectResponse.status).toBe(403);
+        expect(missionResponse.status).toBe(200);
+        const mission = (await missionResponse.json()) as {
+            project: { foxglovePreviewEnabled: boolean };
+        };
+        expect(mission.project.foxglovePreviewEnabled).toBe(false);
     });
 });

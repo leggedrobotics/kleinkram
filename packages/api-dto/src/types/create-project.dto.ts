@@ -1,4 +1,4 @@
-import { KeepRawValue } from '@api-dto/system-settings.dto';
+import { IsOptionalStrictBoolean } from '@api-dto/system-settings.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import { IsValidName } from '@kleinkram/validation';
 import {
@@ -20,9 +20,7 @@ export class ProjectFieldsDto {
     autoConvert?: boolean;
 
     /** Show the Foxglove preview tab in the project's missions. */
-    @KeepRawValue()
-    @IsOptional()
-    @IsBoolean()
+    @IsOptionalStrictBoolean()
     foxglovePreviewEnabled?: boolean;
 
     /** Uuids of the metadata types every mission of the project must set. */

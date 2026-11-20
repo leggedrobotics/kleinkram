@@ -244,7 +244,7 @@ import {
     registerNoPermissionErrorHandler,
     useMission,
 } from 'src/hooks/query-hooks';
-import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
+import { useMissionUUID } from 'src/hooks/router-hooks';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -253,9 +253,8 @@ const $route = useRoute();
 const $q = useQuasar();
 
 const missionUuid = useMissionUUID();
-const projectUuid = useProjectUUID();
 const { isEnabled: isPreviewEnabled, isDisabled: isPreviewDisabled } =
-    useFoxglovePreviewEnabled(projectUuid);
+    useFoxglovePreviewEnabled(missionUuid);
 
 // A bookmarked preview of a project (or instance) that turned it off opens
 // the file list instead.

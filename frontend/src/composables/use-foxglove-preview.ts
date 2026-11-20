@@ -1,6 +1,6 @@
 import type { SystemSettingsDto } from '@kleinkram/api-dto/types/system-settings.dto';
 import { useQuery, type UseQueryReturnType } from '@tanstack/vue-query';
-import { useProjectQuery } from 'src/hooks/query-hooks';
+import { useMission } from 'src/hooks/query-hooks';
 import { getSystemSettings } from 'src/services/queries/system';
 import { computed, type ComputedRef, type Ref } from 'vue';
 
@@ -24,10 +24,13 @@ export const useSystemSettings = (): UseQueryReturnType<
  * and disappears again; `isDisabled` is only true once one of them said no.
  */
 export function useFoxglovePreviewEnabled(
-    projectUuid: Ref<string | undefined>,
+    missionUuid: Ref<string | undefined>,
 ): { isEnabled: ComputedRef<boolean>; isDisabled: ComputedRef<boolean> } {
     const { data: settings } = useSystemSettings();
-    const { data: project } = useProjectQuery(projectUuid);
+    // The project switch comes with the mission: users with access to a single
+    // mission may not read its project.
+    const { data: mission } = useMission(missionUuid);
+    const project = computed(() => mission.value?.project);
     return {
         isEnabled: computed(
             () =>

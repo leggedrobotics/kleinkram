@@ -506,7 +506,7 @@ const deselect = (): void => {
 };
 
 const { isEnabled: isPreviewEnabled } =
-    useFoxglovePreviewEnabled(useProjectUUID());
+    useFoxglovePreviewEnabled(useMissionUUID());
 
 const previewableFiles = computed(() =>
     selectedFiles.value.filter(
