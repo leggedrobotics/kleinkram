@@ -1,6 +1,7 @@
 import { AccessGroupType } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { MAX_TAKE } from '../pagination';
 
 export class GetFilteredAccessGroupsDto {
     @ApiProperty({
@@ -10,11 +11,15 @@ export class GetFilteredAccessGroupsDto {
     search!: string;
 
     @ApiProperty()
-    @IsNumber()
+    @IsInt()
+    @Min(0)
+    @Max(Number.MAX_SAFE_INTEGER)
     skip!: number;
 
     @ApiProperty()
-    @IsNumber()
+    @IsInt()
+    @Min(0)
+    @Max(MAX_TAKE)
     take!: number;
 
     @ApiProperty({

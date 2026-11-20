@@ -7,9 +7,61 @@
         @copy-hash="copyHash"
         @copy-uuid="copyUuid"
         @copy-foxglove="copyFoxgloveLink"
-    />
+    >
+        <template #tabs>
+            <q-tabs
+                :model-value="activeTab"
+                align="left"
+                active-color="primary"
+                dense
+                class="text-grey"
+                @update:model-value="selectTab"
+            >
+                <q-tab
+                    name="content"
+                    :label="displayTopics ? 'Messages' : 'Preview'"
+                    style="color: #222"
+                />
+                <q-tab
+                    v-if="attachments.length > 0"
+                    name="attachments"
+                    no-caps
+                    style="color: #222"
+                >
+                    <div class="row items-center no-wrap">
+                        <span>Attachments</span>
+                        <q-badge
+                            color="grey-4"
+                            text-color="black"
+                            class="q-ml-xs"
+                            :label="attachments.length"
+                        />
+                    </div>
+                </q-tab>
+                <q-tab
+                    v-if="metadataCount > 0"
+                    name="metadata"
+                    no-caps
+                    style="color: #222"
+                >
+                    <div class="row items-center no-wrap">
+                        <span>Metadata</span>
+                        <q-badge
+                            color="grey-4"
+                            text-color="black"
+                            class="q-ml-xs"
+                            :label="metadataCount"
+                        />
+                    </div>
+                </q-tab>
+                <q-tab name="history" label="File Events" style="color: #222" />
+            </q-tabs>
+        </template>
+    </FileHeader>
 
-    <div v-if="file" class="q-my-lg">
+    <!-- Kept mounted while another tab is open: the previews hold loaded
+         messages and expanded rows that should survive a look at the history -->
+    <div v-if="file" v-show="activeTab === 'content'" class="q-my-lg">
         <!-- YAML/Text Preview -->
         <div v-if="isYaml" class="q-mb-lg">
             <h2 class="text-h5 text-md-h4 q-mb-md">Content Preview</h2>
@@ -86,9 +138,12 @@
 
         <!-- Binary/ROS Preview -->
         <div v-else-if="displayTopics">
+            <RecordingFacts v-if="insights" :insights="insights" />
+
             <FileTopicTable
                 :topics="file.topics"
                 :is-loading="isLoading"
+                :insights="insights"
                 :previews="preview.topicPreviews"
                 :loading-state="preview.topicLoadingState"
                 :topic-errors="preview.topicErrors"
@@ -139,8 +194,6 @@
             <FileErrorState :file="file" />
         </div>
 
-        <FileHistory v-if="events !== undefined" :events="events" />
-
         <div
             v-if="preview.readerError.value"
             class="q-my-md text-negative text-center"
@@ -149,7 +202,28 @@
         </div>
     </div>
 
-    <div v-else class="text-center q-pa-md">
+    <div v-if="file && activeTab === 'attachments'" class="q-my-lg">
+        <FileAttachments
+            :attachments="attachments"
+            :read="preview.readAttachment"
+        />
+    </div>
+
+    <!-- Kept mounted once opened, so coming back to the tab neither reads
+         every record again nor folds the rows that were open. -->
+    <div
+        v-if="file && insights && metadataOpenedFor === file.uuid"
+        v-show="activeTab === 'metadata'"
+        class="q-my-lg"
+    >
+        <FileMetadataRecords :key="file.uuid" :read="preview.readMetadata" />
+    </div>
+
+    <div v-if="file && activeTab === 'history'" class="q-mb-lg">
+        <FileHistory v-if="events !== undefined" :events="events" />
+    </div>
+
+    <div v-if="!file" class="text-center q-pa-md">
         <q-spinner size="3em" color="primary" />
         <div class="text-grey q-mt-sm">Loading file...</div>
     </div>
@@ -169,10 +243,13 @@ import { _downloadFile } from 'src/services/generic';
 import { downloadFile, getFoxgloveLink } from 'src/services/queries/file';
 import { fetchTextPreview } from 'src/services/text-preview';
 import { computed, onUnmounted, ref, watch } from 'vue';
+import FileAttachments from './file-attachments.vue';
 import FileErrorState from './file-error-state.vue';
 import FileHeader from './file-header.vue';
 import FileHistory from './file-history.vue';
+import FileMetadataRecords from './file-metadata-records.vue';
 import FileTopicTable from './file-topic-table.vue';
+import RecordingFacts from './recording-facts.vue';
 import CsvViewer from './viewers/csv-viewer.vue';
 import MarkdownViewer from './viewers/markdown-viewer.vue';
 import Svo2Viewer from './viewers/svo2-viewer.vue';
@@ -184,6 +261,51 @@ registerNoPermissionErrorHandler(isLoadingError, fileUuid, 'file', error);
 const { data: events } = useFileEvents(fileUuid);
 
 const preview = useRosmsgPreview();
+
+type FileTab = 'content' | 'attachments' | 'metadata' | 'history';
+const tab = ref<FileTab>('content');
+
+const insights = computed(() => preview.insights.value);
+const attachments = computed(() => insights.value?.attachments ?? []);
+// A record written several times counts once, as in the Metadata tab.
+const metadataCount = computed(
+    () => new Set(insights.value?.metadataNames).size,
+);
+
+const selectTab = (name: FileTab): void => {
+    tab.value = name;
+};
+
+/**
+ * The attachment and metadata tabs only exist once the file's index has been
+ * read and turned out to hold some, so a tab can go away under the selection
+ * (another file, a failed read). The content tab is always there to fall back to.
+ */
+const activeTab = computed<FileTab>(() => {
+    if (tab.value === 'attachments' && attachments.value.length === 0) {
+        return 'content';
+    }
+    if (tab.value === 'metadata' && metadataCount.value === 0) {
+        return 'content';
+    }
+    return tab.value;
+});
+// The file whose metadata tab has been opened; another file starts closed.
+const metadataOpenedFor = ref<string | undefined>(undefined);
+watch(
+    activeTab,
+    (current) => {
+        if (current === 'metadata' && file.value) {
+            metadataOpenedFor.value = file.value.uuid;
+        }
+    },
+    { immediate: true },
+);
+// Leaving a file closes its panel: on return it is only mounted again once
+// the tab is opened, by which time the file's reader is ready to read from.
+watch(fileUuid, () => {
+    metadataOpenedFor.value = undefined;
+});
 const yamlContent = ref<string | undefined>(undefined);
 const tumContent = ref<string | undefined>(undefined);
 const textContent = ref<string | undefined>(undefined);
@@ -246,6 +368,7 @@ watch(
             textContent.value = undefined;
             textTruncated.value = false;
             svo2Url.value = undefined;
+            tab.value = 'content';
             preview.reset();
         }
 
