@@ -1,4 +1,5 @@
 import { AuthService } from '@/services/auth.service';
+import { OAuthLoginStateService } from '@/services/oauth-login-state.service';
 import { SessionService } from '@/services/session.service';
 import { SessionEntity } from '@kleinkram/backend-common/entities/auth/session.entity';
 import { Global, Module } from '@nestjs/common';
@@ -61,6 +62,7 @@ import { MissionGuardService } from './mission-guard.service';
         AuthService,
         SessionService,
         AffiliationGroupService,
+        OAuthLoginStateService,
 
         GoogleStrategy,
         GitHubStrategy,
