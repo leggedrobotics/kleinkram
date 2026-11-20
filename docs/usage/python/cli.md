@@ -225,11 +225,12 @@ klein upload --create --project testProject --mission testMission *.bag
 
 The other options of `upload`:
 
-| Option              | Effect                                                                                                                                                                                                                                                        |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--metadata <file>` | A JSON or YAML file with the metadata of the mission, as `name: value` pairs. It is only used together with `--create`, when the mission is created; the metadata of an existing mission is not changed. To change it, use `klein mission update --metadata`. |
-| `--fix-filenames`   | Upload files whose names Kleinkram does not accept under a fixed name, instead of failing. The local files are not renamed. See below.                                                                                                                        |
-| `--skip`, `-s`      | Skip files that cannot be uploaded (unsupported type, bad name, directories) instead of failing, and upload the rest.                                                                                                                                         |
+| Option                      | Effect                                                                                                                                                                                                                                                        |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--metadata <file>`         | A JSON or YAML file with the metadata of the mission, as `name: value` pairs. It is only used together with `--create`, when the mission is created; the metadata of an existing mission is not changed. To change it, use `klein mission update --metadata`. |
+| `--ignore-missing-metadata` | With `--create`: create the mission even if `--metadata` lacks metadata the project requires. Without it, the upload stops before anything is created.                                                                                                        |
+| `--fix-filenames`           | Upload files whose names Kleinkram does not accept under a fixed name, instead of failing. The local files are not renamed. See below.                                                                                                                        |
+| `--skip`, `-s`              | Skip files that cannot be uploaded (unsupported type, bad name, directories) instead of failing, and upload the rest.                                                                                                                                         |
 
 File names follow the [naming rules](../getting-started.md#naming-rules): the part before the extension is 3 to 50
 characters of letters, digits, `.`, `_` and `-`, not starting with `.` or `-`, and the extension is lowercase. The CLI
@@ -293,6 +294,7 @@ klein project update testProject --name renamedProject --description "New descri
 klein project delete renamedProject
 
 klein mission create testMission --project testProject --metadata metadata.yaml
+# a project can require metadata; add --ignore-missing-metadata to create the mission without it
 klein mission info testMission --project testProject
 klein mission update testMission --project testProject --metadata metadata.yaml
 klein mission delete testMission --project testProject
@@ -420,7 +422,7 @@ follows:
 | `klein endpoint`, `klein endpoint <name>`                           | `klein host`, `klein host use <name>`                            |
 | `klein endpoint <name> <api> <s3>`                                  | `klein login <url>`                                              |
 | `klein verify --skip-hash`                                          | `klein verify --no-check-file-hash`                              |
-| `--ignore-missing-tags` on `upload` / `mission create`              | Remove it: it has no effect                                      |
+| `--ignore-missing-tags` on `upload` / `mission create`              | `--ignore-missing-metadata`                                      |
 | `required_tags` in the JSON of `klein --no-verbose project info`    | `required_metadata_types`                                        |
 
 Deleting a project, template, execution or trigger without `--yes` in a non-interactive session still works for now

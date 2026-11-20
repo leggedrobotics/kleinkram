@@ -87,6 +87,13 @@ const sortLikeIds = (
     );
 };
 
+/**
+ * A required metadata value counts as missing when it is absent, null or an
+ * empty string, as in the web app's create-mission dialog.
+ */
+const isMissingMetadataValue = (value: unknown): boolean =>
+    value === undefined || value === null || value === '';
+
 @Injectable()
 export class MissionService {
     constructor(
@@ -129,11 +136,7 @@ export class MissionService {
         if (!ignoreMissingMetadata) {
             const missingMetadataTypes = project.requiredMetadataTypes.filter(
                 (metadataType: MetadataTypeEntity) =>
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                    metadata[metadataType.uuid] === undefined &&
-                    metadata[metadataType.uuid] === '' &&
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                    metadata[metadataType.uuid] === null,
+                    isMissingMetadataValue(metadata[metadataType.uuid]),
             );
             if (missingMetadataTypes.length > 0) {
                 const missingNames = missingMetadataTypes
