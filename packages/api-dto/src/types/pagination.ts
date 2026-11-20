@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
-const MAX_TAKE = 10_000;
+export const MAX_TAKE = 10_000;
 const DEFAULT_TAKE = 100;
 const DEFAULT_SKIP = 0;
 
@@ -12,9 +12,11 @@ export enum SortOrder {
 }
 
 export class PaginatedQueryDto {
+    // Postgres' OFFSET is a bigint; larger values fail the query with a 500
     @IsOptional()
     @IsInt()
     @Min(0)
+    @Max(Number.MAX_SAFE_INTEGER)
     @Type(() => Number)
     @ApiProperty({ required: false, default: 0 })
     skip: number = DEFAULT_SKIP;
