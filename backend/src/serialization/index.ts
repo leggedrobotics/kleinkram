@@ -294,6 +294,7 @@ export const projectAccessesToProjectDtos = (
                 uuid: project.uuid,
                 rights: access.rights,
                 autoConvert: project.autoConvert ?? false,
+                foxglovePreviewEnabled: project.foxglovePreviewEnabled,
             } as ProjectWithAccessRightsDto,
         ];
     });

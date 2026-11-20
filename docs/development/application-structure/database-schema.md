@@ -506,17 +506,18 @@ Defined in: `project/project.entity.ts`
 
 ### Columns
 
-| Column                  | Type                                                         | Constraints  | Description                                                                                                                              |
-| :---------------------- | :----------------------------------------------------------- | :----------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                  | `string`                                                     | Not Null     | The name of the project. This is the name that will be displayed in the UI. The name must be unique among active (non-deleted) projects. |
-| `missions`              | [MissionEntity](#missionentity-mission)[]                    | OneToMany    |                                                                                                                                          |
-| `project_accesses`      | [ProjectAccessEntity](#projectaccessentity-project_access)[] | OneToMany    |                                                                                                                                          |
-| `description`           | `string`                                                     | Not Null     |                                                                                                                                          |
-| `creator`               | [UserEntity](#userentity-user)                               | FK, Nullable |                                                                                                                                          |
-| `requiredMetadataTypes` | [MetadataTypeEntity](#metadatatypeentity-metadata_type)[]    | ManyToMany   |                                                                                                                                          |
-| `categories`            | [CategoryEntity](#categoryentity-category)[]                 | OneToMany    |                                                                                                                                          |
-| `autoConvert`           | `boolean`                                                    | Nullable     |                                                                                                                                          |
-| `stars`                 | [ProjectStarEntity](#projectstarentity-project_star)[]       | OneToMany    |                                                                                                                                          |
+| Column                   | Type                                                         | Constraints  | Description                                                                                                                               |
+| :----------------------- | :----------------------------------------------------------- | :----------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                   | `string`                                                     | Not Null     | The name of the project. This is the name that will be displayed in the UI. The name must be unique among active (non-deleted) projects.  |
+| `missions`               | [MissionEntity](#missionentity-mission)[]                    | OneToMany    |                                                                                                                                           |
+| `project_accesses`       | [ProjectAccessEntity](#projectaccessentity-project_access)[] | OneToMany    |                                                                                                                                           |
+| `description`            | `string`                                                     | Not Null     |                                                                                                                                           |
+| `creator`                | [UserEntity](#userentity-user)                               | FK, Nullable |                                                                                                                                           |
+| `requiredMetadataTypes`  | [MetadataTypeEntity](#metadatatypeentity-metadata_type)[]    | ManyToMany   |                                                                                                                                           |
+| `categories`             | [CategoryEntity](#categoryentity-category)[]                 | OneToMany    |                                                                                                                                           |
+| `autoConvert`            | `boolean`                                                    | Nullable     |                                                                                                                                           |
+| `foxglovePreviewEnabled` | `boolean`                                                    | Not Null     | Whether the Preview tab of the project's missions shows its files in an embedded Foxglove viewer. Signed Foxglove links are not affected. |
+| `stars`                  | [ProjectStarEntity](#projectstarentity-project_star)[]       | OneToMany    |                                                                                                                                           |
 
 ---
 
@@ -569,6 +570,20 @@ Defined in: `auth/session.entity.ts`
 | `generation`    | `number`                       | Not Null     | Number of the current refresh token, increased on every rotation.                                                                                                                                                                                         |
 | `rotatedAt`     | `Date \| null`                 | Nullable     | When the current refresh token replaced the previous one.                                                                                                                                                                                                 |
 | `secret`        | `string`                       | Not Null     | Per-session input to the refresh token HMAC.                                                                                                                                                                                                              |
+
+---
+
+<h2 id="systemsettingentity-system_setting">SystemSettingEntity (system_setting)</h2>
+
+Defined in: `system/system-setting.entity.ts`
+
+### Columns
+
+| Column      | Type        | Constraints | Description |
+| :---------- | :---------- | :---------- | :---------- |
+| `key`       | `string`    | Not Null    |             |
+| `value`     | `jsonb`     | Not Null    |             |
+| `updatedAt` | `timestamp` | Not Null    |             |
 
 ---
 

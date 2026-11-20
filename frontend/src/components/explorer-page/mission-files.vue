@@ -118,7 +118,7 @@
                     :files="selectedFiles"
                 />
                 <q-btn
-                    v-if="previewableFiles.length > 0"
+                    v-if="isPreviewEnabled && previewableFiles.length > 0"
                     flat
                     dense
                     padding="6px"
@@ -198,6 +198,7 @@ import { Notify, useQuasar } from 'quasar';
 import SmartSearchInput from 'src/components/common/smart-search-input.vue';
 import ComposableFilterPopup from 'src/components/files/filter/composable-filter-popup.vue';
 import { KEYWORDS, useFilterParser } from 'src/composables/use-filter-parser';
+import { useFoxglovePreviewEnabled } from 'src/composables/use-foxglove-preview';
 import {
     DEFAULT_MISSION_STATE,
     useMissionFileFilter,
@@ -503,6 +504,9 @@ const deleteFilesCallback = (): void => {
 const deselect = (): void => {
     selectedFiles.value = [];
 };
+
+const { isEnabled: isPreviewEnabled } =
+    useFoxglovePreviewEnabled(useMissionUUID());
 
 const previewableFiles = computed(() =>
     selectedFiles.value.filter(
