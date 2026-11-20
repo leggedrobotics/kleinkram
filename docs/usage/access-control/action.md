@@ -4,14 +4,14 @@
 
 The valid operations that can be performed on an action are:
 
-| **Operation** | **Description**              | **Access Level**                                                                               |
-| ------------- | ---------------------------- | ---------------------------------------------------------------------------------------------- |
-| view          | View an existing Action      | <Read />                                                                                       |
-| launch        | Launch an Action             | <Modify hint="Or the template's access rights, if those are higher (e.g. Delete)"/>            |
-| stop          | Stop a queued/running Action | <Modify hint="Or the template's access rights, if those are higher (e.g. Delete)"/> <Creator/> |
-| delete        | Delete a finished Action     | <Delete /> <Creator/>                                                                          |
+| **Operation** | **Description**              | **Access Level**                                                                              |
+| ------------- | ---------------------------- | --------------------------------------------------------------------------------------------- |
+| view          | View an existing Action      | <Read />                                                                                      |
+| launch        | Launch an Action             | <Write hint="Or the template's access rights, if those are higher (e.g. Delete)"/>            |
+| stop          | Stop a queued/running Action | <Write hint="Or the template's access rights, if those are higher (e.g. Delete)"/> <Creator/> |
+| delete        | Delete a finished Action     | <Delete /> <Creator/>                                                                         |
 
-Running an action counts as a write operation on the mission, so launching one needs at least <Modify/> on the
+Running an action counts as a write operation on the mission, so launching one needs at least <Write/> on the
 mission, even when the template only asks for <Read/>.
 
 A template's access rights are the rights of the API key the action container gets. They can raise what you need to
@@ -52,14 +52,14 @@ Platform templates such as `script-runner` cannot be changed or deleted by anyon
 
 Triggers hang off a mission, so their access level is the access level you hold
 on that mission. A trigger launches actions as its creator, so creating one
-needs the same <Modify /> access as launching an action. The valid operations
+needs the same <Write /> access as launching an action. The valid operations
 are:
 
 | **Operation** | **Description**                | **Access Level**    |
 | ------------- | ------------------------------ | ------------------- |
 | view          | View a single Trigger          | <Read /> <Creator/> |
 | list          | List the Triggers of a Mission | <Read />            |
-| create        | Create a new Trigger           | <Modify />          |
+| create        | Create a new Trigger           | <Write />           |
 | update        | Change an existing Trigger     | <Creator/>          |
 | delete        | Delete a Trigger               | <Creator/>          |
 

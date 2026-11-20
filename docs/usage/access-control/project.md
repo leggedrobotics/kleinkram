@@ -6,19 +6,19 @@ The valid operations that can be performed on a project are:
 | --------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
 | view            | View an existing project                      | <Read/>                                                                 |
 | create          | Create a new project                          | <Create hint="The create rights need to be from an affiliation group"/> |
-| add Metadata    | Require a metadata type on the project        | <Modify/>                                                               |
-| remove Metadata | Stop requiring a metadata type on the project | <Modify/>                                                               |
-| rename          | Rename the project                            | <Modify/>                                                               |
+| add Metadata    | Require a metadata type on the project        | <Write/>                                                                |
+| remove Metadata | Stop requiring a metadata type on the project | <Write/>                                                                |
+| rename          | Rename the project                            | <Write/>                                                                |
 | delete          | Delete the project                            | <Delete/>                                                               |
 
 ## Managing Project Access
 
-Granting, changing and removing project access (for a user or an access group) needs <Modify/> on the project, and you
+Granting, changing and removing project access (for a user or an access group) needs <Write/> on the project, and you
 can never act above your own level: you need at least the rights the entry has **before and after** the change.
 
 - To grant <Delete/>, you need <Delete/> yourself.
 - To lower or remove an entry that has <Delete/> (for example, to demote a project owner), you need <Delete/> yourself.
-- With <Modify/>, you can grant, change and remove entries up to <Modify/>.
+- With <Write/>, you can grant, change and remove entries up to <Write/>.
 - Making a project public or restricted again (**General access**) needs <Delete/>, although public access itself
   is always <Read/>.
 

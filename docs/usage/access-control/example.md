@@ -22,9 +22,9 @@ The missions are linked to the project, so all RoboticsCorp members also get <Cr
 
 ## Individual Access Rights
 
-As the experiments for the "_Decaf_" mission are done by the student Marie, Hans grants her <Modify/> rights on the "_Decaf_" mission.
-As Marie is only a student and not a part of the RoboticsCorp, she does not get <Create/> on the project "**AnyCoffee**" itself,
-but only <Read hint="While against the schema of inherited rights, this is needed so that she can do anything with the mission"/> rights.
+As the experiments for the "_Decaf_" mission are done by the student Marie, who is not part of RoboticsCorp, Hans adds
+her to the project "**AnyCoffee**" with <Write/> rights. Access can only be granted per project, so Marie gets these
+rights on both missions.
 
 Marie can now upload files to the "_Decaf_" mission, and also delete them as she then is the creator of the files.
 Also she can add & remove metadata on the mission. Or she could rename the mission, but she does not have the rights to delete it.
@@ -32,21 +32,21 @@ Also she can add & remove metadata on the mission. Or she could rename the missi
 To run compute on the files Marie uploaded to the mission, she can create an Action Template and launch it as an Action on the mission.
 But Marie can also view & use the Action Templates of Hans, as those only require <Any/> rights. The Action Marie launches can
 only be stopped by her as the <Creator/> or by Hans as he has <Delete/> rights on the Project, thus on the mission and thus on the action.
-To show Marie how to launch actions, Hans can launches the example action template 'roboticscorp/action:simple-latest' on the "_Decaf_" mission.
-As Marie has <Modify/> rights on the mission, she can see the action and its results, but she cannot stop or delete it.
+To show Marie how to launch actions, Hans launches the example action template 'roboticscorp/action:simple-latest' on the "_Decaf_" mission.
+Marie can see the action and its results. As she has the rights needed to launch that template, she can also stop it, but she
+cannot delete it, which needs <Delete/>.
 
-While Marie as the creator of here files in the "_Decaf_" mission has the rights to move them out of the mission, she has no rights to any other mission
-where she could move them to. Thus she cannot move the files out of the mission.
+As the creator of her files, Marie can also move them to the "_Normal_" mission, as she has <Create/> there.
 
 ## Groups
 
 As the results of the "_Normal_" mission are promising, Hans wants to get more people involved. He creates an Access Group called "Caffeine" and adds Patrik and Peter to it.
 Patrik and Peter were already part of the RoboticsCorp, so they already had <Create/> rights on the project but couldn't contribute easily.
-Now, by linking the Access Group "Caffeine" to the project "**AnyCoffee**" with <Modify/> rights, they can also for example change which metadata types the project requires.
+Now, by linking the Access Group "Caffeine" to the project "**AnyCoffee**" with <Write/> rights, they can also for example change which metadata types the project requires.
 
 To share their results with the external collaborator, the company "Berger Coffee", Patrik creates a new Access Group called "Berger" and adds the external collaborators to it.
 Patrik links the Access Group "Berger" to the project "**AnyCoffee**" with <Read/> rights, so the external collaborator can view the results but not change them.
-As Patrik himself only had <Modify/> rights on the project "**AnyCoffee**", he could not have granted the external collaborator more rights than he had himself.
+As Patrik himself only had <Write/> rights on the project "**AnyCoffee**", he could not have granted the external collaborator more rights than he had himself.
 
 ## Admins
 
