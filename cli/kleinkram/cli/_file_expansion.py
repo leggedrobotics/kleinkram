@@ -24,6 +24,8 @@ from typing import Set
 
 import typer
 
+from kleinkram.utils import file_extension
+
 GLOB_CHARS = frozenset("*?[")
 
 
@@ -54,7 +56,7 @@ def _walk_directory(directory: Path, suffixes: Collection[str]) -> List[Path]:
         dirs[:] = [name for name in dirs if not name.startswith(".")]
         for name in files:
             path = Path(root) / name
-            if not name.startswith(".") and path.suffix.lower() in wanted and path.is_file():
+            if not name.startswith(".") and file_extension(path) in wanted and path.is_file():
                 found.append(path)
     return sorted(found)
 
