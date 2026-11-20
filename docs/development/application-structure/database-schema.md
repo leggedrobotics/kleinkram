@@ -202,24 +202,25 @@ Defined in: `file/file.entity.ts`
 
 ### Columns
 
-| Column                    | Type                                         | Constraints  | Description                                                                                                         |
-| :------------------------ | :------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------ |
-| `mission`                 | [MissionEntity](#missionentity-mission)      | FK, Nullable |                                                                                                                     |
-| `date`                    | `Date`                                       | Not Null     | The date the file is sorted and filtered by. Mirrors `recordingStartDate` once known, otherwise the upload time.    |
-| `recordingStartDate`      | `timestamp`                                  | Nullable     | Timestamp of the first message in the recording. Null while unknown.                                                |
-| `recordingEndDate`        | `timestamp`                                  | Nullable     | Timestamp of the last message in the recording. Null while unknown.                                                 |
-| `recordingTimesCheckedAt` | `timestamp`                                  | Nullable     | When the recording window of this file was last looked for, whether or not one was found.                           |
-| `topics`                  | [TopicEntity](#topicentity-topic)[]          | OneToMany    |                                                                                                                     |
-| `filename`                | `string`                                     | Not Null     |                                                                                                                     |
-| `size`                    | `bigint`                                     | Nullable     |                                                                                                                     |
-| `creator`                 | [UserEntity](#userentity-user)               | FK, Nullable | The user who uploaded the file.                                                                                     |
-| `type`                    | `enum`                                       | Not Null     |                                                                                                                     |
-| `state`                   | `enum`                                       | Not Null     |                                                                                                                     |
-| `hash`                    | `string`                                     | Nullable     |                                                                                                                     |
-| `categories`              | [CategoryEntity](#categoryentity-category)[] | ManyToMany   |                                                                                                                     |
-| `parent`                  | [FileEntity](#fileentity-file_entity)        | FK, Nullable | The parent file this file was derived from. e.g., If this is a .mcap converted from a .bag, the .bag is the parent. |
-| `derivedFiles`            | [FileEntity](#fileentity-file_entity)[]      | OneToMany    | Files derived from this file.                                                                                       |
-| `origin`                  | `enum`                                       | Nullable     |                                                                                                                     |
+| Column                    | Type                                         | Constraints         | Description                                                                                                                                                 |
+| :------------------------ | :------------------------------------------- | :------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mission`                 | [MissionEntity](#missionentity-mission)      | FK, Nullable        |                                                                                                                                                             |
+| `date`                    | `Date`                                       | Not Null            | The date the file is sorted and filtered by. Mirrors `recordingStartDate` once known, otherwise the upload time.                                            |
+| `recordingStartDate`      | `timestamp`                                  | Nullable            | Timestamp of the first message in the recording. Null while unknown.                                                                                        |
+| `recordingEndDate`        | `timestamp`                                  | Nullable            | Timestamp of the last message in the recording. Null while unknown.                                                                                         |
+| `recordingTimesCheckedAt` | `timestamp`                                  | Nullable            | When the recording window of this file was last looked for, whether or not one was found.                                                                   |
+| `topicStatsVersion`       | `integer`                                    | Not Null, Default 0 | Version of the per-topic statistics of this file's topics (see `TOPIC_STATS_VERSION`). 0 means not computed yet. Set even when the index could not be read. |
+| `topics`                  | [TopicEntity](#topicentity-topic)[]          | OneToMany           |                                                                                                                                                             |
+| `filename`                | `string`                                     | Not Null            |                                                                                                                                                             |
+| `size`                    | `bigint`                                     | Nullable            |                                                                                                                                                             |
+| `creator`                 | [UserEntity](#userentity-user)               | FK, Nullable        | The user who uploaded the file.                                                                                                                             |
+| `type`                    | `enum`                                       | Not Null            |                                                                                                                                                             |
+| `state`                   | `enum`                                       | Not Null            |                                                                                                                                                             |
+| `hash`                    | `string`                                     | Nullable            |                                                                                                                                                             |
+| `categories`              | [CategoryEntity](#categoryentity-category)[] | ManyToMany          |                                                                                                                                                             |
+| `parent`                  | [FileEntity](#fileentity-file_entity)        | FK, Nullable        | The parent file this file was derived from. e.g., If this is a .mcap converted from a .bag, the .bag is the parent.                                         |
+| `derivedFiles`            | [FileEntity](#fileentity-file_entity)[]      | OneToMany           | Files derived from this file.                                                                                                                               |
+| `origin`                  | `enum`                                       | Nullable            |                                                                                                                                                             |
 
 ---
 
@@ -446,14 +447,18 @@ Defined in: `topic/topic.entity.ts`
 
 ### Columns
 
-| Column            | Type                                  | Constraints  | Description |
-| :---------------- | :------------------------------------ | :----------- | :---------- |
-| `name`            | `string`                              | Not Null     |             |
-| `type`            | `string`                              | Not Null     |             |
-| `nrMessages`      | `bigint`                              | Nullable     |             |
-| `messageEncoding` | `string`                              | Not Null     |             |
-| `frequency`       | `number`                              | Not Null     |             |
-| `file`            | [FileEntity](#fileentity-file_entity) | FK, Nullable |             |
+| Column            | Type                                  | Constraints  | Description                                                                                                                                                                          |
+| :---------------- | :------------------------------------ | :----------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`            | `string`                              | Not Null     |                                                                                                                                                                                      |
+| `type`            | `string`                              | Not Null     |                                                                                                                                                                                      |
+| `nrMessages`      | `bigint`                              | Nullable     |                                                                                                                                                                                      |
+| `messageEncoding` | `string`                              | Not Null     |                                                                                                                                                                                      |
+| `frequency`       | `number`                              | Not Null     | Messages per second between `firstSeen` and `lastSeen`. 0 for a one-shot topic (seen in fewer than 5 chunks). Where `firstSeen` is null, the message count over the whole recording. |
+| `firstSeen`       | `timestamptz`                         | Nullable     | Start of the first chunk holding the topic. Accurate to one chunk. Null while unknown (db3, MCAP chunks without message index, unreadable index).                                    |
+| `lastSeen`        | `timestamptz`                         | Nullable     | End of the last chunk holding the topic. Null while unknown.                                                                                                                         |
+| `chunkCount`      | `integer`                             | Nullable     | Chunks with at least one message of the topic. Null while unknown.                                                                                                                   |
+| `coverage`        | `jsonb`                               | Nullable     | Where the topic has data: `[startMs, endMs]` spans in milliseconds since the file's recording start. Null while unknown.                                                             |
+| `file`            | [FileEntity](#fileentity-file_entity) | FK, Nullable |                                                                                                                                                                                      |
 
 ---
 
