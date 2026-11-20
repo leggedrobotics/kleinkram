@@ -46,10 +46,10 @@ that is changed must follow the rules.
 
 Kleinkram allows you to organize and search your data using metadata on missions and categories on files.
 
-| Level   | What                 | Defined       | Example                                  |
-| ------- | -------------------- | ------------- | ---------------------------------------- |
-| Mission | Metadata (key-value) | Instance-wide | `Robot ID: anymal-d`, `Location: Zurich` |
-| File    | Categories (labels)  | Per project   | `Raw Data`, `Calibration`                |
+| Level   | What                 | Defined       | Example                              |
+| ------- | -------------------- | ------------- | ------------------------------------ |
+| Mission | Metadata (key-value) | Instance-wide | `Robot ID: anymal-d`, `Site: Zurich` |
+| File    | Categories (labels)  | Per project   | `Raw Data`, `Calibration`            |
 
 #### Mission Level: Metadata
 
@@ -58,19 +58,21 @@ You can add key-value pairs as metadata to missions. Each key is a **metadata ty
 Values have to match their datatype. This matters most in metadata files for the CLI (`--metadata`), since the web UI
 uses a matching input for each type:
 
-| Datatype | Accepted values                                            | Example               |
-| -------- | ---------------------------------------------------------- | --------------------- |
-| string   | Any text                                                   | `anymal-d`            |
-| number   | A number, decimals with a dot                              | `1.5`                 |
-| boolean  | `true` or `false`                                          | `true`                |
-| date     | An ISO 8601 date or date and time (`T` or a space between) | `2024-05-13`          |
-| location | Any text                                                   | `Zurich`              |
-| link     | An absolute `http://` or `https://` URL                    | `https://example.com` |
+| Datatype | Accepted values                                             | Example               |
+| -------- | ----------------------------------------------------------- | --------------------- |
+| string   | Any text                                                    | `anymal-d`            |
+| number   | A number, decimals with a dot                               | `1.5`                 |
+| boolean  | `true` or `false`, in any case (`True` from Python is fine) | `true`                |
+| date     | An ISO 8601 date or date and time (`T` or a space between)  | `2024-05-13`          |
+| location | Any text                                                    | `Zurich`              |
+| link     | An absolute `http://` or `https://` URL                     | `https://example.com` |
 
-A request with values that don't match is rejected as a whole and lists every invalid value, e.g.
-`Metadata "recorded" must be a date like 2024-05-13`; nothing is created or changed.
+A request with values that don't match is rejected as a whole with `422` and lists every invalid value, e.g.
+`Metadata "recorded" must be a date like 2024-05-13`; nothing is created or changed. Besides the `message`, the
+response has an `errors` list with one entry per invalid value:
+`{ "field": "<metadata type uuid>", "name": "…", "error": "…" }`.
 
-- **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" metadata type for every mission).
+- **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" metadata type for every mission). The server enforces this when a mission is created: a request without a value for every required metadata type is rejected with `409`, unless it sets `ignoreMissingMetadata` (`--ignore-missing-metadata` in the CLI). An empty value counts as missing.
 - **Usage**: Use this metadata to quickly find all missions performed by a specific robot or in a specific location.
 
 ::: tip Example: GrandTourDataset

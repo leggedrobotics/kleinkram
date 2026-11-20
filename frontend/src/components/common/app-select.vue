@@ -1,13 +1,17 @@
 <template>
     <div class="column q-gutter-y-xs">
-        <label v-if="label" class="text-weight-bold">
-            {{ label }}
-            <span v-if="required" class="text-negative">*</span>
+        <label v-if="label" :for="selectId">
+            {{ label }}<span v-if="required" class="text-error">*</span>
         </label>
 
         <q-select
             v-bind="$attrs"
+            ref="selectReference"
             v-model="model"
+            :for="selectId"
+            color="button-primary"
+            no-error-icon
+            lazy-rules
             :label="inputLabel"
             outlined
             dense
@@ -35,11 +39,14 @@
     lang="ts"
     generic="T, V extends string | number | object | boolean | null = string"
 >
-import { ref, watch } from 'vue';
+import { QSelect } from 'quasar';
+import { ref, useId, watch } from 'vue';
 
 const model = defineModel<V | null | undefined>();
 
 defineOptions({ inheritAttrs: false });
+
+const selectId = `app-select-${useId()}`;
 
 const props = withDefaults(
     defineProps<{
@@ -65,6 +72,16 @@ const props = withDefaults(
 );
 
 const filteredOptions = ref<readonly T[]>([]);
+const selectReference = ref<QSelect>();
+
+// Choosing a value removes the search input while it has the focus, and a
+// removed element never reports losing it: the field would keep looking
+// focused next to the field that gets the focus next. Blur it first.
+watch(model, (newValue, oldValue) => {
+    if (props.searchable && !oldValue && newValue) {
+        selectReference.value?.blur();
+    }
+});
 
 watch(
     () => props.options,

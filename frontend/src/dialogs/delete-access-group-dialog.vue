@@ -1,6 +1,14 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title> Delete "{{ accessGroup.name }}"? </template>
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="isPending"
+        size="sm"
+        :submit-disabled="!confirmed || isPending"
+        @submit="confirm"
+    >
+        <template #title>Delete Access Group</template>
+        <template #subtitle>{{ accessGroup.name }}</template>
 
         <template #content>
             <template v-if="projectNames.length > 0 || memberCount > 0">
@@ -29,28 +37,36 @@
                     </li>
                 </ul>
             </template>
-            <p>
-                Type <b>{{ accessGroup.name }}</b> to confirm.
-            </p>
+            <label :for="inputId" class="confirm-label">
+                Type <b>{{ accessGroup.name }}</b> to confirm. This can't be
+                undone.
+            </label>
             <q-input
                 v-model="nameCheck"
+                no-error-icon
+                :for="inputId"
                 outlined
                 dense
                 autofocus
-                placeholder="Group name"
-                @keyup.enter="confirm"
+                autocomplete="off"
             />
         </template>
 
         <template #actions>
-            <q-btn
-                flat
-                label="Delete group"
-                class="bg-button-danger"
-                :disable="nameCheck !== accessGroup.name"
-                :loading="isPending"
-                @click="confirm"
-            />
+            <span class="disabled-reason">
+                <q-btn
+                    flat
+                    no-caps
+                    label="Delete Group"
+                    class="bg-button-danger"
+                    :disable="!confirmed"
+                    :loading="isPending"
+                    @click="confirm"
+                />
+                <q-tooltip v-if="!confirmed"
+                    >Type the name to confirm</q-tooltip
+                >
+            </span>
         </template>
     </base-dialog>
 </template>
@@ -60,16 +76,19 @@ import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/acc
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { getErrorMessage } from 'src/services/error-handling';
+import { getDialogErrorMessage } from 'src/services/error-handling';
 import { deleteAccessGroup } from 'src/services/mutations/access';
-import { computed, ref } from 'vue';
+import { computed, ref, useId } from 'vue';
 
 const { accessGroup } = defineProps<{ accessGroup: AccessGroupDto }>();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const queryClient = useQueryClient();
 
+const inputId = `delete-access-group-${useId()}`;
 const nameCheck = ref('');
+const errorMessage = ref('');
+const confirmed = computed(() => nameCheck.value === accessGroup.name);
 
 const projectNames = computed(() =>
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -96,16 +115,21 @@ const { mutate, isPending } = useMutation({
         onDialogOK();
     },
     onError: (error: Error) => {
-        Notify.create({
-            message: `Failed to delete access group: ${getErrorMessage(error)}`,
-            color: 'negative',
-            position: 'bottom',
-        });
+        errorMessage.value = getDialogErrorMessage(error);
     },
 });
 
 const confirm = (): void => {
-    if (isPending.value || nameCheck.value !== accessGroup.name) return;
+    if (isPending.value || !confirmed.value) return;
+    errorMessage.value = '';
     mutate();
 };
 </script>
+
+<style scoped>
+.confirm-label {
+    display: block;
+    margin-bottom: 4px;
+    overflow-wrap: anywhere;
+}
+</style>

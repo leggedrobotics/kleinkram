@@ -46,7 +46,6 @@ if (!uploads) {
 
 const openCreateFileDialog = (): DialogChainObject =>
     $q.dialog({
-        title: 'Create new mission',
         component: CreateFileDialog,
         componentProps: {
             mission: properties.mission,

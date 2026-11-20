@@ -268,6 +268,7 @@
                                     use-input
                                     use-chips
                                     multiple
+                                    color="button-primary"
                                     hide-dropdown-icon
                                     input-debounce="0"
                                     outlined

@@ -1,51 +1,55 @@
 <template>
-    <q-dialog ref="dialogRef">
-        <q-card
-            class="q-pa-sm text-center"
-            style="width: 80%; min-height: 100px; max-width: 500px"
-        >
-            <h5>Move mission {{ mission?.name }} to another project</h5>
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="moving"
+        :submit-disabled="alreadyThere || moving"
+        @submit="onOk"
+    >
+        <template #title>Move Mission</template>
+        <template #subtitle>{{ mission?.name }}</template>
 
-            <div class="column q-gutter-y-md q-ma-md">
+        <template #content>
+            <q-form ref="formReference" greedy @submit.prevent>
                 <ScopeSelector
                     v-model:project-uuid="selectedProjectUuid"
                     :show-mission="false"
                     :required="true"
                 />
+            </q-form>
+        </template>
 
-                <div class="row justify-end q-gutter-x-sm">
-                    <q-btn
-                        label="Cancel"
-                        flat
-                        class="button-border"
-                        @click="onDialogOK"
-                    />
-                    <q-btn
-                        label="OK"
-                        color="primary"
-                        unelevated
-                        :disable="
-                            !selectedProjectUuid ||
-                            selectedProjectUuid === mission?.project?.uuid
-                        "
-                        @click="onOk"
-                    />
-                </div>
-            </div>
-        </q-card>
-    </q-dialog>
+        <template #actions>
+            <span class="disabled-reason">
+                <q-btn
+                    flat
+                    no-caps
+                    label="Move Mission"
+                    class="bg-button-primary"
+                    :disable="alreadyThere"
+                    :loading="moving"
+                    @click="onOk"
+                />
+                <q-tooltip v-if="alreadyThere"
+                    >Already in this project</q-tooltip
+                >
+            </span>
+        </template>
+    </base-dialog>
 </template>
 
 <script setup lang="ts">
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import ScopeSelector from 'components/common/scope-selector.vue';
-import { Notify, useDialogPluginComponent } from 'quasar';
+import { Notify, QForm, useDialogPluginComponent } from 'quasar';
 import { useScopeSelection } from 'src/composables/use-scope-selection';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { getDialogErrorMessage } from 'src/services/error-handling';
 import { moveMission } from 'src/services/mutations/mission';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
-const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const properties = defineProps<{
     mission?: MissionWithFilesDto;
@@ -59,65 +63,45 @@ const selectedProjectUuid = ref<string | undefined>(
 
 const { selectedProject } = useScopeSelection(selectedProjectUuid);
 
+const moving = ref(false);
+const errorMessage = ref('');
+const alreadyThere = computed(
+    () => selectedProjectUuid.value === properties.mission?.project.uuid,
+);
+const formReference = ref<QForm>();
+
 async function onOk(): Promise<void> {
-    if (
-        !properties.mission ||
-        !selectedProjectUuid.value ||
-        !selectedProject.value
-    ) {
+    if (!properties.mission || alreadyThere.value || moving.value) {
         return;
     }
+    if (!(await formReference.value?.validate(true))) return;
+    if (!selectedProjectUuid.value || !selectedProject.value) return;
 
-    const targetProjectName = selectedProject.value.name;
+    const targetProjectUuid = selectedProjectUuid.value;
+    moving.value = true;
+    errorMessage.value = '';
+    try {
+        await moveMission(properties.mission.uuid, targetProjectUuid);
+    } catch (error: unknown) {
+        errorMessage.value = getDialogErrorMessage(error);
+        return;
+    } finally {
+        moving.value = false;
+    }
 
-    const creating = Notify.create({
-        group: false,
-        message: `Moving mission ${properties.mission.name} to project ${targetProjectName}`,
-        color: 'grey',
-        spinner: true,
+    Notify.create({
+        message: `Mission ${properties.mission.name} moved to project ${selectedProject.value.name}`,
+        color: 'positive',
         timeout: 4000,
         position: 'bottom',
     });
+    onDialogOK(targetProjectUuid);
 
-    try {
-        await moveMission(properties.mission.uuid, selectedProjectUuid.value);
-
-        creating({
-            message: `Mission ${properties.mission.name} moved to project ${targetProjectName}`,
-            color: 'positive',
-            spinner: false,
-            timeout: 4000,
-        });
-
-        // Invalidate queries to refresh lists
-        const cache = queryClient.getQueryCache();
-        const filtered = cache
-            .getAll()
-            .filter(
-                (query) =>
-                    query.queryKey[0] === 'missions' ||
-                    query.queryKey[0] === 'projects',
-            );
-        await Promise.all(
-            filtered.map((query) =>
-                queryClient.invalidateQueries({
-                    queryKey: query.queryKey,
-                }),
-            ),
-        );
-
-        onDialogOK(selectedProjectUuid.value);
-    } catch (error: unknown) {
-        creating({
-            message: `Error moving mission ${properties.mission.name} to project ${targetProjectName}`,
-            color: 'negative',
-            spinner: false,
-            timeout: 4000,
-        });
-        console.error(error);
-        onDialogHide();
-    }
+    // refresh the mission and project lists
+    await queryClient.invalidateQueries({
+        predicate: (query) =>
+            query.queryKey[0] === 'missions' ||
+            query.queryKey[0] === 'projects',
+    });
 }
 </script>
-
-<style scoped></style>

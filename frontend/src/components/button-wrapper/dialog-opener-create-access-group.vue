@@ -18,8 +18,10 @@ const canCreate = computed(() => canCreateProject(permissions.value));
 
 const $q = useQuasar();
 
-// the dialog creates the group itself, so it can show a taken name inline
+// the dialog creates the group itself and reports a failure inline
 const createAccessGroupDialog = (): void => {
-    $q.dialog({ component: CreateAccessGroupDialog });
+    $q.dialog({
+        component: CreateAccessGroupDialog,
+    });
 };
 </script>

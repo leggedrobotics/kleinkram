@@ -249,31 +249,62 @@ async function _createFileAction(
                     responseData.message === 'Validation failed'
                 ) {
                     try {
-                        const renameMap: Record<string, string> =
-                            await new Promise((resolve, reject) => {
+                        // the dialog retries with the new names itself and
+                        // stays open (showing the errors) until it succeeds
+                        temporaryCredentials = await new Promise(
+                            (resolve, reject) => {
+                                let retried:
+                                    TemporaryFileAccessesDto | undefined;
                                 Dialog.create({
                                     component: RenameFilesDialog,
                                     componentProps: {
                                         invalidFiles: responseData.errors,
+                                        action: async (
+                                            renameMap: Record<string, string>,
+                                        ) => {
+                                            const names = fileItems.map(
+                                                (item) =>
+                                                    renameMap[
+                                                        item.virtualName
+                                                    ] ?? item.virtualName,
+                                            );
+                                            retried =
+                                                await generateTemporaryCredentials(
+                                                    {
+                                                        filenames: names,
+                                                        missionUUID:
+                                                            selectedMission.uuid,
+                                                        fileSizes,
+                                                    },
+                                                );
+                                            for (const [
+                                                index,
+                                                item,
+                                            ] of fileItems.entries()) {
+                                                item.virtualName =
+                                                    names[index] ??
+                                                    item.virtualName;
+                                            }
+                                        },
                                     },
                                 })
-                                    .onOk(resolve)
-                                    .onCancel(reject)
-                                    .onDismiss(reject);
-                            });
-
-                        // Update virtual names
-                        for (const item of fileItems) {
-                            if (renameMap[item.virtualName]) {
-                                item.virtualName =
-                                    renameMap[item.virtualName] ??
-                                    item.virtualName;
-                            }
-                        }
+                                    .onOk(() => {
+                                        if (retried) resolve(retried);
+                                        else reject(new Error('No retry'));
+                                    })
+                                    .onCancel(reject);
+                            },
+                        );
                         handled = true;
-                        // Continue loop to retry
                     } catch {
-                        // User cancelled
+                        // the user closed the dialog instead of renaming
+                        Notify.create({
+                            message: 'Upload cancelled',
+                            color: 'grey',
+                            spinner: false,
+                            position: 'bottom',
+                            timeout: 3000,
+                        });
                         return;
                     }
                 }

@@ -449,36 +449,65 @@ export function getColorFileState(state: FileState) {
     }
 }
 
-const colorPalette = [
-    'red',
-    'pink',
-    'purple',
-    'deep-purple',
-    'indigo',
-    'blue',
-    'light-blue',
-    'cyan',
-    'teal',
-    'green',
-    'light-green',
-    'lime',
-    'yellow',
-    'amber',
-    'orange',
-    'deep-orange',
-    'brown',
-    'grey',
-    'blue-grey',
-    'black',
+/**
+ * Carbon "soft tag" colours: a light tint with dark text of the same hue,
+ * every pair at least 4.5:1 contrast.
+ */
+const categoryTagPalette: { backgroundColor: string; color: string }[] = [
+    { backgroundColor: '#FFD7D9', color: '#A2191F' }, // red
+    { backgroundColor: '#FFD6E8', color: '#9F1853' }, // magenta
+    { backgroundColor: '#E8DAFF', color: '#6929C4' }, // purple
+    { backgroundColor: '#D0E2FF', color: '#0043CE' }, // blue
+    { backgroundColor: '#BAE6FF', color: '#00539A' }, // cyan
+    { backgroundColor: '#9EF0F0', color: '#005D5D' }, // teal
+    { backgroundColor: '#A7F0BA', color: '#0E6027' }, // green
+    { backgroundColor: '#E0E0E0', color: '#161616' }, // gray
+    { backgroundColor: '#DDE1E6', color: '#121619' }, // cool gray
+    { backgroundColor: '#E5E0DF', color: '#171414' }, // warm gray
 ];
 
-export function hashUUIDtoColor(uuid: string): string {
+/** The colours of a category's tag, always the same for one category */
+export function categoryTagStyle(uuid: string): {
+    backgroundColor: string;
+    color: string;
+} {
     // eslint-disable-next-line @typescript-eslint/no-misused-spread
     const hash = [...uuid].reduce(
         (accumulator, char) => accumulator + (char.codePointAt(0) ?? 0),
         0,
     );
+    return (
+        categoryTagPalette[hash % categoryTagPalette.length] ?? {
+            backgroundColor: '#E0E0E0',
+            color: '#161616',
+        }
+    );
+}
 
-    const colorIndex = hash % colorPalette.length;
-    return colorPalette[colorIndex] ?? 'grey';
+/** Soft tag colours of a queue state: waiting, running, done, failed */
+export function queueStateTagStyle(state: QueueState): {
+    backgroundColor: string;
+    color: string;
+} {
+    switch (state) {
+        case QueueState.AWAITING_UPLOAD:
+        case QueueState.AWAITING_PROCESSING: {
+            return { backgroundColor: '#FCF4D6', color: '#684E00' };
+        }
+        case QueueState.PROCESSING:
+        case QueueState.DOWNLOADING:
+        case QueueState.CONVERTING_AND_EXTRACTING_TOPICS:
+        case QueueState.UPLOADING: {
+            return { backgroundColor: '#D0E2FF', color: '#0043CE' };
+        }
+        case QueueState.COMPLETED: {
+            return { backgroundColor: '#A7F0BA', color: '#0E6027' };
+        }
+        case QueueState.CANCELED: {
+            return { backgroundColor: '#E0E0E0', color: '#161616' };
+        }
+        default: {
+            return { backgroundColor: '#FFD7D9', color: '#A2191F' };
+        }
+    }
 }

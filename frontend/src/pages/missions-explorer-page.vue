@@ -21,7 +21,11 @@
                     :class="{ 'q-mt-sm': project?.description.trim() }"
                     style="gap: 6px"
                 >
-                    <q-icon name="sym_o_public" size="16px" color="green-8" />
+                    <q-icon
+                        name="sym_o_public"
+                        size="16px"
+                        class="text-secondary"
+                    />
                     Everyone with a Kleinkram account can view and download this
                     project.
                     <change-project-rights-dialog-opener
@@ -59,13 +63,13 @@
                             color="primary"
                             icon="sym_o_sell"
                             :label="
-                                $q.screen.xs ? undefined : 'Enforce Metadata'
+                                $q.screen.xs ? undefined : 'Required Metadata'
                             "
-                            aria-label="Enforce Metadata"
+                            aria-label="Required Metadata"
                             :disable="!projectUuid"
                         >
                             <q-tooltip v-if="$q.screen.xs">
-                                Enforce Metadata
+                                Required Metadata
                             </q-tooltip>
                         </q-btn>
                     </ConfigureMetadataTypesDialogOpener>
@@ -171,8 +175,7 @@
                 <q-icon
                     name="sym_o_public"
                     size="22px"
-                    color="green-8"
-                    class="q-mr-md"
+                    class="q-mr-md text-secondary"
                 />
                 <div>
                     <span class="text-weight-bold">
@@ -393,14 +396,13 @@ const deleteMission = (): void => {
     }
 
     $q.dialog({
-        title: 'Delete Mission',
         component: DeleteMissionDialog,
         componentProps: {
             missionUuid: mission.uuid,
         },
+    }).onOk(() => {
+        deselect();
     });
-
-    deselect();
 };
 
 const selectedMissions: Ref<FlatMissionDto[]> = ref([]);

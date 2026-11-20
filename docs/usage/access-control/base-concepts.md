@@ -84,8 +84,25 @@ Users who may create projects (admins and members of an affiliation group) get a
 The System page shows the storage usage, the action workers with their availability, and the running actions. Their
 dashboard shows a one-line summary of it with a link to the page.
 
+The _Storage_ section of the System page shows:
+
+- **Disk**: the used and total disk space, and the share of inodes in use.
+- **Last 30 days**: the size and number of the files uploaded in the last 30 days.
+- **Full in** (admins only): an estimate of when the disk is full: its free space divided by the average upload rate
+  of the last 90 days.
+- **Files**: the total size and number of the stored files, and the projects they are in.
+- **Growth**: the stored file data at the end of each of the last 12 months, and a projection of the next 3 months at
+  the current rate.
+- **By project**, **By file type** and **Largest missions**: where the stored file data comes from.
+- **By uploader** (admins only): the stored file data per user who uploaded it, by name.
+
+Apart from the Disk tile, these numbers add up the recorded sizes of the stored files; deleted files do not count. The
+used disk space is higher, because it also contains the storage system's own overhead. The statistics only include the
+projects and missions you can read; admins see everything. _Full in_ and _By uploader_ are shown to admins only.
+
 Other users do not see the tab or the summary. The API answers `403 Forbidden` when they request the storage usage
-(`GET /files/storage`) or the list of workers (`GET /workers`).
+(`GET /files/storage`), the storage insights (`GET /files/storage/insights`) or the list of workers (`GET /workers`).
+Only admins may request the storage per uploader (`GET /files/storage/insights/uploaders`).
 
 ## Primary Group
 

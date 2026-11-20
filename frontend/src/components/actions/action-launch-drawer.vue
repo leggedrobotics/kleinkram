@@ -151,6 +151,7 @@
 
 <script setup lang="ts">
 import { Dialog, Notify } from 'quasar';
+import ConfirmActionLaunchDialog from 'src/dialogs/confirm-action-launch-dialog.vue';
 import ROUTES from 'src/router/routes';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -319,78 +320,78 @@ async function submitAnalysis(): Promise<void> {
         props.template.accessRights === AccessGroupRights.WRITE ||
         props.template.accessRights === AccessGroupRights.DELETE
     ) {
-        const permissionName = AccessGroupRights[props.template.accessRights];
-        let detailMessage = '';
-
-        if (props.template.accessRights === AccessGroupRights.DELETE) {
-            detailMessage =
-                'DELETE permissions allow this action to delete ANY file within the project it is run in.';
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        } else if (props.template.accessRights === AccessGroupRights.WRITE) {
-            detailMessage =
-                'WRITE permissions allow this action to modify or overwrite files within the project it is run in.';
-        }
-
+        let launched: LaunchResult | undefined;
         Dialog.create({
-            title: 'Confirm Action Launch',
-            message: `This action requires ${permissionName} permissions.<br/><br/>${detailMessage}<br/><br/>Are you sure you want to proceed?`,
-            html: true,
-            cancel: true,
-            persistent: true,
+            component: ConfirmActionLaunchDialog,
+            componentProps: {
+                access:
+                    props.template.accessRights === AccessGroupRights.DELETE
+                        ? 'delete'
+                        : 'write',
+                // the dialog launches and shows a failure itself
+                action: async () => {
+                    launched = await launch();
+                },
+            },
         }).onOk(() => {
-            void executeLaunch();
+            if (launched !== undefined) void afterLaunch(launched);
         });
     } else {
-        await executeLaunch();
+        try {
+            await afterLaunch(await launch());
+        } catch (error: unknown) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : 'Unknown error occurred';
+            Notify.create({
+                message: message || 'Launch Failed',
+                color: 'negative',
+            });
+        }
     }
 }
 
-async function executeLaunch(): Promise<void> {
-    if (!props.template) return;
+type LaunchResult = Awaited<ReturnType<typeof launchAction>>;
 
-    try {
-        // The Composable handles the distinction between single and multi internally
-        const result = await launchAction({
-            templateUUID: props.template.uuid,
-            missionUUID:
-                !hasMissionUUIDs.value && selectedMission.value
-                    ? selectedMission.value.uuid
-                    : undefined,
-            missionUUIDs: hasMissionUUIDs.value
-                ? allMissionUUIDs.value
+/** Launches the action; throws if the server rejects it */
+async function launch(): Promise<LaunchResult> {
+    if (!props.template) throw new Error('No action template selected');
+    // The Composable handles the distinction between single and multi internally
+    return launchAction({
+        templateUUID: props.template.uuid,
+        missionUUID:
+            !hasMissionUUIDs.value && selectedMission.value
+                ? selectedMission.value.uuid
                 : undefined,
-        });
+        missionUUIDs: hasMissionUUIDs.value ? allMissionUUIDs.value : undefined,
+    });
+}
 
-        Notify.create({
-            message: 'Action Launched Successfully',
-            color: 'positive',
-        });
+/** After a successful launch: confirm it and open the run(s) */
+async function afterLaunch(result: LaunchResult): Promise<void> {
+    Notify.create({
+        message: 'Action Launched Successfully',
+        color: 'positive',
+    });
 
-        await queryClient.invalidateQueries({
-            queryKey: actionKeys.templates.all,
-        });
-        await queryClient.invalidateQueries({
-            queryKey: actionKeys.all,
-        });
+    await queryClient.invalidateQueries({
+        queryKey: actionKeys.templates.all,
+    });
+    await queryClient.invalidateQueries({
+        queryKey: actionKeys.all,
+    });
 
-        await (Array.isArray(result)
-            ? router.push({
-                  name: ROUTES.ACTION.routeName,
-                  params: { tab: 'runs' },
-                  query: route.query,
-              })
-            : router.push({
-                  name: ROUTES.ANALYSIS_DETAILS.routeName,
-                  params: { id: result.actionUUID },
-              }));
-    } catch (error: unknown) {
-        const message =
-            error instanceof Error ? error.message : 'Unknown error occurred';
-        Notify.create({
-            message: message || 'Launch Failed',
-            color: 'negative',
-        });
-    }
+    await (Array.isArray(result)
+        ? router.push({
+              name: ROUTES.ACTION.routeName,
+              params: { tab: 'runs' },
+              query: route.query,
+          })
+        : router.push({
+              name: ROUTES.ANALYSIS_DETAILS.routeName,
+              params: { id: result.actionUUID },
+          }));
 }
 
 const createAction = (): void => {

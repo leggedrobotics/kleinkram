@@ -1,6 +1,11 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title>Sign out all other sessions</template>
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="running"
+        size="sm"
+    >
+        <template #title>Sign Out All Other Sessions</template>
         <template #content>
             <p class="q-ma-none">
                 This ends
@@ -14,16 +19,12 @@
         </template>
         <template #actions>
             <q-btn
-                label="Cancel"
+                label="Sign Out"
                 flat
-                class="q-mr-sm button-border"
-                @click="onDialogCancel"
-            />
-            <q-btn
-                label="Sign out"
-                flat
+                no-caps
                 class="bg-button-danger"
-                @click="onDialogOK"
+                :loading="running"
+                @click="confirm"
             />
         </template>
     </base-dialog>
@@ -31,11 +32,16 @@
 
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
+import { useDialogAction } from 'src/composables/use-dialog-action';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 
-const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
+const { running, errorMessage, run } = useDialogAction(onDialogOK);
+const confirm = (): Promise<void> => run(action);
 
-const { count } = defineProps<{
+const { count, action } = defineProps<{
+    /** The request to run on confirm; the dialog closes when it succeeds */
+    action: () => Promise<unknown>;
     count: number;
 }>();
 </script>

@@ -1,54 +1,98 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title> Delete Action</template>
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="deleting"
+        size="sm"
+        :submit-disabled="!confirmed || deleting"
+        @submit="deleteActionAction"
+    >
+        <template #title>Delete Action</template>
         <template #content>
-            <delete-action
-                v-if="action"
-                ref="deleteActionReference"
-                :action="action"
+            <label :for="inputId" class="confirm-label">
+                Type <b>{{ action.template.name }}</b> to confirm. This can't be
+                undone.
+            </label>
+            <q-input
+                v-model="actionNameCheck"
+                no-error-icon
+                :for="inputId"
+                outlined
+                dense
+                autofocus
+                autocomplete="off"
             />
-            <q-skeleton v-else height="250px" />
         </template>
 
         <template #actions>
-            <q-btn
-                flat
-                :disable="
-                    deleteActionReference?.action_name_check !==
-                    action?.template.name
-                "
-                label="Delete Action"
-                class="bg-button-primary"
-                @click="deleteActionAction"
-            />
+            <span class="disabled-reason">
+                <q-btn
+                    flat
+                    no-caps
+                    :disable="!confirmed"
+                    :loading="deleting"
+                    label="Delete Action"
+                    class="bg-button-danger"
+                    @click="deleteActionAction"
+                />
+                <q-tooltip v-if="!confirmed"
+                    >Type the name to confirm</q-tooltip
+                >
+            </span>
         </template>
     </base-dialog>
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent } from 'quasar';
-import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { ref } from 'vue';
-
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
-import DeleteAction from 'components/actions/delete-action.vue';
+import { Notify, useDialogPluginComponent } from 'quasar';
+import { useDeleteAction } from 'src/composables/use-action-mutations';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { getDialogErrorMessage } from 'src/services/error-handling';
+import { computed, ref, useId } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
-const deleteActionReference = ref<
-    InstanceType<typeof DeleteAction> | undefined
->(undefined);
 
 const { action } = defineProps<{
     action: ActionDto;
 }>();
 
-const deleteActionAction = (): void => {
-    if (deleteActionReference.value === undefined) return;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (deleteActionReference.value) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-        (deleteActionReference.value as any).deleteActionAction();
+const { mutateAsync: removeAction } = useDeleteAction();
+
+const inputId = `delete-action-${useId()}`;
+const actionNameCheck = ref('');
+const deleting = ref(false);
+const errorMessage = ref('');
+const confirmed = computed(
+    () => actionNameCheck.value === action.template.name,
+);
+
+async function deleteActionAction(): Promise<void> {
+    if (!confirmed.value || deleting.value) return;
+    deleting.value = true;
+    errorMessage.value = '';
+    try {
+        await removeAction(action.uuid);
+    } catch (error: unknown) {
+        errorMessage.value = getDialogErrorMessage(error);
+        return;
+    } finally {
+        deleting.value = false;
     }
+    Notify.create({
+        message: 'Action deleted',
+        color: 'positive',
+        timeout: 2000,
+        position: 'bottom',
+    });
     onDialogOK();
-};
+}
 </script>
+
+<style scoped>
+.confirm-label {
+    display: block;
+    margin-bottom: 4px;
+    overflow-wrap: anywhere;
+}
+</style>

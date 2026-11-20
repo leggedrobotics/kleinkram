@@ -438,7 +438,7 @@ watch(
     { deep: true },
 );
 
-const { mutate: _deleteFiles } = useMutation({
+const { mutateAsync: _deleteFiles } = useMutation({
     mutationFn: (update: { fileUUIDs: string[]; missionUUID: string }) =>
         deleteFiles(update.fileUUIDs, update.missionUUID),
     onSuccess: async () => {
@@ -452,53 +452,32 @@ const { mutate: _deleteFiles } = useMutation({
         selectedFiles.value = [];
         await Promise.resolve();
     },
-    onError: (error: unknown) => {
-        const errorMessage =
-            (
-                error as {
-                    response?: { data?: { message?: string } };
-                }
-            ).response?.data?.message ?? '';
-
-        Notify.create({
-            message: `Error deleting files: ${errorMessage}`,
-            color: 'negative',
-            timeout: 2000,
-            position: 'bottom',
-        });
-    },
 });
 
 const deleteFilesCallback = (): void => {
-    if (selectedFiles.value.length === 1) {
-        $q.dialog({
-            component: ConfirmDeleteFileDialog,
-            componentProps: {
-                filename: selectedFiles.value.map((file) => file.filename)[0],
-            },
-        }).onOk(() => {
-            const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
-            _deleteFiles({
-                fileUUIDs,
-                missionUUID: missionUuid.value ?? '',
-            });
-            deselect();
+    const files = [...selectedFiles.value];
+    // the dialog runs the delete and shows a failure itself, staying open
+    const action = (): Promise<unknown> =>
+        _deleteFiles({
+            fileUUIDs: files.map((file) => file.uuid),
+            missionUUID: missionUuid.value ?? '',
         });
-    } else {
-        $q.dialog({
-            component: ConfirmDeleteDialog,
-            componentProps: {
-                filenames: selectedFiles.value.map((file) => file.filename),
-            },
-        }).onOk(() => {
-            const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
-            _deleteFiles({
-                fileUUIDs,
-                missionUUID: missionUuid.value ?? '',
-            });
-            deselect();
-        });
-    }
+    $q.dialog(
+        files.length === 1
+            ? {
+                  component: ConfirmDeleteFileDialog,
+                  componentProps: { filename: files[0]?.filename, action },
+              }
+            : {
+                  component: ConfirmDeleteDialog,
+                  componentProps: {
+                      filenames: files.map((file) => file.filename),
+                      action,
+                  },
+              },
+    ).onOk(() => {
+        deselect();
+    });
 };
 
 const deselect = (): void => {

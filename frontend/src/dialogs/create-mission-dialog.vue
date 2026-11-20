@@ -1,141 +1,174 @@
 <template>
-    <base-dialog ref="dialogRef" title="New Mission">
-        <template #title> New Mission </template>
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="creating"
+        fixed-height
+        size="lg"
+        :dirty="dirty"
+        :cancel-label="tab_selection === 'upload' ? 'Skip Upload' : 'Cancel'"
+        :submit-disabled="submitDisabled"
+        @submit="onSubmit"
+    >
+        <template #title>New Mission</template>
 
         <template #tabs>
             <q-tabs
                 v-model="tab_selection"
                 dense
-                class="text-grey"
                 align="left"
-                active-color="primary"
+                active-color="button-primary"
+                indicator-color="button-primary"
             >
                 <q-tab
                     name="details"
-                    label="Mission Details*"
-                    style="color: #222"
+                    label="Details"
                     :disable="missionCreated"
                 />
                 <q-tab
                     name="metadata"
-                    :label="
-                        'Metadata' +
-                        (!!project && project.requiredMetadataTypes.length > 0
-                            ? '*'
-                            : '')
-                    "
-                    style="color: #222"
+                    label="Metadata"
                     :disable="
                         !project || !isValidName(missionName) || missionCreated
                     "
                 />
                 <q-tab
                     name="upload"
-                    label="Upload Data"
-                    style="color: #222"
+                    label="Upload"
                     :disable="!missionCreated"
                 />
             </q-tabs>
         </template>
         <template #content>
-            <q-tab-panels v-model="tab_selection">
-                <q-tab-panel name="details" style="min-height: 280px">
-                    <div
-                        v-if="
-                            !projectsWithCreateWrite ||
-                            projectsWithCreateWrite.length === 0
-                        "
-                        class="text-grey"
-                    >
-                        <q-icon name="sym_o_info" size="sm" class="q-mr-sm" />
-                        You do not have permission to create missions, or no
-                        projects exist yet.
-                    </div>
-                    <div v-else>
-                        <ScopeSelector
-                            v-model:project-uuid="projectUuid"
-                            :custom-projects="projectsWithCreateWrite"
-                            :show-mission="false"
-                            :required="true"
-                            class="q-mb-md"
-                        />
-
-                        <template v-if="projectUuid">
-                            <label for="missionName">Mission Name *</label>
-                            <q-input
-                                ref="missionNameInput"
-                                v-model="missionName"
-                                name="missionName"
-                                outlined
-                                required
-                                autofocus
-                                dense
-                                placeholder="Name...."
-                                style="padding-bottom: 30px"
-                                :error="!!missionNameError"
-                                :error-message="missionNameError"
-                                @update:model-value="onMissionNameChange"
-                            >
-                                <template v-if="missionName" #append>
-                                    <q-icon
-                                        name="sym_o_cancel"
-                                        class="cursor-pointer"
-                                        @click.stop.prevent="clearMissionName"
-                                    />
-                                </template>
-                            </q-input>
-                        </template>
-                        <div v-else class="text-grey">
-                            Please select a project to create a mission.
+            <div class="dialog-tab-panels">
+                <div
+                    role="tabpanel"
+                    class="dialog-tab-panel"
+                    :class="{
+                        'dialog-tab-panel--active': tab_selection === 'details',
+                    }"
+                    :inert="tab_selection !== 'details'"
+                >
+                    <q-form ref="formReference" greedy @submit.prevent>
+                        <div
+                            v-if="
+                                !projectsWithCreateWrite ||
+                                projectsWithCreateWrite.length === 0
+                            "
+                            class="text-secondary"
+                        >
+                            <q-icon
+                                name="sym_o_info"
+                                size="sm"
+                                class="q-mr-sm"
+                            />
+                            You do not have permission to create missions, or no
+                            projects exist yet.
                         </div>
-                    </div>
-                </q-tab-panel>
-                <q-tab-panel name="metadata" style="min-height: 280px">
-                    <SelectMissionMetadata
-                        v-if="project"
-                        :metadata-values="metadataValues"
-                        :project-uuid="project.uuid"
-                        @update:metadata-values="updateMetadataValues"
-                    />
-                </q-tab-panel>
-                <q-tab-panel name="upload">
-                    <CreateFile
-                        v-if="newMission"
-                        ref="createFileReference"
-                        v-model:has-errors="uploadHasErrors"
-                        :mission="newMission"
-                        :uploads="uploads"
-                        :disable-scope="true"
-                    />
-                </q-tab-panel>
-            </q-tab-panels>
+                        <div v-else>
+                            <ScopeSelector
+                                v-model:project-uuid="projectUuid"
+                                :custom-projects="projectsWithCreateWrite"
+                                :show-mission="false"
+                                :required="true"
+                                class="field-group"
+                            />
+
+                            <template v-if="projectUuid">
+                                <label :for="nameId">
+                                    Name<span class="text-error">*</span>
+                                </label>
+                                <NameField
+                                    :id="nameId"
+                                    v-model="missionName"
+                                    label="Mission name"
+                                    autofocus
+                                    :server-error="serverErrorMessage"
+                                    @edit="onMissionNameChange"
+                                />
+                            </template>
+                            <div v-else class="text-secondary">
+                                Please select a project to create a mission.
+                            </div>
+                        </div>
+                    </q-form>
+                </div>
+                <div
+                    role="tabpanel"
+                    class="dialog-tab-panel"
+                    :class="{
+                        'dialog-tab-panel--active':
+                            tab_selection === 'metadata',
+                    }"
+                    :inert="tab_selection !== 'metadata'"
+                >
+                    <q-form ref="metadataFormReference" greedy @submit.prevent>
+                        <SelectMissionMetadata
+                            v-if="project"
+                            :key="project.uuid"
+                            v-model:server-errors="metadataServerErrors"
+                            :metadata-values="metadataValues"
+                            :project-uuid="project.uuid"
+                            @update:metadata-values="updateMetadataValues"
+                        />
+                    </q-form>
+                </div>
+                <div
+                    role="tabpanel"
+                    class="dialog-tab-panel"
+                    :class="{
+                        'dialog-tab-panel--active': tab_selection === 'upload',
+                    }"
+                    :inert="tab_selection !== 'upload'"
+                >
+                    <template v-if="newMission">
+                        <p class="mission-created">
+                            <q-icon name="sym_o_check" size="20px" />
+                            Mission <b>{{ newMission.name }}</b> created
+                        </p>
+                        <CreateFile
+                            ref="createFileReference"
+                            v-model:has-errors="uploadHasErrors"
+                            :mission="newMission"
+                            :uploads="uploads"
+                            :disable-scope="true"
+                        />
+                    </template>
+                </div>
+            </div>
         </template>
 
         <template #actions>
             <q-btn
                 v-if="tab_selection === 'details'"
                 flat
+                no-caps
                 label="Next"
-                :disable="!project || !isValidName(missionName)"
                 class="bg-button-primary"
                 @click="navigateToMetadataTab"
             />
             <q-btn
                 v-if="tab_selection === 'metadata'"
                 flat
+                no-caps
                 label="Create Mission"
                 class="bg-button-primary"
-                :disable="!allRequiredMetadataSet || !isValidName(missionName)"
+                :loading="creating"
                 @click="submitNewMission"
             />
-            <q-btn
-                v-if="tab_selection === 'upload'"
-                flat
-                label="Upload & Exit"
-                class="bg-button-primary"
-                :disable="uploadHasErrors"
-                @click="uploadEventHandler"
-            />
+            <span v-if="tab_selection === 'upload'" class="disabled-reason">
+                <q-btn
+                    flat
+                    no-caps
+                    label="Upload & Close"
+                    class="bg-button-primary"
+                    :disable="uploadHasErrors"
+                    @click="uploadEventHandler"
+                />
+                <q-tooltip v-if="uploadHasErrors"
+                    >Fix the file names first</q-tooltip
+                >
+            </span>
         </template>
     </base-dialog>
 </template>
@@ -144,21 +177,26 @@
 import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
 import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
-import {
-    getNameValidationError,
-    isValidName,
-} from '@kleinkram/validation/frontend';
+import { isValidName } from '@kleinkram/validation/frontend';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import NameField from 'components/common/name-field.vue';
 import ScopeSelector from 'components/common/scope-selector.vue';
 import CreateFile from 'components/create-file.vue';
 import SelectMissionMetadata from 'components/select-mission-metadata.vue';
-import { Notify, useDialogPluginComponent } from 'quasar';
+import { Notify, QForm, useDialogPluginComponent } from 'quasar';
 import { useScopeSelection } from 'src/composables/use-scope-selection';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { canCreateMission, usePermissionsQuery } from 'src/hooks/query-hooks';
+import {
+    focusField,
+    getDialogErrorMessage,
+    getErrorMessage,
+    getFieldErrors,
+    isNameError,
+} from 'src/services/error-handling';
 import { createMission } from 'src/services/mutations/mission';
 import { filteredProjects } from 'src/services/queries/project';
-import { computed, ref, Ref } from 'vue';
+import { computed, nextTick, ref, Ref, useId } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -181,14 +219,17 @@ const queryClient = useQueryClient();
 
 const { selectedProject: project } = useScopeSelection(projectUuid);
 
+const nameId = `new-mission-name-${useId()}`;
 const missionName = ref('');
+const creating = ref(false);
+// a failure that is not about the name itself
+const errorMessage = ref('');
 // error returned by the server, e.g. if the name is already taken
 const serverErrorMessage = ref('');
-const missionNameError = computed(() => {
-    if (serverErrorMessage.value) return serverErrorMessage.value;
-    if (!missionName.value) return '';
-    return getNameValidationError(missionName.value, 'Mission name') ?? '';
-});
+const formReference = ref<QForm>();
+const metadataFormReference = ref<QForm>();
+// errors the server reported per metadata type uuid
+const metadataServerErrors = ref<Record<string, string>>({});
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const { data: all_projects } = useQuery<ProjectsDto>({
@@ -205,63 +246,78 @@ const projectsWithCreateWrite = computed(() => {
 
 const metadataValues: Ref<Record<string, string>> = ref({});
 
-const allRequiredMetadataSet = computed(() => {
-    return project.value?.requiredMetadataTypes.every(
-        (metadataType) =>
-            metadataValues.value[metadataType.uuid] !== undefined &&
-            metadataValues.value[metadataType.uuid] !== '',
-    );
-});
-
 const missionCreated = computed(() => {
     return !!newMission.value;
 });
 
+// before the mission exists, closing would lose the name and metadata
+const dirty = computed(
+    () =>
+        !missionCreated.value &&
+        (missionName.value !== '' ||
+            Object.values(metadataValues.value).some((value) => value !== '')),
+);
+
+const submitDisabled = computed(() => {
+    if (tab_selection.value === 'metadata') return creating.value;
+    return uploadHasErrors.value;
+});
+
+/** Enter runs the main action of the current step */
+const onSubmit = (): void => {
+    if (tab_selection.value === 'details') void navigateToMetadataTab();
+    else if (tab_selection.value === 'metadata') void submitNewMission();
+    else uploadEventHandler();
+};
+
 const submitNewMission = async (): Promise<void> => {
-    if (!project.value) {
+    if (!project.value || creating.value) {
         return;
     }
-    if (!isValidName(missionName.value)) {
+    if (!isValidName(missionName.value) || serverErrorMessage.value) {
         // the details tab shows why the name is invalid
         tab_selection.value = 'details';
+        await nextTick();
+        await formReference.value?.validate(true);
         return;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const resp = await createMission(
-        missionName.value,
-        project.value.uuid,
-        metadataValues.value,
-    ).catch((error: unknown) => {
-        tab_selection.value = 'details';
-        // @ts-ignore
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        serverErrorMessage.value = error.response.data.message[0];
-    });
+    if (!(await metadataFormReference.value?.validate())) {
+        tab_selection.value = 'metadata';
+        await nextTick();
+        await metadataFormReference.value?.validate(true);
+        return;
+    }
+    creating.value = true;
+    errorMessage.value = '';
+    let resp: FlatMissionDto;
+    try {
+        resp = (await createMission(
+            missionName.value,
+            project.value.uuid,
+            metadataValues.value,
+        )) as FlatMissionDto;
+    } catch (error: unknown) {
+        const fieldErrors = getFieldErrors(error);
+        if (fieldErrors) {
+            // shown on the metadata fields they belong to
+            metadataServerErrors.value = fieldErrors;
+            tab_selection.value = 'metadata';
+        } else if (isNameError(error)) {
+            // a rejected (e.g. taken) name is shown on the name field
+            tab_selection.value = 'details';
+            serverErrorMessage.value = getErrorMessage(error);
+            focusField(nameId);
+        } else {
+            errorMessage.value = getDialogErrorMessage(error);
+        }
+        return;
+    } finally {
+        creating.value = false;
+    }
 
-    // exit if the request failed
-    if (!resp) return;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     newMission.value = resp;
     // @ts-ignore
     newMission.value.project = project.value;
-    const cache = queryClient.getQueryCache();
-    const filtered = cache
-        .getAll()
-        .filter(
-            (query) =>
-                query.queryKey[0] === 'missions' &&
-                query.queryKey[1] === project.value?.uuid,
-        );
-
-    await Promise.all(
-        filtered.map((query) => {
-            // eslint-disable-next-line no-console
-            console.log('Invalidating query', query.queryKey);
-            return queryClient.invalidateQueries({
-                queryKey: query.queryKey,
-            });
-        }),
-    );
     Notify.create({
         message: `Mission ${missionName.value} created`,
         color: 'positive',
@@ -272,6 +328,12 @@ const submitNewMission = async (): Promise<void> => {
     missionName.value = '';
     metadataValues.value = {};
     tab_selection.value = 'upload';
+
+    await queryClient.invalidateQueries({
+        predicate: (query) =>
+            query.queryKey[0] === 'missions' &&
+            query.queryKey[1] === project.value?.uuid,
+    });
 };
 
 const updateMetadataValues = (update: Record<string, string>): void => {
@@ -290,11 +352,24 @@ function onMissionNameChange(): void {
     serverErrorMessage.value = '';
 }
 
-function navigateToMetadataTab(): void {
+async function navigateToMetadataTab(): Promise<void> {
+    if (!(await formReference.value?.validate(true))) return;
     tab_selection.value = 'metadata';
 }
-
-function clearMissionName(): void {
-    missionName.value = '';
-}
 </script>
+
+<style scoped>
+/* $support-success check, $text-primary text */
+.mission-created {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #161616;
+    overflow-wrap: anywhere;
+}
+
+.mission-created .q-icon {
+    flex: none;
+    color: #198038;
+}
+</style>

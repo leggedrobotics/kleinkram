@@ -1,47 +1,29 @@
 <template>
     <q-select
         v-model="selectedDataType"
+        no-error-icon
         :options="dataTypeOptions"
         outlined
         dense
-        required
+        color="button-primary"
         :error="error"
         :error-message="errorMessage"
-        option-label="label"
-        option-value="value"
     >
-        <span
-            v-if="selectedDataType === undefined"
-            class="text-placeholder absolute"
-            style="line-height: 40px"
-        >
-            e.g., String
-        </span>
-
         <template #option="scope">
             <q-item v-bind="scope.itemProps">
-                <q-item-section>
-                    <q-item-label>
-                        <q-chip square>{{ scope.opt }}</q-chip>
-                    </q-item-label>
+                <q-item-section avatar class="data-type-option__icon">
+                    <q-icon :name="icon(scope.opt)" size="20px" />
                 </q-item-section>
-                <q-item-section side>
-                    <q-icon :name="icon(scope.opt)" class="q-mr-sm" />
+                <q-item-section>
+                    <q-item-label>{{ dataTypeName(scope.opt) }}</q-item-label>
                 </q-item-section>
             </q-item>
         </template>
 
         <template #selected-item="scope">
-            <div class="row items-center">
-                <span v-if="scope.opt">{{ scope.opt }}</span>
-                <span v-else-if="!scope.opt || !scope.opt" class="text-grey">
-                    Data Type (e.g., String)
-                </span>
-                <q-icon
-                    v-if="scope.opt"
-                    :name="icon(scope.opt)"
-                    class="q-ml-sm"
-                />
+            <div v-if="scope.opt" class="row items-center no-wrap">
+                <q-icon :name="icon(scope.opt)" size="20px" class="q-mr-sm" />
+                <span>{{ dataTypeName(scope.opt) }}</span>
             </div>
         </template>
     </q-select>
@@ -70,7 +52,18 @@ const selectedDataType = computed({
 const error = computed(() => properties.error ?? false);
 const errorMessage = computed(() => properties.errorMessage ?? '');
 
+/** e.g. STRING -> String */
+const dataTypeName = (dataType: string): string =>
+    dataType.charAt(0) + dataType.slice(1).toLowerCase();
+
 const dataTypeOptions = Object.keys(DataType).filter(
     (value) => (value as DataType) !== DataType.ANY,
 );
 </script>
+
+<style scoped>
+.data-type-option__icon {
+    min-width: 0;
+    padding-right: 12px;
+}
+</style>

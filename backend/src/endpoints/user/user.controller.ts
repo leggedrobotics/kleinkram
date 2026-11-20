@@ -13,6 +13,7 @@ import {
     SortablePaginatedQueryDto,
     SuccessResponseDto,
     UserDto,
+    UserSearchResultsDto,
     UsersDto,
 } from '@kleinkram/api-dto';
 import {
@@ -97,9 +98,13 @@ export class UserController {
 
     @Get('search')
     @LoggedIn()
-    @OutputDto(UsersDto)
-    async search(@Query() query: PaginatedQueryDto): Promise<UsersDto> {
+    @OutputDto(UserSearchResultsDto)
+    async search(
+        @Query() query: PaginatedQueryDto,
+        @AddUser() authHeader: AuthHeader,
+    ): Promise<UserSearchResultsDto> {
         return this.userService.search(
+            authHeader.user.uuid,
             query.search ?? '',
             query.skip,
             query.take,

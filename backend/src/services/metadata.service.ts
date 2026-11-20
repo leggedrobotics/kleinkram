@@ -8,6 +8,7 @@ import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { DataType } from '@kleinkram/shared';
+import { getMetadataValueError } from '@kleinkram/validation';
 import {
     BadRequestException,
     ConflictException,
@@ -31,6 +32,14 @@ const parseOrReject = (
     if (!parsed.ok) throw new UnprocessableEntityException(parsed.error);
     return parsed.columns;
 };
+
+/** One invalid metadata value in a 422 response */
+interface MetadataValueError {
+    /** uuid of the metadata type */
+    field: string;
+    name: string;
+    error: string;
+}
 
 @Injectable()
 export class MetadataService {
@@ -157,7 +166,12 @@ export class MetadataService {
      * `abc` for a NUMBER, `13.05.2024` for a DATE or a `javascript:` LINK.
      * Call it before writing anything, so a bad value cannot leave a
      * half-created mission or a partially replaced metadata set behind.
-     * Every invalid value is reported, not just the first one.
+     * Every invalid value is reported, not just the first one:
+     *
+     *     422 { message: 'Metadata "…" must be …; …', errors: [{ field, name, error }] }
+     *
+     * `field` is the metadata type uuid and `error` a short line for the
+     * field.
      */
     async validateValues(metadata: Record<string, unknown>): Promise<void> {
         // PostgreSQL matches uuids case-insensitively but returns them in
@@ -173,17 +187,26 @@ export class MetadataService {
             where: { uuid: In([...valuesByUUID.keys()]) },
             select: { uuid: true, name: true, datatype: true },
         });
-        const errors = metadataTypes.flatMap(({ uuid, name, datatype }) => {
-            const parsed = parseMetadataValue(
+
+        const errors: MetadataValueError[] = [];
+        const messages: string[] = [];
+        for (const { uuid, name, datatype } of metadataTypes) {
+            const value = valuesByUUID.get(uuid.toLowerCase());
+            const parsed = parseMetadataValue(name, datatype, value);
+            if (parsed.ok) continue;
+            messages.push(parsed.error);
+            errors.push({
+                field: uuid,
                 name,
-                datatype,
-                valuesByUUID.get(uuid.toLowerCase()),
-            );
-            return parsed.ok ? [] : [parsed.error];
-        });
-        if (errors.length > 0) {
-            throw new UnprocessableEntityException(errors.join('; '));
+                error: getMetadataValueError(datatype, value) ?? parsed.error,
+            });
         }
+        if (errors.length === 0) return;
+
+        throw new UnprocessableEntityException({
+            message: messages.join('; '),
+            errors,
+        });
     }
 
     async replaceMissionMetadata(

@@ -1,47 +1,77 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title> Add Project to Access Group</template>
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="error"
+        :busy="isPending"
+        size="lg"
+    >
+        <template #title>Add Projects to Access Group</template>
 
         <template #content>
-            <AddProjectToAccessGroupDialog
+            <AddProjectToAccessGroup
                 ref="addProjectReference"
+                v-model:count="count"
                 :access-group-uuid="accessGroupUuid"
             />
         </template>
 
         <template #actions>
-            <q-btn
-                flat
-                label="Confirm"
-                class="bg-button-primary"
-                @click="addProjectToAccessGroupAction"
-            />
+            <span class="disabled-reason">
+                <q-btn
+                    flat
+                    no-caps
+                    :label="addLabel"
+                    class="bg-button-primary"
+                    :disable="count === 0 || isPending"
+                    :loading="isPending"
+                    @click="add"
+                />
+                <q-tooltip v-if="count === 0"
+                    >Select at least one project</q-tooltip
+                >
+            </span>
         </template>
     </base-dialog>
-    >
 </template>
 <script setup lang="ts">
-import AddProjectToAccessGroupDialog from 'components/add-project-access-group.vue';
+import AddProjectToAccessGroup from 'components/add-project-access-group.vue';
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { ref } from 'vue';
+import { getDialogErrorMessage } from 'src/services/error-handling';
+import { computed, ref } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const addProjectReference = ref<
-    InstanceType<typeof AddProjectToAccessGroupDialog> | undefined
+    InstanceType<typeof AddProjectToAccessGroup> | undefined
 >(undefined);
 
 const { accessGroupUuid } = defineProps<{
     accessGroupUuid: string;
 }>();
 
-const addProjectToAccessGroupAction = (): void => {
-    if (addProjectReference.value) {
-        addProjectReference.value.mutate?.();
+const error = ref('');
+const count = ref(0);
+const isPending = ref(false);
+
+// "Add Project" for one, "Add 3 Projects" for several
+const addLabel = computed(() => {
+    if (count.value === 0) return 'Add Projects';
+    if (count.value === 1) return 'Add Project';
+    return `Add ${String(count.value)} Projects`;
+});
+
+const add = async (): Promise<void> => {
+    if (!addProjectReference.value || count.value === 0) return;
+    error.value = '';
+    isPending.value = true;
+    try {
+        await addProjectReference.value.mutateAsync();
+        onDialogOK();
+    } catch (error_: unknown) {
+        error.value = getDialogErrorMessage(error_);
+    } finally {
+        isPending.value = false;
     }
-    onDialogOK();
 };
 </script>
-
-<style scoped></style>

@@ -206,7 +206,8 @@ import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-
 import ButtonGroup from 'components/buttons/button-group.vue';
 import AppCreateButton from 'components/common/app-create-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
-import { Dialog } from 'quasar';
+import { Dialog, Notify } from 'quasar';
+import { useDeleteTemplate } from 'src/composables/use-action-mutations';
 import { useTemplateList } from 'src/composables/use-actions-queries';
 import { DEFAULT_PAGINATION_SIZE } from 'src/constants';
 import DeleteActionTemplateDialog from 'src/dialogs/delete-action-template-dialog.vue';
@@ -278,6 +279,9 @@ const { data: templatesResult, isLoading } = useTemplateList(
         includeArchived: showArchived.value,
     })),
 );
+
+// Delete mutation
+const { mutateAsync: removeTemplate } = useDeleteTemplate();
 
 // --- Client-Side Filtering & Grouping ---
 const templates = computed(() => templatesResult.value?.data ?? []);
@@ -374,14 +378,22 @@ const emptyState = computed(() => {
 });
 
 // --- Delete Handler ---
+// --- Delete Handler ---
 const confirmDelete = (template: ActionTemplateDto): void => {
     Dialog.create({
         component: DeleteActionTemplateDialog,
         componentProps: {
             template: template,
+            // the dialog deletes it once and shows a failure itself
+            action: () => removeTemplate(template.uuid),
         },
+    }).onOk(() => {
+        Notify.create({
+            message: 'Action template deleted or archived successfully',
+            color: 'positive',
+            icon: 'sym_o_delete',
+        });
     });
-    // the dialog deletes (or archives) the template and reports the result
 };
 </script>
 

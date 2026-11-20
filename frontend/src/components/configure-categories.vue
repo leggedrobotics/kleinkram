@@ -4,7 +4,6 @@
         :project-uuid="file.mission?.project?.uuid"
         @update:selected="updateSelected"
     />
-    <CategoryCreator :project-uuid="file.mission?.project?.uuid" />
 </template>
 <script setup lang="ts">
 import { ref, watch } from 'vue';
@@ -12,7 +11,6 @@ import { ref, watch } from 'vue';
 import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
 
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import CategoryCreator from 'components/category-creator.vue';
 import CategorySelector from 'components/category-selector.vue';
 
 const emit = defineEmits(['update:selected']);
