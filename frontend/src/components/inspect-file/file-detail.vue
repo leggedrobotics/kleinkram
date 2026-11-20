@@ -144,6 +144,7 @@
                 :topics="file.topics"
                 :is-loading="isLoading"
                 :insights="insights"
+                :stats="topicStats"
                 :previews="preview.topicPreviews"
                 :loading-state="preview.topicLoadingState"
                 :topic-errors="preview.topicErrors"
@@ -230,7 +231,13 @@
 </template>
 
 <script setup lang="ts">
-import { FileState, FileType } from '@kleinkram/shared';
+import type { FileTopicStats } from '@kleinkram/shared';
+import {
+    FileState,
+    FileType,
+    rebaseSpans,
+    storedTopicStats,
+} from '@kleinkram/shared';
 import { copyToClipboard, Notify } from 'quasar';
 import { useRosmsgPreview } from 'src/composables/use-rosmsg-preview';
 import {
@@ -267,6 +274,25 @@ const tab = ref<FileTab>('content');
 
 const insights = computed(() => preview.insights.value);
 const attachments = computed(() => insights.value?.attachments ?? []);
+
+/**
+ * Span, rate and coverage per topic: stored with the file once it has been
+ * indexed for them, otherwise read live from the MCAP summary. Bags have no
+ * live read, so they show stored statistics or none. Pauses are only known
+ * from the live read, and are moved onto the stored time axis when both exist.
+ */
+const topicStats = computed<FileTopicStats | undefined>(() => {
+    const current = file.value;
+    if (!current) return;
+    const live = insights.value?.topicStats;
+    const stored = storedTopicStats(current, current.topics);
+    if (!stored) return live;
+    if (!live) return stored;
+    return {
+        ...stored,
+        pauses: rebaseSpans(live.pauses, live.startTime, stored.startTime),
+    };
+});
 // A record written several times counts once, as in the Metadata tab.
 const metadataCount = computed(
     () => new Set(insights.value?.metadataNames).size,

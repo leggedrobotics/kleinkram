@@ -1,4 +1,8 @@
-import type { RecordingCoverage, RecordingStorage } from '@kleinkram/shared';
+import type {
+    FileTopicStats,
+    RecordingCoverage,
+    RecordingStorage,
+} from '@kleinkram/shared';
 
 export interface RecordingSchema {
     name: string;
@@ -31,6 +35,8 @@ export interface RecordingInsights {
     storage: RecordingStorage;
     /** Undefined when the file has no chunk index to draw coverage from. */
     coverage: RecordingCoverage | undefined;
+    /** Per-topic span, rate and coverage; undefined with `coverage`. */
+    topicStats: FileTopicStats | undefined;
     schemasByTopic: Record<string, RecordingSchema>;
     attachments: RecordingAttachment[];
     metadataNames: string[];

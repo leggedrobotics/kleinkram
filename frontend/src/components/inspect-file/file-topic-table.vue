@@ -46,25 +46,40 @@
                         class="q-ml-xs cursor-help"
                     >
                         <q-tooltip max-width="320px">
-                            Where in the recording the topic has data, read from
-                            the file's chunk index. The resolution is one chunk;
-                            hatched stretches are pauses of the whole recording.
+                            Where the topic has data, in 20 slices of the
+                            recording. Hatched: the recorder paused.
                         </q-tooltip>
                     </q-icon>
                     <div
-                        v-if="coverage"
+                        v-if="stats"
                         class="row justify-between text-caption text-grey-7 coverage-axis"
                     >
-                        <span>{{ clockTime(coverage.startTime, 0) }}</span>
+                        <span>{{ clockTime(stats.startTime, 0) }}</span>
                         <span>
                             {{
                                 clockTime(
-                                    coverage.startTime,
-                                    coverage.durationSeconds,
+                                    stats.startTime,
+                                    stats.durationSeconds,
                                 )
                             }}
                         </span>
                     </div>
+                </q-th>
+            </template>
+
+            <template #header-cell-freq="props">
+                <q-th :props="props">
+                    mean Hz
+                    <q-icon
+                        name="sym_o_info"
+                        size="14px"
+                        class="q-ml-xs cursor-help"
+                    >
+                        <q-tooltip max-width="320px">
+                            Messages ÷ time from first to last seen. — for
+                            topics in fewer than 5 chunks.
+                        </q-tooltip>
+                    </q-icon>
                 </q-th>
             </template>
 
@@ -111,8 +126,11 @@
 
                         <template v-else-if="col.name === 'coverage'">
                             <TopicCoverageStrip
-                                v-if="coverage?.topics[props.row.name]"
-                                :coverage="coverage"
+                                v-if="
+                                    stats?.topics[props.row.name]?.covered
+                                        .length
+                                "
+                                :stats="stats"
                                 :topic="props.row.name"
                             />
                         </template>
@@ -183,6 +201,7 @@
 </template>
 
 <script setup lang="ts">
+import type { FileTopicStats } from '@kleinkram/shared';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import type { QTableColumn } from 'quasar';
 import { useQuasar } from 'quasar';
@@ -216,6 +235,8 @@ const properties = defineProps<{
     isLoading: boolean;
     /** What the file's index says about the recording; MCAP only for now. */
     insights?: RecordingInsights | null;
+    /** Span, rate and coverage per topic, stored or read live. */
+    stats?: FileTopicStats | undefined;
 }>();
 
 const emit = defineEmits(['load-preview', 'pause-preview', 'resume-preview']);
@@ -232,7 +253,15 @@ const filteredTopics = computed(() => {
     );
 });
 
-const coverage = computed(() => properties.insights?.coverage);
+const stats = computed(() => properties.stats);
+
+const meanHzOf = (row: TopicRow): number | undefined =>
+    stats.value?.topics[row.name]?.meanHz;
+
+const formatHz = (hz: number | undefined): string => {
+    if (hz === undefined) return '—';
+    return hz >= 10 ? hz.toFixed(1) : hz.toPrecision(2);
+};
 
 type ExpandedView = 'preview' | 'definition';
 const EXPANDED_VIEWS: { label: string; value: ExpandedView }[] = [
@@ -297,9 +326,13 @@ const allColumns: QTableColumn[] = [
     },
     {
         name: 'freq',
-        label: 'Freq (Hz)',
-        field: 'frequency',
-        format: (v: number): string => (v ? v.toFixed(1) : '-'),
+        label: 'mean Hz',
+        field: (row: TopicRow) => meanHzOf(row),
+        format: (hz: number | undefined): string => formatHz(hz),
+        // Topics without a rate sort below every topic with one.
+        sort: (a: number | undefined, b: number | undefined): number =>
+            (a ?? -1) - (b ?? -1),
+        sortable: true,
         align: 'right',
         classes: 'kk-num',
         headerClasses: 'kk-num',
@@ -319,7 +352,7 @@ const HIDDEN_COLUMNS_ON_PHONES = new Set(['type', 'freq']);
 const columns = computed<QTableColumn[]>(() =>
     allColumns.filter((column) => {
         if (column.name === 'coverage') {
-            return coverage.value !== undefined && $q.screen.gt.sm;
+            return stats.value !== undefined && $q.screen.gt.sm;
         }
         return !($q.screen.xs && HIDDEN_COLUMNS_ON_PHONES.has(column.name));
     }),

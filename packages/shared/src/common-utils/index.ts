@@ -13,5 +13,6 @@ export * from './public-access';
 export * from './recording-insights';
 export * from './state-cause';
 export * from './text-decoding';
+export * from './topic-stats';
 export * from './universal-http-reader';
 export * from './upload-limits';
