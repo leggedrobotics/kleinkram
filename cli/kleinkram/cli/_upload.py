@@ -175,6 +175,7 @@ def upload(
             create=create,
             fix_filenames=fix_filenames,
             metadata=load_metadata(Path(metadata)) if metadata else None,
+            ignore_missing_metadata=ignore_missing_metadata,
         )
         print_upload_plan(plan, pprint=verbose)
         return
