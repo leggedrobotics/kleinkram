@@ -159,7 +159,7 @@ caveats.
 To see what a recording holds before fetching any of it, read its summary:
 
 ```bash
-klein file inspect <file>              # topics, counts, time range, chunk layout
+klein file inspect <file>              # topics, counts, rates, coverage, time range, chunk layout
 klein file inspect --schemas <file>    # also the message definitions
 klein file inspect --metadata <file>   # also the content of the metadata records
 ```

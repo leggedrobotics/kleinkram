@@ -3,6 +3,8 @@ from __future__ import annotations
 import io
 import logging
 import struct
+import zlib
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from dataclasses import field
 from typing import Dict
@@ -16,6 +18,17 @@ from kleinkram.api.mcap_filter import fetch_ranges
 from kleinkram.api.mcap_index import ByteRange
 from kleinkram.api.range_reader import DEFAULT_CONCURRENCY
 from kleinkram.api.range_reader import HttpRangeReader
+from kleinkram.errors import McapSummaryUnavailable
+
+__all__ = [
+    "McapAttachment",
+    "McapInfo",
+    "McapMetadata",
+    "McapSchema",
+    "McapSummaryUnavailable",
+    "McapTopic",
+    "read_mcap_info_from_url",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +38,11 @@ MCAP_MAGIC = b"\x89MCAP0\r\n"
 # summary crc. The footer is the last record, followed only by the magic.
 _FOOTER = struct.Struct("<BQQQI")
 _FOOTER_OPCODE = 0x02
+# summary_start, summary_offset_start and summary_crc.
+_FOOTER_LENGTH = 8 + 8 + 4
 _TAIL_SIZE = _FOOTER.size + len(MCAP_MAGIC)
+# The summary CRC covers everything up to the CRC field itself.
+_SUMMARY_CRC_EXCLUDED = 4 + len(MCAP_MAGIC)
 
 # magic, opcode, record length: where the header record's content starts.
 _HEADER_PREFIX = struct.Struct("<8sBQ")
@@ -34,9 +51,18 @@ _HEADER_OPCODE = 0x01
 # it in one request for every recorder we have seen.
 _HEADER_GUESS = 4096
 
-
-class McapSummaryUnavailable(RuntimeError):
-    """The remote file has no summary section to read, or is not an MCAP at all."""
+# A topic seen in fewer chunks is a one-shot topic (`/tf_static` and the like),
+# whose silences are by design and whose rate means nothing. The file page uses
+# the same threshold (`MIN_CHUNKS_FOR_GAPS` in recording-insights.ts).
+MIN_CHUNKS_FOR_RATE = 5
+# Chunks a topic is absent from are joined into one covered span when the hole
+# between them is at most this many typical chunk lengths...
+_MERGE_CHUNKS = 2
+# ...or this many of the topic's own message periods...
+_MERGE_PERIODS = 3
+# ...or this many seconds. Chunks overlap or leave small holes between them all
+# the time; neither is a dropout.
+_MERGE_MIN_NS = 2_000_000_000
 
 
 @dataclass(frozen=True)
@@ -46,8 +72,21 @@ class McapTopic:
     message_encoding: str
     # None when the recorder wrote no statistics record.
     message_count: Optional[int] = None
-    # Mean rate over the whole recording, in Hz. None for fewer than two messages.
+    # Mean rate in Hz: the message count over the topic's own span, from
+    # `first_seen` to `last_seen`. None for a topic seen in fewer than
+    # `MIN_CHUNKS_FOR_RATE` chunks, and whenever the count or the span is unknown.
     frequency: Optional[float] = None
+    # Start of the first and end of the last chunk holding the topic, in
+    # nanoseconds. Chunk resolution: where inside a chunk the messages sit is
+    # unknown. None when any chunk lacks a message index, since the summary then
+    # does not say which chunks hold which topics.
+    first_seen: Optional[int] = None
+    last_seen: Optional[int] = None
+    # Chunks holding at least one message of the topic; None when unknown.
+    chunk_count: Optional[int] = None
+    # [start, end] spans in nanoseconds where the topic has data, in recording
+    # order. None when unknown, as above.
+    coverage: Optional[List[Tuple[int, int]]] = None
 
 
 @dataclass(frozen=True)
@@ -97,9 +136,6 @@ class McapInfo:
     schemas: List[McapSchema] = field(default_factory=list)
     attachments: List[McapAttachment] = field(default_factory=list)
     metadata: List[McapMetadata] = field(default_factory=list)
-    file_size: int = 0
-    bytes_fetched: int = 0
-    requests: int = 0
 
     @property
     def duration(self) -> Optional[float]:
@@ -120,7 +156,7 @@ class McapInfo:
         return {record.name: record for record in self.metadata}
 
     @property
-    def per_message_access(self) -> bool:
+    def _per_message_access(self) -> bool:
         """Whether a partial download can fetch single messages.
 
         It can when chunks are uncompressed and indexed. Otherwise a slice pulls
@@ -140,8 +176,9 @@ def read_mcap_info_from_url(
     """Read the header and summary section of a remote MCAP through range requests.
 
     Three requests, whatever the size of the recording: the footer, which says
-    where the summary starts, the summary itself, and the header. `metadata`
-    adds one request per metadata record, since the summary only indexes them.
+    where the summary starts, the summary itself, and the header, which is
+    fetched alongside the footer. `metadata` adds one request per metadata
+    record, since the summary only indexes them.
     """
     # Imported lazily so that `klein` starts without paying for the mcap import
     # on every invocation.
@@ -156,8 +193,14 @@ def read_mcap_info_from_url(
 
     stream = HttpRangeReader(url, client=client)
     try:
-        summary_start = _read_summary_start(stream)
-        blob = stream.read_exact(summary_start, stream.size - summary_start)
+        # The header does not depend on the footer, so it costs no round trip
+        # of its own.
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            header = pool.submit(_read_header, stream)
+            summary_start, summary_crc = _read_footer(stream)
+            blob = stream.read_exact(summary_start, stream.size - summary_start)
+            _check_summary_crc(blob, summary_crc)
+            profile, library = header.result()
 
         statistics: Optional[Statistics] = None
         schemas: Dict[int, Schema] = {}
@@ -181,7 +224,6 @@ def read_mcap_info_from_url(
             elif isinstance(record, Footer):
                 break
 
-        profile, library = _read_header(stream)
         start_time, end_time = _time_range(statistics, chunk_indexes)
 
         compression: Dict[str, int] = {}
@@ -205,36 +247,47 @@ def read_mcap_info_from_url(
             compressed_size=sum(c.compressed_size for c in chunk_indexes),
             uncompressed_size=sum(c.uncompressed_size for c in chunk_indexes),
             message_indexed=bool(chunk_indexes) and all(c.message_index_offsets for c in chunk_indexes),
-            topics=_topics(channels, schemas, statistics, start_time, end_time),
+            topics=_topics(channels, schemas, statistics, chunk_indexes),
             schemas=[_schema(schema) for schema in sorted(schemas.values(), key=lambda s: s.name)],
             attachments=[
                 McapAttachment(name=a.name, media_type=a.media_type, size=a.data_size, log_time=a.log_time)
                 for a in attachment_indexes
             ],
             metadata=metadata_records,
-            file_size=stream.size,
-            bytes_fetched=stream.bytes_fetched,
-            requests=stream.requests,
         )
     finally:
         stream.close()
 
 
-def _read_summary_start(stream: HttpRangeReader) -> int:
+def _read_footer(stream: HttpRangeReader) -> Tuple[int, int]:
+    """Where the summary section starts, and its CRC (0 when none was written)."""
     if stream.size < _TAIL_SIZE + len(MCAP_MAGIC):
         raise McapSummaryUnavailable("the file is too small to be an MCAP")
 
     tail = stream.read_exact(stream.size - _TAIL_SIZE, _TAIL_SIZE)
-    opcode, _length, summary_start, _summary_offset_start, _crc = _FOOTER.unpack_from(tail)
+    opcode, length, summary_start, _summary_offset_start, summary_crc = _FOOTER.unpack_from(tail)
     if not tail.endswith(MCAP_MAGIC) or opcode != _FOOTER_OPCODE:
         raise McapSummaryUnavailable(
             "the file does not end in an MCAP footer; it is not an MCAP, or the recording was cut off before it was closed"
         )
+    if length != _FOOTER_LENGTH:
+        raise McapSummaryUnavailable(f"the footer record is {length} bytes long, expected {_FOOTER_LENGTH}")
     if summary_start == 0:
         raise McapSummaryUnavailable("the file has no summary section, so nothing can be read without downloading it")
     if summary_start >= stream.size - _TAIL_SIZE:
         raise McapSummaryUnavailable("the footer points at a summary section outside the file")
-    return int(summary_start)
+    return int(summary_start), int(summary_crc)
+
+
+def _check_summary_crc(blob: bytes, expected: int) -> None:
+    """`blob` runs from the start of the summary section to the end of the file."""
+    if expected == 0:
+        return
+    actual = zlib.crc32(blob[: len(blob) - _SUMMARY_CRC_EXCLUDED])
+    if actual != expected:
+        raise McapSummaryUnavailable(
+            f"the summary section is corrupt: its CRC is {actual:#010x}, the footer says {expected:#010x}"
+        )
 
 
 def _read_header(stream: HttpRangeReader) -> Tuple[str, str]:
@@ -264,39 +317,92 @@ def _time_range(statistics, chunk_indexes) -> Tuple[Optional[int], Optional[int]
     return None, None
 
 
-def _topics(channels, schemas, statistics, start_time: Optional[int], end_time: Optional[int]) -> List[McapTopic]:
-    seconds = (end_time - start_time) / 1e9 if start_time is not None and end_time is not None else 0.0
-
+def _topics(channels, schemas, statistics, chunk_indexes) -> List[McapTopic]:
     # A topic can be recorded on several channels (one per publisher), so
-    # their counts are added up.
+    # their counts and chunks are merged.
+    keys: Dict[int, Tuple[str, str, str]] = {}
     counts: Dict[Tuple[str, str, str], Optional[int]] = {}
     for channel_id, channel in channels.items():
         schema = schemas.get(channel.schema_id)
         key = (channel.topic, schema.name if schema is not None else "", channel.message_encoding)
+        keys[channel_id] = key
         if statistics is None:
             counts[key] = None
         else:
             counts[key] = (counts.get(key) or 0) + statistics.channel_message_counts.get(channel_id, 0)
 
-    return [
-        McapTopic(
-            name=name,
-            message_type=message_type,
-            message_encoding=message_encoding,
-            message_count=count,
-            frequency=_frequency(count, seconds),
+    # A chunk without a message index does not say which channels it holds, so
+    # a topic missing from it is unknown rather than absent. Guessing would show
+    # every unindexed stretch as a dropout of every topic.
+    indexed = bool(chunk_indexes) and all(c.message_index_offsets for c in chunk_indexes)
+    chunks: Dict[Tuple[str, str, str], List[Tuple[int, int]]] = {key: [] for key in counts}
+    if indexed:
+        for chunk_index in chunk_indexes:
+            span = (chunk_index.message_start_time, chunk_index.message_end_time)
+            for key in {keys[c] for c in chunk_index.message_index_offsets if c in keys}:
+                chunks[key].append(span)
+    typical_chunk = _median([c.message_end_time - c.message_start_time for c in chunk_indexes])
+
+    topics: List[McapTopic] = []
+    for key, count in sorted(counts.items()):
+        name, message_type, message_encoding = key
+        if not indexed:
+            topics.append(McapTopic(name, message_type, message_encoding, message_count=count))
+            continue
+
+        spans = sorted(chunks[key])
+        first_seen = min((start for start, _ in spans), default=None)
+        last_seen = max((end for _, end in spans), default=None)
+        frequency = _frequency(count, len(spans), first_seen, last_seen)
+        topics.append(
+            McapTopic(
+                name,
+                message_type,
+                message_encoding,
+                message_count=count,
+                frequency=frequency,
+                first_seen=first_seen,
+                last_seen=last_seen,
+                chunk_count=len(spans),
+                coverage=_merge_spans(spans, _merge_tolerance(typical_chunk, frequency)),
+            )
         )
-        for (name, message_type, message_encoding), count in sorted(counts.items())
-    ]
+    return topics
 
 
-def _frequency(count: Optional[int], seconds: float) -> Optional[float]:
-    # The summary has no per-topic time range, so this is the count over the
-    # length of the whole recording, as `mcap info` reports it. One message
-    # has no rate.
-    if count is None or count < 2 or seconds <= 0:
+def _frequency(count: Optional[int], chunk_count: int, first_seen: Optional[int], last_seen: Optional[int]) -> Optional[float]:
+    """The count over the topic's own span; the whole recording would understate
+    every topic that starts late, stops early or drops out."""
+    if count is None or chunk_count < MIN_CHUNKS_FOR_RATE or first_seen is None or last_seen is None:
+        return None
+    seconds = (last_seen - first_seen) / 1e9
+    if count < 2 or seconds <= 0:
         return None
     return count / seconds
+
+
+def _median(values: List[int]) -> int:
+    if not values:
+        return 0
+    return sorted(values)[len(values) // 2]
+
+
+def _merge_tolerance(typical_chunk: int, frequency: Optional[float]) -> int:
+    # A slow topic is absent from most chunks without anything being wrong, so
+    # the hole it may leave scales with its own period.
+    period = int(1e9 / frequency) if frequency else 0
+    return max(_MERGE_CHUNKS * typical_chunk, _MERGE_PERIODS * period, _MERGE_MIN_NS)
+
+
+def _merge_spans(spans: List[Tuple[int, int]], tolerance: int) -> List[Tuple[int, int]]:
+    """Join spans (sorted by start) that lie at most `tolerance` apart."""
+    merged: List[Tuple[int, int]] = []
+    for start, end in spans:
+        if merged and start - merged[-1][1] <= tolerance:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+    return merged
 
 
 def _schema(schema) -> McapSchema:

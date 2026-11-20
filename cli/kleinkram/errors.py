@@ -46,6 +46,10 @@ class FileTypeNotSupported(Exception): ...
 class FileNameNotSupported(Exception): ...
 
 
+class McapSummaryUnavailable(Exception):
+    """The remote file has no readable summary section, or is not an MCAP at all."""
+
+
 class DatatypeNotSupported(Exception): ...
 
 

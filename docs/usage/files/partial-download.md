@@ -43,12 +43,32 @@ recording and prints what the file says about itself:
 klein file inspect <file>
 ```
 
-- topics, with message type, encoding, message count and mean rate
+- topics, with message type, encoding, message count, mean rate and coverage
 - the first and last log time, in the format `--start-time` and `--end-time` take
 - how the chunks are stored: their count, compression, and whether they are indexed
 - attachments and metadata records
 - with `--schemas`, the message definitions
 - with `--metadata`, the content of the metadata records (one extra request each)
+
+The mean rate (`mean Hz`) is a topic's message count over its own span, from
+the first to the last chunk that holds it, so a topic that starts late or stops
+early is not rated against the whole recording. A topic found in fewer than five
+chunks, such as `/tf_static`, is a one-shot topic and shows `—` instead of a
+rate. The coverage column draws the recording in 20 cells, `█` where the topic
+has data and `░` where it has none:
+
+```text
+ topic        messages  mean Hz  coverage  0:00 ─── 19:26
+ /camera        34,980     30.0  ████████████████████
+ /lidar          5,820     10.0  ░░░░░░░░██████████░░
+ /tf_static          7        —  █░░░░░░░░░░░░░░░░░░░
+```
+
+Both come from the chunk index, so their resolution is one chunk: a span starts
+and ends at chunk boundaries, not at the first and last message. When any chunk
+was written without a message index, the summary does not say which chunks hold
+which topics, and the rate and coverage stay empty rather than showing invented
+dropouts.
 
 That costs three range requests, whatever the size of the recording. On the
 2.15 GB file measured below it is the "read the index only" row: 1.67 MB.
@@ -58,14 +78,17 @@ extracted at upload. `klein file inspect` answers from the file. Use it to pick
 a time window and topics for a slice, or to check that a recording contains
 what you need before you start an action on it.
 
-With `--no-verbose` the command prints JSON, with times as nanoseconds:
+With `--no-verbose` the command prints JSON, with times as nanoseconds. Each
+topic carries `first_seen`, `last_seen`, `chunk_count` and `coverage`, a list of
+`[start, end]` spans where it has data (all `null` when coverage is unknown):
 
 ```bash
-klein --no-verbose file inspect <file> | jq '.topics[] | {name, message_count}'
+klein --no-verbose file inspect <file> | jq '.topics[] | {name, message_count, frequency, coverage}'
 ```
 
 A recording that was never closed has no summary section and cannot be
-inspected this way; the command says so instead of downloading the file.
+inspected this way; the command says so instead of downloading the file. A
+summary whose checksum does not match the footer's is refused as corrupt.
 
 ## Options
 
@@ -154,14 +177,21 @@ straight on:
 info = kleinkram.inspect_file("38d7e53e-64d6-434e-a21a-f02017dc6290")
 
 print(info.duration, [t.name for t in info.topics])
-if info.per_message_access:   # uncompressed, indexed chunks
-    kleinkram.download(
-        file_ids=["38d7e53e-64d6-434e-a21a-f02017dc6290"],
-        dest="./slice",
-        topics=["/rosout"],
-        start_time=info.start_time,
-        end_time=info.start_time + 10 * 10**9,
-    )
+kleinkram.download(
+    file_ids=["38d7e53e-64d6-434e-a21a-f02017dc6290"],
+    dest="./slice",
+    topics=["/rosout"],
+    start_time=info.start_time,
+    end_time=info.start_time + 10 * 10**9,
+)
+```
+
+To slice where a topic actually has data, start from its own span:
+
+```python
+lidar = next(t for t in info.topics if t.name == "/lidar")
+if lidar.first_seen is not None:   # None when the chunks carry no message index
+    start_time, end_time = lidar.first_seen, lidar.last_seen
 ```
 
 ## When to slice and when not to

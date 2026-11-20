@@ -111,14 +111,25 @@ info.start_time, info.end_time      # nanoseconds, as `download` takes them
 info.message_count
 for topic in info.topics:
     print(topic.name, topic.message_type, topic.message_count, topic.frequency)
+    topic.first_seen, topic.last_seen   # nanoseconds, the topic's own span
+    topic.chunk_count                   # chunks that hold the topic
+    topic.coverage                      # [(start, end), ...] where it has data
 
 info.schemas                        # message definitions
 info.attachments                    # name, media type, size
-info.per_message_access             # True if `topics=` alone cuts a download
+info.compression                    # chunk count per compression
 ```
 
+`frequency` is the message count over the topic's own span, not over the whole
+recording. It is `None` for a topic found in fewer than five chunks (a one-shot
+topic such as `/tf_static`). `first_seen`, `last_seen`, `chunk_count` and
+`coverage` come from the chunk index, at chunk resolution, and are all `None`
+when any chunk lacks a message index.
+
 Pass `metadata=True` to also read the metadata records. Only `.mcap` files can
-be inspected; other types raise `FileTypeNotSupported`.
+be inspected; other types raise `FileTypeNotSupported`. A file without a
+readable summary section (never closed, not an MCAP, or with a summary that
+fails its checksum) raises `kleinkram.McapSummaryUnavailable`.
 
 ### Getting Resources by ID
 
