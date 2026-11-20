@@ -493,6 +493,8 @@ def verify(
     mission_name: str,
     project_name: str,
     files: Sequence[PathLike],
+    check_file_hash: bool = True,
+    check_file_size: bool = False,
     verbose: bool = False,
     client: Optional[AuthenticatedClient] = None,
 ) -> Dict[Path, kleinkram.core.FileVerificationStatus]: ...
@@ -504,6 +506,8 @@ def verify(
     mission_name: str,
     project_id: IdLike,
     files: Sequence[PathLike],
+    check_file_hash: bool = True,
+    check_file_size: bool = False,
     verbose: bool = False,
     client: Optional[AuthenticatedClient] = None,
 ) -> Dict[Path, kleinkram.core.FileVerificationStatus]: ...
@@ -514,6 +518,8 @@ def verify(
     *,
     mission_id: IdLike,
     files: Sequence[PathLike],
+    check_file_hash: bool = True,
+    check_file_size: bool = False,
     verbose: bool = False,
     client: Optional[AuthenticatedClient] = None,
 ) -> Dict[Path, kleinkram.core.FileVerificationStatus]: ...
@@ -526,10 +532,17 @@ def verify(
     project_name: Optional[str] = None,
     project_id: Optional[IdLike] = None,
     files: Sequence[PathLike],
-    skip_hash: bool = False,
+    check_file_hash: bool = True,
+    check_file_size: bool = False,
+    skip_hash: Optional[bool] = None,
     verbose: bool = False,
     client: Optional[AuthenticatedClient] = None,
 ) -> Dict[Path, kleinkram.core.FileVerificationStatus]:
+    """\
+    compares local files with the files of a mission
+
+    `skip_hash` is deprecated, use `check_file_hash=False` instead
+    """
     query = _args_to_mission_query(
         mission_names=singleton_list(mission_name),
         mission_ids=singleton_list(mission_id),
@@ -545,6 +558,8 @@ def verify(
         query=query,
         file_paths=[parse_path_like(f) for f in files],
         skip_hash=skip_hash,
+        check_file_hash=check_file_hash,
+        check_file_size=check_file_size,
         verbose=verbose,
     )
 
@@ -699,6 +714,7 @@ def update_project(
     project_id: IdLike,
     description: Optional[str] = None,
     *,
+    new_name: Optional[str] = None,
     client: Optional[AuthenticatedClient] = None,
 ) -> None:
     client = client or AuthenticatedClient()
@@ -706,6 +722,7 @@ def update_project(
         client=client,
         project_id=parse_uuid_like(project_id),
         description=description,
+        new_name=new_name,
     )
 
 

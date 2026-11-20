@@ -438,9 +438,10 @@ Deleting a project, template, execution or trigger without `--yes` in a non-inte
 
 The Python SDK has deprecated names too. They emit a `DeprecationWarning` and are removed in version 1.0.0:
 
-| Deprecated              | Replacement                       |
-| ----------------------- | --------------------------------- |
-| `Project.required_tags` | `Project.required_metadata_types` |
+| Deprecated               | Replacement                       |
+| ------------------------ | --------------------------------- |
+| `Project.required_tags`  | `Project.required_metadata_types` |
+| `verify(skip_hash=True)` | `verify(check_file_hash=False)`   |
 
 ## Additional Commands
 
