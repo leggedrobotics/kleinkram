@@ -11,6 +11,8 @@
             options-selected-class="multi-option--selected"
             :options="foundUsers?.users ?? []"
             option-label="name"
+            :option-disable="isOptionDisabled"
+            :hint="limitHint"
             class="full-width q-mb-md"
             label="Search by name or email"
             @input-value="onInputUpdate"
@@ -132,13 +134,14 @@
 </template>
 <script setup lang="ts">
 import type { UserDto } from '@kleinkram/api-dto/types/user/user.dto';
+import { MAX_ACCESS_GROUP_BATCH_SIZE } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { useUserSearch } from 'src/hooks/query-hooks';
 import { formatDate, parseDate } from 'src/services/date-formating';
 import { icon } from 'src/services/generic';
 import { addUsersToAccessGroup } from 'src/services/mutations/access';
-import { Ref, ref, watch } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
 
 const properties = defineProps<{
     accessGroupUuid: string;
@@ -149,6 +152,20 @@ const userSelect = ref();
 const search = ref('');
 const selected: Ref<UserDto[]> = ref([]);
 const { data: foundUsers } = useUserSearch(search);
+
+// One request adds at most this many users: at the limit no further user
+// can be picked, and a line under the field says why.
+const atLimit = computed(
+    () => selected.value.length >= MAX_ACCESS_GROUP_BATCH_SIZE,
+);
+const isOptionDisabled = (user: UserDto): boolean =>
+    atLimit.value &&
+    !selected.value.some((picked) => picked.uuid === user.uuid);
+const limitHint = computed(() =>
+    atLimit.value
+        ? `${String(MAX_ACCESS_GROUP_BATCH_SIZE)} selected, the most for one step. Add these, then add more.`
+        : undefined,
+);
 
 const selectedRole = ref(false);
 const roleOptions = [
