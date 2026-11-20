@@ -23,6 +23,7 @@ import pLimit from 'p-limit';
 import { Dialog, Notify } from 'quasar';
 import SparkMD5 from 'spark-md5';
 import RenameFilesDialog from 'src/components/rename-files-dialog.vue';
+import { getErrorMessage } from 'src/services/error-handling';
 import {
     cancelUploads,
     confirmUpload,
@@ -472,14 +473,9 @@ async function _createFileAction(
                             md5Hash,
                         );
                     } catch (error: unknown) {
-                        let errorMessage = '';
-                        if (error instanceof Error) {
-                            errorMessage = error.message;
-                        }
-
                         newFileUploadReference.value.canceled = true;
                         Notify.create({
-                            message: `Upload of File ${file.name} failed: ${errorMessage}`,
+                            message: `Upload of File ${file.name} failed: ${getErrorMessage(error)}`,
                             color: 'negative',
                             spinner: false,
                             timeout: 0,

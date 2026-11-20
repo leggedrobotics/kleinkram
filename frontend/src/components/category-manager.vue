@@ -77,6 +77,7 @@ import {
     useCategories,
     usePermissionsQuery,
 } from 'src/hooks/query-hooks';
+import { getErrorMessage } from 'src/services/error-handling';
 import { hashUUIDtoColor } from 'src/services/generic';
 import { updateCategoryDescription } from 'src/services/mutations/categories';
 import { computed, ref, Ref } from 'vue';
@@ -149,7 +150,7 @@ const { mutate } = useMutation({
     },
     onError: (error: Error) =>
         Notify.create({
-            message: error.message,
+            message: getErrorMessage(error),
             color: 'negative',
             position: 'bottom',
         }),

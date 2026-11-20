@@ -26,6 +26,7 @@ import {
     UserRole,
 } from '@kleinkram/shared';
 import {
+    BadRequestException,
     ForbiddenException,
     Injectable,
     NotFoundException,
@@ -72,6 +73,53 @@ const FIND_MANY_SORT_KEYS = {
     'mission.name': 'mission.name',
     // eslint-disable-next-line @typescript-eslint/naming-convention
     'project.name': 'project.name',
+};
+
+/**
+ * Converts a metadata filter value to what the metadata type's column holds,
+ * or rejects it, e.g. `abc` for a NUMBER. The converted value is what goes
+ * into the query: Postgres can't read every string JavaScript accepts as a
+ * number or date (`0x10`, `1715600000000`), so the original must not be
+ * passed on. The web UI uses typed inputs, so this only catches API and CLI
+ * requests.
+ */
+const toMetadataFilterValue = (
+    name: string,
+    datatype: DataType,
+    value: unknown,
+): unknown => {
+    const text = typeof value === 'string' ? value.trim() : value;
+    const reject = (expected: string): never => {
+        throw new BadRequestException(`Metadata "${name}" must be ${expected}`);
+    };
+    switch (datatype) {
+        case DataType.NUMBER: {
+            const number =
+                typeof text === 'number' ||
+                (typeof text === 'string' && text !== '')
+                    ? Number(text)
+                    : NaN;
+            if (!Number.isFinite(number)) reject('a number');
+            return number;
+        }
+        case DataType.DATE: {
+            const date =
+                typeof text === 'number' ||
+                (typeof text === 'string' && text !== '')
+                    ? new Date(text)
+                    : new Date(NaN);
+            if (Number.isNaN(date.getTime())) reject('a date');
+            return date;
+        }
+        case DataType.BOOLEAN: {
+            if (text === true || text === 'true') return true;
+            if (text === false || text === 'false') return false;
+            return reject('true or false');
+        }
+        default: {
+            return value;
+        }
+    }
 };
 
 @Injectable()
@@ -885,10 +933,14 @@ export class FileQueryService {
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const value = metadataByTypeUuid[uuid];
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const [column, processedValue] = this._getMetadataColumnAndValue(
+            const converted = toMetadataFilterValue(
+                metadataType.name,
                 metadataType.datatype,
                 value,
+            );
+            const [column, processedValue] = this._getMetadataColumnAndValue(
+                metadataType.datatype,
+                converted,
             );
 
             if (!column) {

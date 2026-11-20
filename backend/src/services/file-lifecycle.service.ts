@@ -54,6 +54,7 @@ import {
     Repository,
 } from 'typeorm';
 import logger from '../logger';
+import { updateStorageTags } from './storage-tags';
 
 const FILE_EXTENSION_TO_FILE_TYPE_MAP: ReadonlyMap<string, FileType> = new Map([
     ['.bag', FileType.BAG],
@@ -245,7 +246,8 @@ export class FileLifecycleService implements OnModuleInit {
             );
         }
 
-        await this.dataStorage.addTags(databaseFile.uuid, {
+        // the update is saved: tags are best effort from here on
+        await updateStorageTags(this.dataStorage, databaseFile, {
             // @ts-expect-error
             projectUuid: databaseFile.mission.project.uuid,
             missionUuid: databaseFile.mission.uuid,
