@@ -1,15 +1,16 @@
 # Implementation
 
-Currently, two methods of authentication are supported: Google and Api Key.
-Every regular user should authenticate using Google. Api keys are only used for actions.
+Users log in with Google or GitHub (OAuth); local development and the tests also have a fake OAuth provider
+(`backend/src/endpoints/auth/*.strategy.ts`). Api keys are only used for actions.
 
-## Google Authentication
+## User Authentication
 
-We use the standard JWT auth flow.
-The user logs in to google, which validates the login upon which the backend issues a JWT.
+The user logs in with their OAuth provider, which validates the login, upon which the backend starts a login session
+and issues a JWT access token as a cookie. The CLI gets its session through a device login (`klein login`).
 
-Within the JWT is only the user UUID.
-Upon each request, the backend checks the JWT and retrieves the user from the database.
+Within the JWT is the user UUID and the session id. Upon each request, the backend checks the JWT, checks that the
+session is still active (so a logout or a revoked session takes effect at once) and retrieves the user from the
+database.
 Using this User, using guards, each endpoint validates whether the user has the required rights to access the endpoint.
 
 Common guards are:
@@ -20,9 +21,9 @@ Common guards are:
 - @CanReadProject() - Checks if the user has read rights to the project
 - ...
 
-Endpoints that list data, like /oldProject/filtered are often guarded by @UserOnly() and
+Endpoints that list data, like `GET /projects`, are often guarded by @UserOnly() and
 handle the filtering of the data based on the user rights internally. They will only return the data the user has access to.
-For this, the helper function [`addAccessConstraints`](/development/access-control/addAccessConstraints) is used.
+For this, the helpers in [`auth-helper.ts`](/development/access-control/addAccessConstraints) are used.
 
 ## Api Key Authentication
 
@@ -40,7 +41,7 @@ A key only reaches its own mission: file listings are limited to it, and a singl
 confirmation) is only accessible when it belongs to the key's mission, even if the user has access to other missions of
 the same project.
 
-In the middleware (backend/src/UserResolverMiddleware.ts), before the JWT is checked & resolved, the Api key is checked. If an Api key is present,
+In the middleware (`backend/src/routing/middlewares/api-key-resolver-middleware.service.ts`), before the JWT is checked & resolved, the Api key is checked. If an Api key is present,
 the user is resolved to the user the key represents. Written into the request object is `req.user = {user: User, apiKey: ApiKey}`.
 
 Each guard is responsible for detecting whether an Api key is present and if so, whether the key grants the required rights.
