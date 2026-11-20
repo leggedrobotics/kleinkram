@@ -53,6 +53,36 @@ import { UserService } from './user.service';
  */
 const RECORDING_TIMES_BACKFILL_BATCH_SIZE = 2000;
 
+const QUEUE_STATES = new Set<number>(
+    Object.values(QueueState).filter(
+        (value): value is number => typeof value === 'number',
+    ),
+);
+
+/**
+ * Parses the `stateFilter` of `GET /files/queue`: a comma-separated list of
+ * numeric queue states, e.g. `10,20`.
+ *
+ * @returns the states, or `undefined` if no filter was given
+ */
+export const parseQueueStateFilter = (
+    stateFilter: string | undefined,
+): number[] | undefined => {
+    if (!stateFilter) return undefined;
+
+    const states = stateFilter.split(',').map((state) => Number(state.trim()));
+    if (!states.every((state) => QUEUE_STATES.has(state))) {
+        throw new BadRequestException(
+            `stateFilter must be a comma-separated list of queue states: ${[
+                ...QUEUE_STATES,
+            ].join(', ')}`,
+        );
+    }
+    return states;
+};
+
+const UPLOAD_MISSING_MESSAGE = 'File not found in storage. Upload it again.';
+
 @Injectable()
 export class QueueService implements OnModuleInit {
     private fileQueue!: Queue.Queue;
@@ -253,12 +283,16 @@ export class QueueService implements OnModuleInit {
                     `Error in getFileInfo for ${file.uuid}: ${error instanceof Error ? error.message : String(error)}`,
                     error,
                 );
-                throw new ConflictException('File not found in storage');
+                throw new ConflictException(UPLOAD_MISSING_MESSAGE);
             });
 
+        // the object never arrived: the client has to upload it again, so
+        // this is a conflict with the file's state, not a server error
         if (!fileInfo) {
-            logger.error(`getFileInfo returned undefined for ${file.uuid}`);
-            throw new Error('File not found in storage');
+            logger.warn(
+                `Upload confirmed for ${file.uuid}, but no object found`,
+            );
+            throw new ConflictException(UPLOAD_MISSING_MESSAGE);
         }
 
         if (file.state === FileState.UPLOADING) file.state = FileState.OK;
@@ -305,13 +339,10 @@ export class QueueService implements OnModuleInit {
             updatedAt: MoreThan(startDate),
         };
 
+        const states = parseQueueStateFilter(stateFilter);
+
         if (user.role === UserRole.ADMIN) {
-            if (stateFilter) {
-                const filter = stateFilter
-                    .split(',')
-                    .map((state) => Number.parseInt(state));
-                where.state = In(filter);
-            }
+            if (states) where.state = In(states);
             return await this.queueRepository.find({
                 where,
                 relations: {
@@ -340,11 +371,8 @@ export class QueueService implements OnModuleInit {
             .take(take)
             .orderBy('ingestion_job.createdAt', 'DESC');
 
-        if (stateFilter) {
-            const filter = stateFilter
-                .split(',')
-                .map((state) => Number.parseInt(state));
-            query.andWhere('ingestion_job.state IN (:...filter)', { filter });
+        if (states) {
+            query.andWhere('ingestion_job.state IN (:...states)', { states });
         }
         return (await query.getMany()) as IngestionJobEntity[];
     }

@@ -26,6 +26,7 @@ import {
     UserRole,
 } from '@kleinkram/shared';
 import {
+    BadRequestException,
     ForbiddenException,
     Injectable,
     NotFoundException,
@@ -72,6 +73,54 @@ const FIND_MANY_SORT_KEYS = {
     'mission.name': 'mission.name',
     // eslint-disable-next-line @typescript-eslint/naming-convention
     'project.name': 'project.name',
+};
+
+/**
+ * Rejects a metadata filter value that the metadata type's column can't hold,
+ * e.g. `abc` for a NUMBER. Postgres would otherwise fail the whole query.
+ * The web UI uses typed inputs, so this only catches API and CLI requests.
+ */
+const assertMetadataFilterValue = (
+    name: string,
+    datatype: DataType,
+    value: unknown,
+): void => {
+    const text = typeof value === 'string' ? value.trim() : value;
+    let valid = true;
+    let expected = '';
+    switch (datatype) {
+        case DataType.NUMBER: {
+            valid =
+                (typeof text === 'number' || typeof text === 'string') &&
+                text !== '' &&
+                Number.isFinite(Number(text));
+            expected = 'a number';
+            break;
+        }
+        case DataType.DATE: {
+            valid =
+                (typeof text === 'number' || typeof text === 'string') &&
+                text !== '' &&
+                !Number.isNaN(new Date(text).getTime());
+            expected = 'a date';
+            break;
+        }
+        case DataType.BOOLEAN: {
+            valid =
+                text === true ||
+                text === false ||
+                text === 'true' ||
+                text === 'false';
+            expected = 'true or false';
+            break;
+        }
+        default: {
+            break;
+        }
+    }
+    if (!valid) {
+        throw new BadRequestException(`Metadata "${name}" must be ${expected}`);
+    }
 };
 
 @Injectable()
@@ -885,6 +934,11 @@ export class FileQueryService {
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const value = metadataByTypeUuid[uuid];
+            assertMetadataFilterValue(
+                metadataType.name,
+                metadataType.datatype,
+                value,
+            );
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const [column, processedValue] = this._getMetadataColumnAndValue(
                 metadataType.datatype,

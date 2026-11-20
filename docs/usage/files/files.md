@@ -46,6 +46,9 @@ The server does not compare the content of a file with what you uploaded. Use `k
 in a mission have the same size and hash as your local files (see the [CLI reference](../python/cli.md#verifying-resources)).
 :::
 
+If an upload is confirmed but its data never reached the file storage (e.g. the transfer was interrupted), the upload
+fails with _File not found in storage. Upload it again._ Upload the file again; the CLI does the same with `klein upload`.
+
 ::: details Advanced File States
 These states are typically only relevant for administrators or debugging purposes.
 

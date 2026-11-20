@@ -23,6 +23,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Not, Repository } from 'typeorm';
 import logger from '../logger';
 import { MetadataService } from './metadata.service';
+import { updateStorageTags } from './storage-tags';
 import { UserService } from './user.service';
 import {
     addFileStats,
@@ -445,9 +446,10 @@ export class MissionService {
 
         if (mission.files === undefined) throw new Error('Files not loaded');
 
+        // the move is saved: tags are best effort from here on
         await Promise.all(
             mission.files.map(async (file) =>
-                this.dataStorage.addTags(file.uuid, {
+                updateStorageTags(this.dataStorage, file, {
                     filename: file.filename,
                     missionUuid: missionUUID,
                     projectUuid: projectUUID,
