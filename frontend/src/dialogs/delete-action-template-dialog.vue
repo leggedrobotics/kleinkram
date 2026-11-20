@@ -2,7 +2,7 @@
     <base-dialog ref="dialogRef">
         <template #title>
             {{
-                isArchiving
+                isArchiving && !isBlocked
                     ? 'Archive Action Template'
                     : 'Delete Action Template'
             }}
@@ -19,7 +19,10 @@
         <template #actions>
             <q-btn
                 flat
-                :disable="deleteActionReference?.nameCheck !== template?.name"
+                :disable="
+                    isBlocked ||
+                    deleteActionReference?.nameCheck !== template?.name
+                "
                 :label="isArchiving ? 'Archive' : 'Delete'"
                 class="bg-button-danger"
                 @click="onConfirm"
@@ -46,6 +49,8 @@ const deleteActionReference = ref<
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 const isArchiving = computed(() => (props.template?.executionCount ?? 0) > 0);
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+const isBlocked = computed(() => (props.template?.triggerCount ?? 0) > 0);
 
 const onConfirm = async (): Promise<void> => {
     if (!deleteActionReference.value) return;

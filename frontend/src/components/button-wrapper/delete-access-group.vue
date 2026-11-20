@@ -15,10 +15,9 @@
 import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
 import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
 import { AccessGroupType, UserRole } from '@kleinkram/shared';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { Notify } from 'quasar';
+import { useQuasar } from 'quasar';
+import DeleteAccessGroupDialog from 'src/dialogs/delete-access-group-dialog.vue';
 import { getUser } from 'src/services/auth';
-import { deleteAccessGroup } from 'src/services/mutations/access';
 import { computed, onMounted, Ref, ref } from 'vue';
 
 const { accessGroup } = defineProps<{ accessGroup: AccessGroupDto }>();
@@ -38,35 +37,15 @@ const canModify = computed(() => {
     return accessGroup.creator?.uuid === me.value.uuid;
 });
 const isPrimary = computed(() => accessGroup.type === AccessGroupType.PRIMARY);
-const queryClient = useQueryClient();
 
-const { mutate: _deleteAccessGroup } = useMutation({
-    mutationFn: () => deleteAccessGroup(accessGroup.uuid),
-    onSuccess: async () => {
-        await queryClient.invalidateQueries({
-            predicate: (query) => {
-                return query.queryKey[0] === 'accessGroups';
-            },
-        });
-        Notify.create({
-            message: 'Access Group Deleted',
-            color: 'positive',
-            position: 'bottom',
-            timeout: 2000,
-        });
-    },
-    onError: () => {
-        Notify.create({
-            message: 'Error deleting Access Group',
-            color: 'negative',
-            position: 'bottom',
-            timeout: 2000,
-        });
-    },
-});
+const $q = useQuasar();
 
+// deleting a group also removes its access, so it is confirmed first
 function onClick(): void {
     if (!canModify.value || isPrimary.value) return;
-    _deleteAccessGroup();
+    $q.dialog({
+        component: DeleteAccessGroupDialog,
+        componentProps: { accessGroup },
+    });
 }
 </script>

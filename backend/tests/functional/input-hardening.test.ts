@@ -92,29 +92,7 @@ describe('Request Input Hardening', () => {
         assert.equal(response.status, 409);
     });
 
-    test('should return 409 if a deleted row is still referenced', async () => {
-        const { user } = await generateAndFetchDatabaseUser('internal', 'user');
-        const projectUuid = await createProjectUsingPost(
-            { name: 'referenced_group_project', description: 'still in use' },
-            user,
-        );
-        const created = await request(user, 'POST', '/access-groups', {
-            name: 'used_group',
-        });
-        const group = created.body as { uuid: string };
-        await request(
-            user,
-            'POST',
-            `/access-groups/${group.uuid}/projects/${projectUuid}`,
-            { rights: 10 },
-        );
-
-        const response = await request(
-            user,
-            'DELETE',
-            `/access-groups/${group.uuid}`,
-        );
-
-        assert.equal(response.status, 409);
-    });
+    // A delete blocked by a foreign key (23503) maps to 409; that mapping is
+    // covered in database-error-mapping.unit.test.ts. Deleting an access
+    // group no longer hits it: its project access is removed with it.
 });

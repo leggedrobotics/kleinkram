@@ -1,5 +1,6 @@
 import { TemplateService } from '@/services/template.service';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
+import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { Module } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { TemplatesController } from './templates.controller';
         TypeOrmModule.forFeature([
             ActionTemplateEntity,
             ActionEntity,
+            ActionTriggerEntity,
             UserEntity,
         ]),
     ],
