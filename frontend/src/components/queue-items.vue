@@ -511,6 +511,8 @@ const sinceDay = computed({
     set: (day: string | null) => {
         if (!day) return;
         startDate.value = `${day} ${startDate.value.split(' ')[1] ?? '00:00'}`;
+        // unfinished typed text would hide the picked day
+        typedSince.value = undefined;
     },
 });
 
@@ -524,6 +526,7 @@ const sinceTime = computed({
         if (!isValidTime(value)) return;
         startDate.value = `${sinceDay.value} ${value}`;
         typedTime.value = undefined;
+        typedSince.value = undefined;
     },
 });
 

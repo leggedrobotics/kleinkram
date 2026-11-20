@@ -62,6 +62,7 @@ import {
     Controller,
     Delete,
     Get,
+    NotFoundException,
     Patch,
     Post,
     Put,
@@ -271,6 +272,7 @@ export class FileController {
         @QueryString('filename', 'Filename searched for') name: string,
     ): Promise<FileDto> {
         const file = await this.fileQueryService.findOneByName(uuid, name);
+        if (!file) throw new NotFoundException('File not found');
         return plainToInstance(FileDto, file, {
             excludeExtraneousValues: true,
         });

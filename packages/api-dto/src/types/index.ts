@@ -102,6 +102,7 @@ export * from '@api-dto/update-file.dto';
 export * from '@api-dto/upload.dto';
 export * from '@api-dto/user/api-key-metadata.dto';
 export * from '@api-dto/user/api-keys.dto';
+export * from '@api-dto/user/change-user-role.dto';
 export * from '@api-dto/user/current-api-user.dto';
 export * from '@api-dto/user/resolve-users.dto';
 export * from '@api-dto/user/session.dto';

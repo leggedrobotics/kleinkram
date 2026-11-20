@@ -44,6 +44,14 @@ The access group can be edited by the creator or any other users with the <CanEd
 Currently, there is no way to add additional owners to an access group (the creator is always an owner). This must be
 done manually within the database.
 
+### Naming and Deleting Access Groups
+
+Group names are unique: a new group can't take the name of another group, including the primary group of a user.
+
+Deleting an access group removes the access it gives to projects and missions as well. Its members keep the access they
+have through other groups. The delete dialog lists the affected projects and members and asks you to type the group
+name to confirm.
+
 ## Affiliation Groups
 
 Users may be added to an affiliation group based on their email domain, e.g. uses signing in with

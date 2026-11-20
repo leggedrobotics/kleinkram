@@ -215,24 +215,13 @@ const serverErrors = defineModel<Record<string, string>>('serverErrors', {
     default: () => ({}),
 });
 
-/** The values the mission already has when the form opens */
-const storedValues: Record<string, string> = { ...properties.metadataValues };
-
-/**
- * Required, then the format of the type; checked on blur and on submit. A
- * value that still is the stored one is not checked (the server skips it
- * too), so a value saved before a rule existed, e.g. a free-text location,
- * does not block saving the rest. Links are always checked.
- */
+/** Required, then the format of the type; checked on blur and on submit */
 const rulesFor = (
     metadataType: MetadataTypeDto,
 ): ((value: string) => true | string)[] => [
     ...(isRequired(metadataType) ? [required(metadataType.name)] : []),
     (value: string) =>
-        (metadataType.datatype !== DataType.LINK &&
-            value !== '' &&
-            value === storedValues[metadataType.uuid]) ||
-        (getMetadataValueError(metadataType.datatype, value) ?? true),
+        getMetadataValueError(metadataType.datatype, value) ?? true,
 ];
 
 // Create a shallow copy of metadataValues to make it editable locally

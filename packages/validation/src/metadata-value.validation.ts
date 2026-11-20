@@ -5,20 +5,8 @@ import { DataType, safeLinkUrl } from '@kleinkram/shared';
  * and the backend (enforced when a mission's metadata is written).
  */
 
-/** "latitude, longitude" in decimal degrees, e.g. "47.3769, 8.5417" */
-const LOCATION_REGEX = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/;
-
 export const METADATA_VALUE_EXAMPLES: Partial<Record<DataType, string>> = {
     [DataType.LINK]: 'https://…',
-    [DataType.LOCATION]: '47.3769, 8.5417',
-};
-
-const isValidLocation = (value: string): boolean => {
-    const match = LOCATION_REGEX.exec(value);
-    if (!match) return false;
-    const latitude = Number(match[1]);
-    const longitude = Number(match[2]);
-    return Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180;
 };
 
 const isValidNumber = (value: unknown): boolean => {
@@ -30,8 +18,28 @@ const isValidNumber = (value: unknown): boolean => {
     );
 };
 
-const isValidDate = (value: unknown): boolean =>
-    typeof value === 'string' && !Number.isNaN(new Date(value).getTime());
+/**
+ * ISO 8601 date, optionally with a time and a zone: `2024-05-13`,
+ * `2024-05-13T10:30`, `2024-05-13T10:30:00.000Z`, `2024-05-13 10:30+02:00`.
+ */
+const ISO_DATE =
+    /^(\d{4})-(\d{2})-(\d{2})(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;
+
+const isValidDate = (value: unknown): boolean => {
+    if (typeof value !== 'string') return false;
+    const text = value.trim();
+    const match = ISO_DATE.exec(text);
+    if (!match || Number.isNaN(new Date(text).getTime())) return false;
+    // `new Date` rolls 2024-02-30 over into March: the calendar date must
+    // come back unchanged
+    const [year, month, day] = [match[1], match[2], match[3]].map(Number);
+    const calendar = new Date(Date.UTC(year, month - 1, day));
+    return (
+        calendar.getUTCFullYear() === year &&
+        calendar.getUTCMonth() === month - 1 &&
+        calendar.getUTCDate() === day
+    );
+};
 
 /**
  * The boolean a metadata value stands for: true/false, or the words in any
@@ -57,10 +65,6 @@ const RULES: Partial<
     [DataType.LINK]: {
         valid: (value) => safeLinkUrl(value) !== undefined,
         error: 'Enter a full link, e.g. https://example.com/image.png',
-    },
-    [DataType.LOCATION]: {
-        valid: (value) => typeof value === 'string' && isValidLocation(value),
-        error: 'Enter latitude, longitude, e.g. 47.3769, 8.5417',
     },
     [DataType.NUMBER]: { valid: isValidNumber, error: 'Enter a number.' },
     [DataType.DATE]: {

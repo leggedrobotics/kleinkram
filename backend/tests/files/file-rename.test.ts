@@ -130,12 +130,12 @@ describe('File Rename Bug Verification', () => {
             UserRole.ADMIN,
         );
 
-        await uploadFile(user, 'first.bag', missionUuid);
-        await uploadFile(user, 'second.bag', missionUuid);
+        await uploadFile(user, 'file1.bag', missionUuid);
+        await uploadFile(user, 'file2.bag', missionUuid);
 
         const fileRepo = database.getRepository(FileEntity);
         const file = await fileRepo.findOneOrFail({
-            where: { filename: 'second.bag' },
+            where: { filename: 'file2.bag' },
         });
 
         const headers = new HeaderCreator(user);
@@ -149,20 +149,20 @@ describe('File Rename Bug Verification', () => {
                 body: JSON.stringify({
                     uuid: file.uuid,
                     date: file.date,
-                    filename: 'first.bag',
+                    filename: 'file1.bag',
                 }),
             },
         );
 
         expect(renameResponse.status).toBe(409);
         const error = (await renameResponse.json()) as { message: string };
-        expect(error.message).toBe(
-            'A file with this name already exists in this mission.',
+        expect(error.message).toContain(
+            'already contains a file with the same name',
         );
         const unchanged = await fileRepo.findOneOrFail({
             where: { uuid: file.uuid },
         });
-        expect(unchanged.filename).toBe('second.bag');
+        expect(unchanged.filename).toBe('file2.bag');
     }, 30_000);
 
     test('should allow .yaml <-> .yml rename but fail for others', async () => {

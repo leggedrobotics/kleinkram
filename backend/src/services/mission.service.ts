@@ -23,6 +23,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Not, Repository } from 'typeorm';
 import logger from '../logger';
 import { MetadataService } from './metadata.service';
+import { updateStorageTags } from './storage-tags';
 import { UserService } from './user.service';
 import {
     addFileStats,
@@ -122,15 +123,17 @@ export class MissionService {
         // the canonical fields win when both are given.
         // An empty value means "not set", as when a mission's metadata is
         // saved later: it is not written and does not satisfy a requirement.
+        // The keys are metadata type UUIDs; the database returns them in
+        // lowercase, so they are compared in lowercase.
         const metadata = Object.fromEntries(
-            Object.entries(
-                createMission.metadata ?? createMission.tags ?? {},
-            ).filter(
-                ([, value]) =>
-                    (value as unknown) !== '' &&
-                    (value as unknown) !== null &&
-                    (value as unknown) !== undefined,
-            ),
+            Object.entries(createMission.metadata ?? createMission.tags ?? {})
+                .filter(
+                    ([, value]) =>
+                        (value as unknown) !== '' &&
+                        (value as unknown) !== null &&
+                        (value as unknown) !== undefined,
+                )
+                .map(([key, value]) => [key.toLowerCase(), value]),
         );
         const ignoreMissingMetadata =
             createMission.ignoreMissingMetadata ??
@@ -173,7 +176,9 @@ export class MissionService {
             );
         }
 
-        await this.metadataService.validateMetadataValues(metadata);
+        // every value is checked before the mission is saved, so a bad value
+        // can't leave a half-created mission behind
+        await this.metadataService.validateValues(metadata);
 
         const mission = this.missionRepository.create({
             name: createMission.name,
@@ -452,9 +457,10 @@ export class MissionService {
 
         if (mission.files === undefined) throw new Error('Files not loaded');
 
+        // the move is saved: tags are best effort from here on
         await Promise.all(
             mission.files.map(async (file) =>
-                this.dataStorage.addTags(file.uuid, {
+                updateStorageTags(this.dataStorage, file, {
                     filename: file.filename,
                     missionUuid: missionUUID,
                     projectUuid: projectUUID,
@@ -495,6 +501,10 @@ export class MissionService {
 
         if (mission.metadata === undefined)
             throw new Error('Metadata not loaded');
+
+        // check every value first, so a bad one doesn't leave the mission
+        // half updated
+        await this.metadataService.validateValues(metadata);
 
         await Promise.all(
             Object.entries(metadata).map(async ([metadataTypeUUID, value]) => {

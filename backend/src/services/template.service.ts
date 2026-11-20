@@ -8,7 +8,9 @@ import {
     UpdateTemplateDto,
 } from '@kleinkram/api-dto';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
+import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserRole } from '@kleinkram/shared';
 import {
     isImageInDockerNamespace,
@@ -23,7 +25,38 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, QueryFailedError, Repository } from 'typeorm';
+import {
+    Brackets,
+    In,
+    ObjectLiteral,
+    QueryFailedError,
+    Repository,
+    SelectQueryBuilder,
+} from 'typeorm';
+
+/**
+ * Correlated sub-query counting the triggers that run any version of the
+ * template named like the outer `template` row. Triggers of deleted missions
+ * are left out: they can never fire and nobody can see or delete them.
+ */
+const countActiveTriggers = (
+    subQuery: SelectQueryBuilder<ObjectLiteral>,
+): SelectQueryBuilder<ObjectLiteral> =>
+    subQuery
+        .select('COUNT(trigger.uuid)', 'count')
+        .from(ActionTriggerEntity, 'trigger')
+        .innerJoin(ActionTemplateEntity, 't', 't.uuid = trigger.templateUuid')
+        .innerJoin(
+            MissionEntity,
+            'mission',
+            'mission.uuid = trigger.missionUuid AND mission.deletedAt IS NULL',
+        )
+        .where('t.name = template.name');
+
+const parseCount = (value: unknown): number =>
+    typeof value === 'string' || typeof value === 'number'
+        ? Math.trunc(Number(value))
+        : 0;
 
 @Injectable()
 export class TemplateService {
@@ -34,8 +67,6 @@ export class TemplateService {
     constructor(
         @InjectRepository(ActionTemplateEntity)
         private actionTemplateRepository: Repository<ActionTemplateEntity>,
-        @InjectRepository(ActionEntity)
-        private actionRepository: Repository<ActionEntity>,
     ) {}
 
     async create(
@@ -223,6 +254,7 @@ export class TemplateService {
                 .leftJoin('action.template', 't')
                 .where('t.name = template.name');
         }, 'executionCount');
+        qb.addSelect(countActiveTriggers, 'triggerCount');
 
         const { entities, raw } = await qb.getRawAndEntities();
         const count = await qb.getCount();
@@ -235,7 +267,12 @@ export class TemplateService {
                   Number.parseInt(rawRow.executionCount, 10)
                 : 0;
 
-            return actionTemplateEntityToDto(entity, execCount);
+            return actionTemplateEntityToDto(
+                entity,
+                execCount,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                parseCount(rawRow?.triggerCount),
+            );
         });
 
         return {
@@ -279,22 +316,68 @@ export class TemplateService {
     ): Promise<DeleteTemplateResponseDto> {
         const { name } = await this.findModifiableTemplate(uuid, auth);
 
-        const totalExecutionCount = await this.actionRepository
-            .createQueryBuilder('action')
-            .innerJoin('action.template', 'template')
-            .where('template.name = :name', { name })
-            .getCount();
+        return this.actionTemplateRepository.manager.transaction(
+            async (manager) => {
+                // Lock every version first. Saving a trigger takes a key
+                // share lock on the template it references (foreign key),
+                // so a trigger created or changed meanwhile waits for this
+                // transaction, and one saved before is seen by the counts.
+                const versions = await manager.find(ActionTemplateEntity, {
+                    where: { name },
+                    select: { uuid: true },
+                    lock: { mode: 'pessimistic_write' },
+                });
+                const versionUuids = versions.map((version) => version.uuid);
 
-        if (totalExecutionCount > 0) {
-            await this.actionTemplateRepository.update(
-                { name },
-                { isArchived: true },
-            );
-            return { archived: true, deleted: false };
-        } else {
-            await this.actionTemplateRepository.delete({ name });
-            return { archived: false, deleted: true };
-        }
+                // A trigger is automation someone set up on a mission.
+                // Deleting or archiving its template would silently break
+                // it, so the trigger has to be deleted or changed first.
+                const activeTriggerCount = await manager
+                    .createQueryBuilder(ActionTriggerEntity, 'trigger')
+                    .innerJoin('trigger.mission', 'mission')
+                    .where('trigger.templateUuid IN (:...versionUuids)', {
+                        versionUuids,
+                    })
+                    .getCount();
+                if (activeTriggerCount > 0) {
+                    throw new ConflictException(
+                        activeTriggerCount === 1
+                            ? 'Used by 1 trigger. Delete or change it first.'
+                            : `Used by ${activeTriggerCount.toString()} triggers. Delete or change them first.`,
+                    );
+                }
+
+                // Any trigger left belongs to a deleted mission (or was
+                // deleted with it) and can never fire again: it goes with
+                // the template, so it doesn't keep the template around.
+                await manager
+                    .createQueryBuilder()
+                    .delete()
+                    .from(ActionTriggerEntity)
+                    .where({ templateUuid: In(versionUuids) })
+                    .execute();
+
+                const totalExecutionCount = await manager
+                    .createQueryBuilder(ActionEntity, 'action')
+                    .innerJoin('action.template', 'template')
+                    .where('template.uuid IN (:...versionUuids)', {
+                        versionUuids,
+                    })
+                    .getCount();
+
+                // executions keep their template: archive it instead
+                if (totalExecutionCount > 0) {
+                    await manager.update(
+                        ActionTemplateEntity,
+                        { name },
+                        { isArchived: true },
+                    );
+                    return { archived: true, deleted: false };
+                }
+                await manager.delete(ActionTemplateEntity, { name });
+                return { archived: false, deleted: true };
+            },
+        );
     }
 
     async findRevisions(
@@ -326,6 +409,7 @@ export class TemplateService {
                     .leftJoin('action.template', 't')
                     .where('t.uuid = template.uuid');
             }, 'executionCount')
+            .addSelect(countActiveTriggers, 'triggerCount')
             .where('template.name = :name', { name: current.name })
             .orderBy('template.version', 'DESC')
             .skip(skip)
@@ -342,7 +426,12 @@ export class TemplateService {
                   Number.parseInt(rawRow.executionCount, 10)
                 : 0;
 
-            return actionTemplateEntityToDto(entity, execCount);
+            return actionTemplateEntityToDto(
+                entity,
+                execCount,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                parseCount(rawRow?.triggerCount),
+            );
         });
 
         return {
