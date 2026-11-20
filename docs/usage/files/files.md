@@ -57,3 +57,24 @@ These states are typically only relevant for administrators or debugging purpose
 | <span class="material-symbols-outlined" style="color: green">helicopter</span> | Found      | The file was in the file storage but not in the database, and was restored. Older versions of Kleinkram set this state. |
 
 :::
+
+## Moving and Copying Files
+
+To move or copy files into another mission, select them in the file table of a mission and click **Move**. The dialog
+lets you:
+
+- choose **Move** or **Copy**. A copy keeps the originals; the data is copied on the server, nothing is downloaded.
+- pick any mission you may add files to, also of another project, or create a **new mission** in place (with the
+  metadata the project requires).
+- resolve name conflicts. A mission cannot hold two files with the same name. Files whose name is taken in the target
+  mission are marked; give them a new name or skip them.
+- copy the equivalent `klein file move` / `klein file copy` command.
+
+Moving needs <Delete /> rights on the files, copying <Read /> rights; both need <Create /> rights on the target
+mission. API keys cannot move or copy files.
+
+Both are all-or-nothing: if a name conflict is left, Kleinkram rejects the request, lists the conflicting names and
+changes nothing. A copy keeps the topics, dates and hash of its original. Categories belong to a project, so a copy into
+another project has none.
+
+To share only a subset of a mission with other people, copy the files into a new mission of a project they can access.

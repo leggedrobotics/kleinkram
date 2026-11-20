@@ -5,6 +5,7 @@ import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
 import type { FoxgloveLinkResponseDto } from '@kleinkram/api-dto/types/file/foxglove-link-response.dto';
 import type { IsUploadingDto } from '@kleinkram/api-dto/types/file/is-uploading.dto';
+import type { ExistingFilenamesResponseDto } from '@kleinkram/api-dto/types/file/transfer-files.dto';
 import type { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
 import { FileState, FileType, HealthStatus } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
@@ -223,3 +224,18 @@ export async function getFoxgloveLink(fileUuid: string): Promise<string> {
     );
     return response.data.url;
 }
+
+/**
+ * Returns which of the filenames already exist in the mission.
+ */
+export const existingFilenames = async (
+    missionUUID: string,
+    filenames: string[],
+): Promise<string[]> => {
+    if (filenames.length === 0) return [];
+    const response = await axios.post<ExistingFilenamesResponseDto>(
+        '/files/existingNames',
+        { missionUUID, filenames },
+    );
+    return response.data.filenames;
+};

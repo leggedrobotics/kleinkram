@@ -104,6 +104,10 @@ export default withMermaid({
                             link: '/usage/files/partial-download',
                         },
                         {
+                            text: 'Preview in Foxglove',
+                            link: '/usage/files/foxglove-preview',
+                        },
+                        {
                             text: 'MCAP Chunking & Compression',
                             link: '/usage/files/compression',
                         },

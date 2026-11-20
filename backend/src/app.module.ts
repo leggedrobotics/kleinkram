@@ -23,6 +23,7 @@ import { MetadataModule } from './endpoints/metadata/metadata.module';
 import { MissionModule } from './endpoints/mission/mission.module';
 import { ProjectModule } from './endpoints/project/project.module';
 import { QueueModule } from './endpoints/queue/queue.module';
+import { SystemSettingsModule } from './endpoints/system/system-settings.module';
 import { TemplatesModule } from './endpoints/templates/templates.module';
 import { TopicModule } from './endpoints/topic/topic.module';
 import { TriggerModule } from './endpoints/trigger/trigger.module';
@@ -86,6 +87,7 @@ import { VersionCheckerMiddlewareService } from './routing/middlewares/version-c
         TemplatesModule,
         MetadataModule,
         WorkerModule,
+        SystemSettingsModule,
         CategoryModule,
         CliModule,
         ScheduleModule.forRoot(),

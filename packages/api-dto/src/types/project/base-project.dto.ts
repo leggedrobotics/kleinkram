@@ -33,4 +33,12 @@ export class ProjectDto {
     @IsBoolean()
     @Expose()
     autoConvert!: boolean;
+
+    @ApiProperty({
+        description:
+            'Whether the Foxglove preview tab is shown in the missions of this project',
+    })
+    @IsBoolean()
+    @Expose()
+    foxglovePreviewEnabled!: boolean;
 }

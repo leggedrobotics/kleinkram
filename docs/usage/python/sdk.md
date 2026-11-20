@@ -99,6 +99,27 @@ kleinkram.download(
 See [Partial Download](../files/partial-download.md) for what actually saves
 bandwidth.
 
+### Inspecting a Recording Without Downloading It
+
+`inspect_file` reads the header and summary section of a remote `.mcap` through
+range requests and returns a `McapInfo`.
+
+```python
+info = kleinkram.inspect_file("38d7e53e-64d6-434e-a21a-f02017dc6290")
+
+info.start_time, info.end_time      # nanoseconds, as `download` takes them
+info.message_count
+for topic in info.topics:
+    print(topic.name, topic.message_type, topic.message_count, topic.frequency)
+
+info.schemas                        # message definitions
+info.attachments                    # name, media type, size
+info.per_message_access             # True if `topics=` alone cuts a download
+```
+
+Pass `metadata=True` to also read the metadata records. Only `.mcap` files can
+be inspected; other types raise `FileTypeNotSupported`.
+
 ### Getting Resources by ID
 
 If you already know the unique identifier for a resource, you can fetch it directly.
@@ -208,6 +229,19 @@ kleinkram.update_project(project_id="...", description="Updated Description")
 
 # Update a mission's metadata
 kleinkram.update_mission(mission_id="...", metadata={"status": "completed"})
+```
+
+### Moving and Copying Files
+
+Move or copy files into another mission, also of another project. Both are all-or-nothing: on a name conflict in the
+target mission the call raises and nothing changes. Use `renames` to give files a new name in the target mission.
+
+```python
+# move files; they leave their current mission
+kleinkram.move_files(file_ids=["..."], mission_id="...")
+
+# copy files; the originals stay and the ids of the copies are returned
+copies = kleinkram.copy_files(file_ids=["...", "..."], mission_id="...", renames={"<file id>": "data_1.bag"})
 ```
 
 ### Kleinkram Actions

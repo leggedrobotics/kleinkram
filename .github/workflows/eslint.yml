@@ -20,7 +20,7 @@ jobs:
             - name: Use Node.js
               uses: actions/setup-node@v7
               with:
-                  node-version: '22.22.0'
+                  node-version: '22.23.5'
                   cache: 'pnpm'
 
             - name: Generate Build Info

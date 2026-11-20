@@ -84,11 +84,11 @@ Configuration for the PostgreSQL database.
 
 ### Access Config
 
-| Variable             | Description                                                                                                                                                 | Default                               |
-| :------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------ |
-| `ACCESS_CONFIG_PATH` | Path (inside the container) to the `access_config.json` that defines the affiliation groups. Required: the backend refuses to start without a valid config. | `/app/backend/access_config.dev.json` |
-| `ACCESS_CONFIG_FILE` | Host path of the deployment's `access_config.json`, mounted by `docker-compose.dev.yml` and `docker-compose.prod.yml`.                                      | `./access_config.json`                |
-| `JWT_SECRET`         | Secret key used to sign and verify JWT tokens.                                                                                                              | `SECRET`                              |
+| Variable             | Description                                                                                                                                                                                                                                                                                                                | Default                               |
+| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------ |
+| `ACCESS_CONFIG_PATH` | Path (inside the container) to the `access_config.json` that defines the affiliation groups and whether external users may sign in (`allow_external_users`, see [Access Control](./access-control/base-concepts.md#restricting-sign-in-to-internal-users)). Required: the backend refuses to start without a valid config. | `/app/backend/access_config.dev.json` |
+| `ACCESS_CONFIG_FILE` | Host path of the deployment's `access_config.json`, mounted by `docker-compose.dev.yml` and `docker-compose.prod.yml`.                                                                                                                                                                                                     | `./access_config.json`                |
+| `JWT_SECRET`         | Secret key used to sign and verify JWT tokens.                                                                                                                                                                                                                                                                             | `SECRET`                              |
 
 ## Docker & Registry Configuration
 
