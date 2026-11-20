@@ -498,6 +498,12 @@ export class ActionManagerService implements OnModuleInit {
 
             // wait for the container to stop
             await container.wait();
+            // recorded right away: what follows may still fail, and deleting
+            // the mission only waits for this
+            await this.actionRepository.update(
+                { uuid: action.uuid },
+                { actionContainerExitedAt: new Date() },
+            );
 
             // Give the stats stream a moment to finish flushing after container exit
             // using a race to prevent infinite hanging
@@ -543,10 +549,7 @@ export class ActionManagerService implements OnModuleInit {
 
             await this.actionRepository.update(
                 { uuid: action.uuid },
-                {
-                    executionEndedAt: new Date(),
-                    actionContainerExitedAt: new Date(),
-                },
+                { executionEndedAt: new Date() },
             );
 
             if (statsResult) {
@@ -686,7 +689,18 @@ export class ActionManagerService implements OnModuleInit {
                 // already stopped
             });
             const stopped = await Promise.race([
-                container.wait().then(() => true),
+                container
+                    .wait()
+                    .then(() => true)
+                    .catch((error: unknown) => {
+                        // already removed, so it has stopped
+                        if (
+                            (error as { statusCode?: number }).statusCode ===
+                            404
+                        )
+                            return true;
+                        throw error;
+                    }),
                 new Promise<boolean>((resolve) =>
                     setTimeout(() => {
                         resolve(false);

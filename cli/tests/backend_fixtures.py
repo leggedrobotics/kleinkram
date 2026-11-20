@@ -62,8 +62,11 @@ def _delete_project_after_its_executions(project_id) -> None:
             delete_project(project_id)
             return
         except httpx.HTTPStatusError as error:
-            if error.response.status_code != 409 or time.monotonic() > deadline:
+            if error.response.status_code != 409:
                 raise
+            if time.monotonic() > deadline:
+                left = [f"{e.uuid} {e.state}" for e in get_executions(client, ExecutionQuery(project_uuid=project_id))]
+                raise AssertionError(f"project still blocked: {error.response.text}; executions: {left}") from error
             time.sleep(WAIT_BEFORE_DELETION)
 
 
