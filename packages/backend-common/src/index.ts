@@ -26,6 +26,7 @@ export * from './entities/metadata/metadata.entity';
 export * from './entities/mission/mission.entity';
 export * from './entities/project/project-star.entity';
 export * from './entities/project/project.entity';
+export * from './entities/system/system-setting.entity';
 export * from './entities/topic/topic.entity';
 export * from './entities/user/user.entity';
 export * from './entities/worker/worker.entity';
@@ -74,6 +75,7 @@ import { MetadataEntity } from './entities/metadata/metadata.entity';
 import { MissionEntity } from './entities/mission/mission.entity';
 import { ProjectStarEntity } from './entities/project/project-star.entity';
 import { ProjectEntity } from './entities/project/project.entity';
+import { SystemSettingEntity } from './entities/system/system-setting.entity';
 import { TopicEntity } from './entities/topic/topic.entity';
 import { UserEntity } from './entities/user/user.entity';
 import { WorkerEntity } from './entities/worker/worker.entity';
@@ -103,6 +105,7 @@ export const ALL_ENTITIES = [
     ProjectStarEntity,
     MetadataTypeEntity,
     SessionEntity,
+    SystemSettingEntity,
     TopicEntity,
     UserEntity,
     WorkerEntity,
