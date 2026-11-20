@@ -48,6 +48,7 @@ import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { getErrorMessage } from 'src/services/error-handling';
 import { addManyCategories } from 'src/services/mutations/categories';
 import { Ref, ref } from 'vue';
 
@@ -93,7 +94,7 @@ const { mutate } = useMutation({
     },
     onError: (error: Error) => {
         Notify.create({
-            message: error.message,
+            message: getErrorMessage(error),
             color: 'negative',
             position: 'bottom',
         });

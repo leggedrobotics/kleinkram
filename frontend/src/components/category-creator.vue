@@ -8,6 +8,9 @@
                 outlined
                 dense
                 placeholder="Add new category"
+                :error="!!nameError"
+                :error-message="nameError"
+                @update:model-value="clearNameError"
                 @keyup.enter="addCategory"
             />
             <q-btn
@@ -17,6 +20,7 @@
                 icon="sym_o_add"
                 style="width: 20%"
                 :disable="!newCategory || newCategory.length < 2"
+                :loading="isPending"
                 @click="addCategory"
             />
         </div>
@@ -35,6 +39,7 @@
 <script setup lang="ts">
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify, QNotifyCreateOptions } from 'quasar';
+import { getErrorMessage, getErrorStatus } from 'src/services/error-handling';
 import { createCategory } from 'src/services/mutations/categories';
 import { ref } from 'vue';
 
@@ -45,7 +50,12 @@ const queryClient = useQueryClient();
 
 const newCategory = ref('');
 const newDescription = ref('');
-const { mutate } = useMutation({
+// a taken name is shown on the name input, it's the field the user has to fix
+const nameError = ref('');
+const clearNameError = (): void => {
+    nameError.value = '';
+};
+const { mutate, isPending } = useMutation({
     mutationFn: ({
         name,
         description,
@@ -54,6 +64,10 @@ const { mutate } = useMutation({
         description: string;
     }) => createCategory(name, properties.projectUuid, description),
     onSuccess: async () => {
+        // inputs are only cleared once the category exists, a failed request
+        // keeps them so the user can fix the name and retry
+        newCategory.value = '';
+        newDescription.value = '';
         await queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'categories',
         });
@@ -63,22 +77,27 @@ const { mutate } = useMutation({
             location: 'bottom',
         } as QNotifyCreateOptions);
     },
-    onError: (error: Error) =>
+    onError: (error: Error) => {
+        if (getErrorStatus(error) === 409) {
+            nameError.value = getErrorMessage(error);
+            return;
+        }
         Notify.create({
-            message: error.message,
+            message: `Failed to add category: ${getErrorMessage(error)}`,
             color: 'negative',
-            location: 'bottom',
-        } as QNotifyCreateOptions),
+            position: 'bottom',
+        });
+    },
 });
 
 function addCategory() {
+    if (isPending.value) return;
     if (newCategory.value && newCategory.value.length >= 2) {
+        nameError.value = '';
         mutate({
             name: newCategory.value.trim(),
             description: newDescription.value.trim(),
         });
-        newCategory.value = '';
-        newDescription.value = '';
     }
 }
 </script>
