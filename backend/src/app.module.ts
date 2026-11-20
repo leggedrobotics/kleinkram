@@ -30,6 +30,7 @@ import { UserModule } from './endpoints/user/user.module';
 import { WorkerModule } from './endpoints/worker/worker.module';
 import { APIKeyResolverMiddleware } from './routing/middlewares/api-key-resolver-middleware.service';
 import { AuditLoggerMiddleware } from './routing/middlewares/audit-logger-middleware.service';
+import { NulCharacterMiddleware } from './routing/middlewares/nul-character-middleware.service';
 import { VersionCheckerMiddlewareService } from './routing/middlewares/version-checker-middleware.service';
 
 @Module({
@@ -104,7 +105,11 @@ export class AppModule implements NestModule {
      */
     configure(consumer: MiddlewareConsumer): void {
         consumer
-            .apply(APIKeyResolverMiddleware, AuditLoggerMiddleware)
+            .apply(
+                APIKeyResolverMiddleware,
+                AuditLoggerMiddleware,
+                NulCharacterMiddleware,
+            )
             .forRoutes('*');
 
         consumer
