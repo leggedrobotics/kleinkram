@@ -27,6 +27,7 @@ describe('Metadata Values', () => {
         '2024-02-29',
         '2024-05-13T10:30',
         '2024-05-13T10:30:00.000Z',
+        '2024-05-13T10:30:00.123456Z',
         '2024-05-13T10:30:00+02:00',
     ])('should accept the ISO date %s', (value) => {
         expect(parseMetadataValue('m', DataType.DATE, value).ok).toBe(true);

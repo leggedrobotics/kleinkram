@@ -47,7 +47,7 @@ const parseBoolean = (name: string, value: unknown): ParsedMetadataValue => {
  * `2024-05-13T10:30`, `2024-05-13T10:30:00.000Z`, `2024-05-13T10:30+02:00`.
  */
 const ISO_DATE =
-    /^(\d{4})-(\d{2})-(\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;
+    /^(\d{4})-(\d{2})-(\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;
 
 const parseDate = (name: string, value: unknown): ParsedMetadataValue => {
     const text = typeof value === 'string' ? value.trim() : '';
