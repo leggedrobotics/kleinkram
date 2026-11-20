@@ -42,7 +42,6 @@ logger = logging.getLogger(__name__)
 # characters allowed in a file name before the extension, see `kleinkram/naming.py`
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-" + "."
 SUPPORT_FILE_TYPES = list(FILE_EXTENSIONS)
-EXPERIMENTAL_FILE_TYPES = []
 
 
 def sanitize_path_component(name: str) -> str:

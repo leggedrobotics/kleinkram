@@ -14,11 +14,11 @@ from kleinkram.cli._exit_codes import EXIT_INCOMPLETE
 from kleinkram.cli._file_expansion import expand_file_args
 from kleinkram.cli._file_validator import FileValidator
 from kleinkram.cli._file_validator import _report_skipped_files
-from kleinkram.cli._file_validator import supported_suffixes
 from kleinkram.cli._upload import _build_mission_query
 from kleinkram.config import get_shared_state
 from kleinkram.models import FileVerificationStatus
 from kleinkram.printing import print_file_verification_status
+from kleinkram.utils import SUPPORT_FILE_TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,6 @@ def verify(
         "-r",
         help="include all supported files in the given directories and their subdirectories",
     ),
-    experimental_datatypes: bool = typer.Option(False, help="allow experimental datatypes (yaml, svo2, db3, tum)"),
     check_file_hash: bool = typer.Option(
         True,
         help="check file hash. If True, file names and file hashes are checked.",
@@ -88,16 +87,13 @@ def verify(
         check_file_hash = not skip_hash
 
     # get all filepaths
-    original_file_paths = expand_file_args(
-        files, recursive=recursive, suffixes=supported_suffixes(experimental_datatypes=experimental_datatypes)
-    )
+    original_file_paths = expand_file_args(files, recursive=recursive, suffixes=SUPPORT_FILE_TYPES)
 
     # get mission query
     mission_query = _build_mission_query(mission, project)
 
     validator = FileValidator(
         skip=skip,
-        experimental_datatypes=experimental_datatypes,
         check_filename=False,
     )
     files_to_verify = validator.filter_files(original_file_paths)
