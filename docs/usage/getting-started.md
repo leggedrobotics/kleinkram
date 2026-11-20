@@ -58,14 +58,14 @@ You can add key-value pairs as metadata to missions. Each key is a **metadata ty
 Values have to match their datatype. This matters most in metadata files for the CLI (`--metadata`), since the web UI
 uses a matching input for each type:
 
-| Datatype | Accepted values                         | Example               |
-| -------- | --------------------------------------- | --------------------- |
-| string   | Any text                                | `anymal-d`            |
-| number   | A number, decimals with a dot           | `1.5`                 |
-| boolean  | `true` or `false`                       | `true`                |
-| date     | An ISO 8601 date or date and time       | `2024-05-13`          |
-| location | Any text                                | `Zurich`              |
-| link     | An absolute `http://` or `https://` URL | `https://example.com` |
+| Datatype | Accepted values                                            | Example               |
+| -------- | ---------------------------------------------------------- | --------------------- |
+| string   | Any text                                                   | `anymal-d`            |
+| number   | A number, decimals with a dot                              | `1.5`                 |
+| boolean  | `true` or `false`                                          | `true`                |
+| date     | An ISO 8601 date or date and time (`T` or a space between) | `2024-05-13`          |
+| location | Any text                                                   | `Zurich`              |
+| link     | An absolute `http://` or `https://` URL                    | `https://example.com` |
 
 A request with values that don't match is rejected as a whole and lists every invalid value, e.g.
 `Metadata "recorded" must be a date like 2024-05-13`; nothing is created or changed.
