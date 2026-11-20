@@ -44,6 +44,9 @@ import {
 const accessGroupNameTaken = (name: string): ConflictException =>
     new ConflictException(`A group named "${name}" already exists`);
 
+/** Rolls back a group deletion that has to start over, see `deleteAccessGroup`. */
+class RetryAccessGroupDeletion extends Error {}
+
 @Injectable()
 export class AccessModificationService {
     constructor(
@@ -487,68 +490,110 @@ export class AccessModificationService {
     async deleteAccessGroup(uuid: string): Promise<void> {
         assertNotPublicAccessGroup(uuid);
 
-        // The group's project and mission access belongs to the group: it is
-        // removed together with it, in one transaction, so a failure can't
-        // leave a group without its access or access without its group.
-        // Memberships and audit events cascade in the database.
-        await this.entityManager.transaction(async (transaction) => {
-            // Exclusive lock on the group first: adding a grant for it takes
-            // a key share lock on the group (foreign key), so no grant can be
-            // added while it is deleted, and every grant committed before is
-            // visible below. Otherwise a project could be handed to this
-            // group after the grants were read and lose its last owner.
-            const accessGroup = await transaction.findOneOrFail(
-                AccessGroupEntity,
-                { where: { uuid }, lock: { mode: 'pessimistic_write' } },
+        // A grant added meanwhile for a project not locked yet makes the
+        // attempt start over with that project included (see below).
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const projectUuids = await this.projectsWithGrantsOf(
+                this.entityManager,
+                uuid,
             );
+            try {
+                await this.entityManager.transaction((transaction) =>
+                    this.deleteAccessGroupLocked(
+                        transaction,
+                        uuid,
+                        projectUuids,
+                    ),
+                );
+                return;
+            } catch (error) {
+                if (!(error instanceof RetryAccessGroupDeletion)) throw error;
+            }
+        }
+        throw new ConflictException(
+            'The access of this group keeps changing, try again',
+        );
+    }
 
-            // Lock the projects the group has access to (in a fixed order,
-            // so two deletions can't deadlock) the same way every project
-            // access change does, so the check below sees the final state.
-            const grants = await transaction.find(ProjectAccessEntity, {
-                where: { accessGroup: { uuid } },
-                relations: { project: true },
+    /** The projects a group has a grant on, sorted (the lock order). */
+    private async projectsWithGrantsOf(
+        manager: EntityManager,
+        groupUuid: string,
+    ): Promise<string[]> {
+        const grants = await manager.find(ProjectAccessEntity, {
+            where: { accessGroup: { uuid: groupUuid } },
+            relations: { project: true },
+        });
+        // a grant on a deleted project loads its project as null: it is
+        // removed with the group, but there is nothing to lock or check
+        const uuids = grants
+            .map((grant) => grant.project?.uuid)
+            .filter((projectUuid): projectUuid is string => !!projectUuid);
+        // `toSorted` isn't available in this target; the array is new
+        // eslint-disable-next-line unicorn/no-array-sort
+        return [...new Set(uuids)].sort();
+    }
+
+    /**
+     * Deletes the group and its access, with the given projects locked.
+     *
+     * Locks are taken in the same order as `updateProjectAccess` does: the
+     * project first, then the group (adding a grant takes a key share lock
+     * on its group). The exclusive lock on the group keeps grants from being
+     * added while it is deleted; grants committed before it are read again
+     * afterwards. If one is on a project that isn't locked, locking it now
+     * would invert the order and could deadlock, so the transaction is
+     * rolled back and the caller starts over with that project.
+     *
+     * @throws RetryAccessGroupDeletion if the caller has to start over
+     */
+    private async deleteAccessGroupLocked(
+        transaction: EntityManager,
+        uuid: string,
+        projectUuids: string[],
+    ): Promise<void> {
+        for (const projectUuid of projectUuids) {
+            await this.lockProjectForAccessChange(transaction, projectUuid);
+        }
+        const accessGroup = await transaction.findOneOrFail(AccessGroupEntity, {
+            where: { uuid },
+            lock: { mode: 'pessimistic_write' },
+        });
+        const current = await this.projectsWithGrantsOf(transaction, uuid);
+        if (
+            current.some((projectUuid) => !projectUuids.includes(projectUuid))
+        ) {
+            throw new RetryAccessGroupDeletion();
+        }
+
+        await transaction.delete(ProjectAccessEntity, {
+            accessGroup: { uuid },
+        });
+        await transaction.delete(MissionAccessEntity, {
+            accessGroup: { uuid },
+        });
+
+        // Every project keeps at least one group with delete rights,
+        // otherwise only an administrator could manage it again.
+        for (const projectUuid of current) {
+            const remaining = await transaction.count(ProjectAccessEntity, {
+                where: {
+                    rights: AccessGroupRights.DELETE,
+                    project: { uuid: projectUuid },
+                },
             });
-            // a grant on a deleted project loads its project as null: it is
-            // removed with the group, but there is nothing to lock or check
-            const projects: ProjectEntity[] = grants
-                .map((grant) => grant.project)
-                .filter((project): project is ProjectEntity => !!project);
-            // `toSorted` isn't available in this target; the array is new
-            // eslint-disable-next-line unicorn/no-array-sort
-            projects.sort((a, b) => a.uuid.localeCompare(b.uuid));
-            for (const project of projects) {
-                await this.lockProjectForAccessChange(
-                    transaction,
-                    project.uuid,
+            if (remaining === 0) {
+                const project = await transaction.findOneOrFail(ProjectEntity, {
+                    where: { uuid: projectUuid },
+                    select: { name: true },
+                });
+                throw new ConflictException(
+                    `"${accessGroup.name}" is the only group with delete rights on project "${project.name}". Give another group delete rights first.`,
                 );
             }
+        }
 
-            await transaction.delete(ProjectAccessEntity, {
-                accessGroup: { uuid },
-            });
-            await transaction.delete(MissionAccessEntity, {
-                accessGroup: { uuid },
-            });
-
-            // Every project keeps at least one group with delete rights,
-            // otherwise only an administrator could manage it again.
-            for (const project of projects) {
-                const remaining = await transaction.count(ProjectAccessEntity, {
-                    where: {
-                        rights: AccessGroupRights.DELETE,
-                        project: { uuid: project.uuid },
-                    },
-                });
-                if (remaining === 0) {
-                    throw new ConflictException(
-                        `"${accessGroup.name}" is the only group with delete rights on project "${project.name}". Give another group delete rights first.`,
-                    );
-                }
-            }
-
-            await transaction.remove(accessGroup);
-        });
+        await transaction.remove(accessGroup);
     }
 
     private async uncheckedProjectAccessTransactionalUpdate(

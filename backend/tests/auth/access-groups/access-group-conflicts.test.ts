@@ -164,6 +164,34 @@ describe('Access Group Conflicts', () => {
         expect(response.status).toBeLessThan(300);
     });
 
+    test('should not deadlock when a group is deleted while project access is saved', async () => {
+        const { user, projectUuid } = await setupTestEnvironment();
+
+        for (let round = 0; round < 5; round++) {
+            const created = await send(user, 'POST', '/access-groups', {
+                name: `racing-group-${round.toString()}`,
+            });
+            const groupUuid = (created.json as { uuid: string }).uuid;
+            await send(
+                user,
+                'POST',
+                `/access-groups/${groupUuid}/projects/${projectUuid}`,
+                { rights: AccessGroupRights.READ },
+            );
+            const current = await projectAccess(user, projectUuid);
+
+            // the save locks the project and then needs the group, the
+            // deletion locks both: they must not wait for each other
+            const [deletion, save] = await Promise.all([
+                send(user, 'DELETE', `/access-groups/${groupUuid}`),
+                send(user, 'POST', `/projects/${projectUuid}/access`, current),
+            ]);
+
+            expect(deletion.status).toBeLessThan(500);
+            expect(save.status).toBeLessThan(500);
+        }
+    });
+
     test('should return 404 if the project access names a group that does not exist', async () => {
         const { user, projectUuid } = await setupTestEnvironment();
         const current = await projectAccess(user, projectUuid);
