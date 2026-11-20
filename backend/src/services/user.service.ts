@@ -27,8 +27,10 @@ import {
 } from '@kleinkram/shared';
 import {
     BadRequestException,
+    ConflictException,
     ForbiddenException,
     Injectable,
+    NotFoundException,
     OnModuleInit,
     UnauthorizedException,
 } from '@nestjs/common';
@@ -48,6 +50,9 @@ const API_KEY_SORT_FIELDS = [
     'updatedAt',
     'deletedAt',
 ];
+
+/** Key of the advisory lock that serializes promotions and demotions. */
+const ROLE_CHANGE_LOCK = 4_242_001;
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -147,21 +152,50 @@ export class UserService implements OnModuleInit {
     }
 
     async promoteUser(usermail: string): Promise<UserDto> {
-        const user = await this.userRepository.findOneOrFail({
-            where: { email: usermail },
-        });
-        user.role = UserRole.ADMIN;
-        await this.userRepository.save(user);
-        return userEntityToDto(user);
+        return this.changeRole(usermail, UserRole.ADMIN);
     }
 
-    async demoteUser(usermail: string) {
-        const user = await this.userRepository.findOneOrFail({
-            where: { email: usermail },
+    /**
+     * Demotes an admin to a regular user. The last admin can't be demoted:
+     * without an admin, `claimAdmin` lets any signed-in user make themselves
+     * admin.
+     */
+    async demoteUser(usermail: string): Promise<UserDto> {
+        return this.changeRole(usermail, UserRole.USER);
+    }
+
+    /**
+     * Role changes run one at a time (a transaction-scoped advisory lock),
+     * and the target's role is read inside the lock: otherwise a demotion
+     * that read a role before a concurrent promotion could still remove
+     * the last admin.
+     */
+    private async changeRole(
+        usermail: string,
+        role: UserRole,
+    ): Promise<UserDto> {
+        return this.userRepository.manager.transaction(async (manager) => {
+            await manager.query('SELECT pg_advisory_xact_lock($1)', [
+                ROLE_CHANGE_LOCK,
+            ]);
+            const user = await manager.findOne(UserEntity, {
+                where: { email: usermail },
+            });
+            if (!user) throw new NotFoundException('User not found');
+
+            if (user.role === UserRole.ADMIN && role !== UserRole.ADMIN) {
+                const admins = await manager.count(UserEntity, {
+                    where: { role: UserRole.ADMIN },
+                });
+                if (admins <= 1) {
+                    throw new ConflictException("Can't demote the last admin");
+                }
+            }
+
+            user.role = role;
+            await manager.save(user);
+            return userEntityToDto(user);
         });
-        user.role = UserRole.USER;
-        await this.userRepository.save(user);
-        return userEntityToDto(user);
     }
 
     async search(
