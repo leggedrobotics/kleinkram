@@ -122,15 +122,17 @@ export class MissionService {
         // the canonical fields win when both are given.
         // An empty value means "not set", as when a mission's metadata is
         // saved later: it is not written and does not satisfy a requirement.
+        // The keys are metadata type UUIDs; the database returns them in
+        // lowercase, so they are compared in lowercase.
         const metadata = Object.fromEntries(
-            Object.entries(
-                createMission.metadata ?? createMission.tags ?? {},
-            ).filter(
-                ([, value]) =>
-                    (value as unknown) !== '' &&
-                    (value as unknown) !== null &&
-                    (value as unknown) !== undefined,
-            ),
+            Object.entries(createMission.metadata ?? createMission.tags ?? {})
+                .filter(
+                    ([, value]) =>
+                        (value as unknown) !== '' &&
+                        (value as unknown) !== null &&
+                        (value as unknown) !== undefined,
+                )
+                .map(([key, value]) => [key.toLowerCase(), value]),
         );
         const ignoreMissingMetadata =
             createMission.ignoreMissingMetadata ??

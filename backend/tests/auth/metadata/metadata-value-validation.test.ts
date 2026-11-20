@@ -259,5 +259,13 @@ describe('Metadata Value Validation', () => {
             metadata: { [types.number]: '4' },
         });
         expect(provided.status).toBeLessThan(300);
+
+        // the key is a UUID: its case does not matter
+        const uppercase = await post(user, '/missions', {
+            name: `required_uppercase_${suffix}`,
+            projectUUID: projectUuid,
+            metadata: { [types.number.toUpperCase()]: '4' },
+        });
+        expect(uppercase.status).toBeLessThan(300);
     });
 });

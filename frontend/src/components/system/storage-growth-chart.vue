@@ -229,12 +229,19 @@ const projectedEnd = computed(
     () => lastBytes.value + monthlyRate * projectionMonths.value,
 );
 
-/** The y axis: TB from 1 TB on, GB below */
-const unit = computed(() =>
-    Math.max(projectedEnd.value, ...monthly.map((m) => m.bytes)) >= 1e12
-        ? { size: 1e12, name: 'TB' }
-        : { size: 1e9, name: 'GB' },
-);
+const UNITS = [
+    { size: 1e12, name: 'TB' },
+    { size: 1e9, name: 'GB' },
+    { size: 1e6, name: 'MB' },
+    { size: 1e3, name: 'kB' },
+];
+
+/** The y axis: the largest unit the highest value reaches, GB when empty */
+const unit = computed(() => {
+    const top = Math.max(projectedEnd.value, ...monthly.map((m) => m.bytes));
+    if (top <= 0) return { size: 1e9, name: 'GB' };
+    return UNITS.find((u) => top >= u.size) ?? { size: 1, name: 'B' };
+});
 
 /** Round tick steps (1, 2, 2.5, 5 × 10ⁿ) for about 4 lines */
 const ticks = computed<number[]>(() => {
@@ -257,7 +264,8 @@ const x = (index: number): number => LEFT + index * step.value;
 
 const formatTick = (bytes: number): string => {
     const value = bytes / unit.value.size;
-    return `${value.toFixed(Number.isInteger(value) ? 0 : 1)} ${unit.value.name}`;
+    // steps are 1, 2, 2.5 or 5 × 10ⁿ: two decimals tell every tick apart
+    return `${String(Number(value.toFixed(2)))} ${unit.value.name}`;
 };
 
 const points = computed<Point[]>(() =>
