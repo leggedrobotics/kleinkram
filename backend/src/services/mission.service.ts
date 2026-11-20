@@ -167,7 +167,9 @@ export class MissionService {
             );
         }
 
-        await this.metadataService.validateLinks(metadata);
+        // every value is checked before the mission is saved, so a bad value
+        // can't leave a half-created mission behind
+        await this.metadataService.validateValues(metadata);
 
         const mission = this.missionRepository.create({
             name: createMission.name,
@@ -490,6 +492,10 @@ export class MissionService {
 
         if (mission.metadata === undefined)
             throw new Error('Metadata not loaded');
+
+        // check every value first, so a bad one doesn't leave the mission
+        // half updated
+        await this.metadataService.validateValues(metadata);
 
         await Promise.all(
             Object.entries(metadata).map(async ([metadataTypeUUID, value]) => {
