@@ -84,15 +84,7 @@ export class TriggerQueueProcessorProvider {
             this.logger.log(
                 `Trigger ${trigger.name} matched file ${file.filename}`,
             );
-            await this.dispatchAction(
-                trigger,
-                {
-                    fileUuid: file.uuid,
-                    filename: file.filename,
-                    event,
-                },
-                ActionTriggerSource.FILE_EVENT,
-            );
+            await this.dispatchAction(trigger, ActionTriggerSource.FILE_EVENT);
         }
     }
 
@@ -140,10 +132,6 @@ export class TriggerQueueProcessorProvider {
                     );
                     await this.dispatchAction(
                         trigger,
-                        {
-                            scheduledTime: previousDate.toISOString(),
-                            triggerTime: timestamp.toISOString(),
-                        },
                         ActionTriggerSource.CRON,
                     );
                 }
@@ -157,7 +145,6 @@ export class TriggerQueueProcessorProvider {
 
     private async dispatchAction(
         trigger: ActionTriggerEntity,
-        payload: Record<string, unknown>,
         triggerSource: ActionTriggerSource,
     ): Promise<void> {
         try {
@@ -165,7 +152,6 @@ export class TriggerQueueProcessorProvider {
                 trigger.template.uuid,
                 trigger.mission,
                 trigger.creator,
-                payload,
                 triggerSource,
                 trigger.uuid,
             );

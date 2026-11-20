@@ -138,7 +138,6 @@ describe('ActionDispatcherService Unit Tests', () => {
                 'template-uuid',
                 mission,
                 creator,
-                {},
                 ActionTriggerSource.MANUAL,
             ),
         ).rejects.toThrow('No worker available');
@@ -194,7 +193,6 @@ describe('ActionDispatcherService Unit Tests', () => {
                 'template-uuid',
                 mission,
                 creator,
-                {},
                 ActionTriggerSource.MANUAL,
             );
         } catch (error) {
@@ -209,6 +207,59 @@ describe('ActionDispatcherService Unit Tests', () => {
 
         // the submission is rejected outright, no half-created run is left behind
         expect(saveSpy).not.toHaveBeenCalled();
+    });
+
+    test('dispatch picks the worker by the template requirements only', async () => {
+        const mission = { uuid: 'mission-uuid' } as MissionEntity;
+        const creator = {
+            uuid: 'user-uuid',
+            role: UserRole.USER,
+        } as UserEntity;
+
+        (templateRepo.findOneOrFail as jest.Mock).mockResolvedValue({
+            uuid: 'template-uuid',
+            cpuCores: 2,
+            cpuMemory: 4,
+            gpuMemory: 8,
+            maxRuntime: 3,
+            accessRights: 0,
+        });
+        (accessControlService.canAccessMission as jest.Mock).mockResolvedValue(
+            true,
+        );
+        (actionRepo.create as jest.Mock).mockImplementation(
+            (d) => d as ActionEntity,
+        );
+        (actionRepo.save as jest.Mock).mockImplementation((d) =>
+            Promise.resolve({ ...d, uuid: 'action-uuid' } as ActionEntity),
+        );
+        const addActionQueueSpy = (schedulingLogic.addActionQueue as jest.Mock)
+            .mockReset()
+            .mockResolvedValue({ id: 'job' });
+
+        await service.dispatch(
+            'template-uuid',
+            mission,
+            creator,
+            ActionTriggerSource.WEBHOOK,
+            'trigger-uuid',
+        );
+
+        // a webhook or trigger payload never reaches worker selection
+        expect(addActionQueueSpy).toHaveBeenCalledTimes(1);
+        expect(addActionQueueSpy).toHaveBeenCalledWith(
+            expect.anything(),
+            {
+                cpuCores: 2,
+                cpuMemory: 4,
+                gpuMemory: 8,
+                maxRuntime: 3,
+            },
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+        );
     });
 
     describe('stopAction', () => {

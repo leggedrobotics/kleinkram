@@ -123,7 +123,6 @@ export class ActionService {
             data.templateUUID,
             mission,
             creator,
-            {},
         );
 
         return { actionUUID };
@@ -189,7 +188,6 @@ export class ActionService {
                 template.uuid,
                 mission,
                 creator,
-                {},
                 ActionTriggerSource.MANUAL,
                 undefined,
                 { scriptObject, maxRuntimeHours: data.maxRuntimeHours },
