@@ -26,6 +26,9 @@ Development environments (e.g., `docker compose up --build --watch`) run with `s
 
 When your changes are ready for review or deployment, generate a migration file.
 
+Also update the [database schema page](../application-structure/database-schema.md), which is generated from the
+entities: run `pnpm --filter kleinkram-docs run gen:entities` from the repository root and commit the result.
+
 ### Recommended: Clean Generation
 
 Generate migrations against a pristine state to prevent local database drift from polluting your migration history. This uses a temporary Docker container to compare your entities against the existing migrations.

@@ -1,6 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { ClassDeclaration, Project, PropertyDeclaration } from 'ts-morph';
+import {
+    ClassDeclaration,
+    Decorator,
+    Project,
+    PropertyDeclaration,
+} from 'ts-morph';
 
 import { fileURLToPath } from 'node:url';
 
@@ -12,14 +17,20 @@ const ENTITIES_DIR = path.resolve(
     ROOT_DIR,
     '../packages/backend-common/src/entities',
 );
-// Adjust this path if your docs structure is different
 const OUTPUT_FILE = path.resolve(
     ROOT_DIR,
-    'development/application-structure/postgres.md',
+    'development/application-structure/database-schema.md',
 );
 
-// Initialize ts-morph project
-const project = new Project();
+// Load the package's tsconfig so relation types (e.g. `creator: UserEntity`)
+// resolve instead of falling back to `any`.
+const project = new Project({
+    tsConfigFilePath: path.resolve(
+        ROOT_DIR,
+        '../packages/backend-common/tsconfig.json',
+    ),
+    skipAddingFilesFromTsConfig: true,
+});
 
 // Add source files
 project.addSourceFilesAtPaths(`${ENTITIES_DIR}/**/*.entity.ts`);
@@ -49,7 +60,8 @@ function getColumnType(property: PropertyDeclaration): string {
     return property
         .getType()
         .getText()
-        .replaceAll(/import\(.*?\)\./g, '');
+        .replaceAll(/import\(.*?\)\./g, '')
+        .replace(/ \| undefined$/, '');
 }
 
 function getConstraints(property: PropertyDeclaration): string {
@@ -85,6 +97,16 @@ function getConstraints(property: PropertyDeclaration): string {
     return constraints.join(', ');
 }
 
+// Decorator arguments on one line, so they fit in a table cell
+function decoratorArguments(dec: Decorator): string {
+    return dec
+        .getArguments()
+        .map((a) => a.getText())
+        .join(', ')
+        .replaceAll(/\s+/g, ' ')
+        .replaceAll('|', String.raw`\|`);
+}
+
 // Helper to get indices
 function getIndices(entity: ClassDeclaration): string[] {
     const indices: string[] = [];
@@ -94,9 +116,7 @@ function getIndices(entity: ClassDeclaration): string[] {
         .getDecorators()
         .filter((d) => d.getName() === 'Index');
     for (const dec of classDecorators) {
-        const args = dec.getArguments();
-        const text = args.map((a) => a.getText()).join(', ');
-        indices.push(`\`@Index(${text})\``);
+        indices.push(`\`@Index(${decoratorArguments(dec)})\``);
     }
 
     // Property level indices @Index()
@@ -105,10 +125,8 @@ function getIndices(entity: ClassDeclaration): string[] {
             .getDecorators()
             .filter((d) => d.getName() === 'Index');
         for (const dec of propertyDecorators) {
-            const args = dec.getArguments();
-            const text = args.map((a) => a.getText()).join(', ');
             indices.push(
-                `Column \`${property.getName()}\`: \`@Index(${text})\``,
+                `Column \`${property.getName()}\`: \`@Index(${decoratorArguments(dec)})\``,
             );
         }
     }
@@ -127,8 +145,9 @@ function slugify(text: string): string {
 // eslint-disable-next-line complexity
 function generateMarkdown(entities: ClassDeclaration[]): string {
     let md =
-        '# Postgres\n\nAuto-generated documentation from TypeORM entities.\n\n';
-    md += `Entities are located in \`${path.relative(ROOT_DIR, ENTITIES_DIR)}\`.\n\n`;
+        '# Postgres\n\nGenerated from the TypeORM entities in `packages/backend-common/src/entities`. ' +
+        'Do not edit this page by hand: after changing an entity, run ' +
+        '`pnpm --filter kleinkram-docs run gen:entities` and commit the result.\n\n';
 
     // Sort by name
     entities.sort((a, b) =>
@@ -249,7 +268,9 @@ function generateMarkdown(entities: ClassDeclaration[]): string {
                 .getJsDocs()
                 .map((document) => document.getInnerText())
                 .join(' ')
-                .replaceAll('\n', ' ');
+                .replaceAll('\n', ' ')
+                // `{@link name}` → `name`
+                .replaceAll(/\{@link\s+([^}]+)\}/g, '`$1`');
 
             const containsLink = /]\(#[^)]+\)/.test(type);
             // eslint-disable-next-line unicorn/consistent-function-scoping

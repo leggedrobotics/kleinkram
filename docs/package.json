@@ -4,13 +4,13 @@
     "license": "MIT",
     "target": "es2022",
     "scripts": {
-        "docs:dev": "npm run gen:entities && VITE_MODE=localhost vitepress dev --port 4000 --host 0.0.0.0",
+        "docs:dev": "VITE_MODE=localhost vitepress dev --port 4000 --host 0.0.0.0",
         "docs:build:staging": "VITE_MODE=staging vitepress build",
         "docs:build:production": "VITE_MODE=production vitepress build",
         "docs:build": "vitepress build",
         "docs:serve": "vitepress build && vitepress serve --port 4000",
-        "gen:entities": "tsx scripts/generate-entity-documentation.ts",
-        "build": "npm run gen:entities && vitepress build"
+        "gen:entities": "tsx scripts/generate-entity-documentation.ts && prettier --write development/application-structure/database-schema.md",
+        "build": "vitepress build"
     },
     "author": "Cyrill Püntener",
     "dependencies": {
