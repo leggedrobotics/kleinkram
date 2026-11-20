@@ -170,6 +170,20 @@
                                 :protocol="props.row.protocol"
                                 @load-required="() => loadSmart(props.row)"
                                 @load-more="() => loadMore(props.row.name)"
+                                @load-window="
+                                    (
+                                        from: bigint,
+                                        until: bigint,
+                                        playhead: bigint,
+                                    ) =>
+                                        emit(
+                                            'load-window',
+                                            props.row.name,
+                                            from,
+                                            until,
+                                            playhead,
+                                        )
+                                "
                                 @pause-preview="
                                     () => emit('pause-preview', props.row.name)
                                 "
@@ -216,9 +230,19 @@ const properties = defineProps<{
     isLoading: boolean;
     /** What the file's index says about the recording; MCAP only for now. */
     insights?: RecordingInsights | null;
+    /**
+     * Bytes a sampled read of a topic downloads at a given stride, when the
+     * file format makes that differ from the messages' own size.
+     */
+    sampleCost?: (topic: string, stride: number) => number | undefined;
 }>();
 
-const emit = defineEmits(['load-preview', 'pause-preview', 'resume-preview']);
+const emit = defineEmits([
+    'load-preview',
+    'pause-preview',
+    'resume-preview',
+    'load-window',
+]);
 const $q = useQuasar();
 const search = ref('');
 
@@ -423,7 +447,34 @@ const bytesPerImageFrame = (row: TopicRow): number => {
     return counted > 0 ? bytes / counted : 0;
 };
 
+/**
+ * Smallest stride whose sampled read fits the byte budget, measured by what
+ * it downloads rather than by the frames' own size: a frame stored in a
+ * compressed chunk costs the whole chunk, which in a recording with large
+ * chunks is many frames' worth. Undefined when the format addresses frames
+ * individually, so their size is the cost.
+ */
+const strideWithinFetchBudget = (row: TopicRow): number | undefined => {
+    const cost = properties.sampleCost;
+    if (!cost || row.nrMessages <= 0) return undefined;
+    const fullCost = cost(row.name, 1);
+    if (fullCost === undefined) return undefined;
+
+    let low = Math.max(1, Math.ceil(row.nrMessages / MAX_IMAGE_FRAMES));
+    let high = row.nrMessages;
+    // The cost falls (almost) monotonically with the stride
+    while (low < high) {
+        const mid = Math.floor((low + high) / 2);
+        if ((cost(row.name, mid) ?? 0) <= IMAGE_BYTE_BUDGET) high = mid;
+        else low = mid + 1;
+    }
+    return low;
+};
+
 const imageStrideForLevel = (row: TopicRow, level: number): number => {
+    const withinBudget = strideWithinFetchBudget(row);
+    if (withinBudget !== undefined) return withinBudget;
+
     const bytesPerFrame = bytesPerImageFrame(row);
     const framesWithinBudget =
         bytesPerFrame > 0

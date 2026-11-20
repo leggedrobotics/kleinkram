@@ -26,6 +26,12 @@ export interface ReadOptions {
      * holds only one message of the topic (typical for images).
      */
     totalMessages?: number;
+    /**
+     * Read only the messages with `start <= logTime < end`, in time order,
+     * fetching only the chunks that overlap that range. Used to fill in every
+     * frame just ahead of the playhead while an image sequence plays.
+     */
+    window?: { start: bigint; end: bigint };
 }
 
 /**

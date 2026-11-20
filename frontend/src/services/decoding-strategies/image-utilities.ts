@@ -16,8 +16,10 @@ export interface RosImageMessage {
 }
 
 import {
+    DrawCallbacks,
+    FrameDecoder,
     ImageRenderer,
-    PREVIEW_WIDTH,
+    previewSize,
     renderCompressed,
 } from './image-decoders';
 
@@ -42,9 +44,10 @@ export const isVideoStreamFormat = (format: string | undefined): boolean => {
 export function renderMessageToCanvas(
     message: RosImageMessage,
     canvas: HTMLCanvasElement,
-    onRender?: () => void,
-    onError?: (error: Error) => void,
+    callbacks: DrawCallbacks = {},
+    decoder?: FrameDecoder,
 ): void {
+    const { onRender } = callbacks;
     const context = canvas.getContext('2d', {
         alpha: false,
         desynchronized: true,
@@ -70,7 +73,7 @@ export function renderMessageToCanvas(
         }
         // We cannot calculate scale yet because we don't know the dimensions.
         // Pass the canvas element directly to resize it after load.
-        renderCompressed(context, bytes, canvas, onRender, onError);
+        renderCompressed(context, bytes, canvas, callbacks, decoder);
         return;
     }
 
@@ -79,10 +82,10 @@ export function renderMessageToCanvas(
     if (!message.width || !message.height) return;
 
     // Calculate Dimensions & Scale (Only possible for Raw)
-    const scale =
-        message.width > PREVIEW_WIDTH ? PREVIEW_WIDTH / message.width : 1;
-    const targetW = Math.floor(message.width * scale);
-    const targetH = Math.floor(message.height * scale);
+    const { width: targetW, height: targetH } = previewSize(
+        message.width,
+        message.height,
+    );
 
     if (canvas.width !== targetW || canvas.height !== targetH) {
         canvas.width = targetW;

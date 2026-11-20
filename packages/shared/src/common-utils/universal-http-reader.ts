@@ -179,6 +179,24 @@ export class UniversalHttpReader implements IReadable {
             );
         }
 
+        // A prefetch already on its way for these bytes is joined rather
+        // than repeated.
+        for (const [key, active] of this.activeRequests) {
+            const [activeOffset = '0', activeLength = '0'] = key.split('-');
+            const from = BigInt(activeOffset);
+            if (offset < from || end > from + BigInt(activeLength)) continue;
+            try {
+                const data = await active;
+                const relative = Number(offset - from);
+                if (data.length >= relative + Number(length)) {
+                    return data.subarray(relative, relative + Number(length));
+                }
+            } catch {
+                // Fall through to a request of its own
+            }
+            break;
+        }
+
         // One retry for a transient failure. Storage answers a cancelled or
         // overlapping request with a 5xx under load, and these reads are both
         // numerous and concurrent, so a single blip should not become a
