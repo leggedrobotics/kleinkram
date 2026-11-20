@@ -123,22 +123,36 @@ export class S3StorageBucket implements IStorageBucket {
         throw new TypeError('S3 body is not a readable stream');
     }
 
+    /**
+     * Lists every object of the bucket. `ListObjectsV2` returns at most
+     * 1000 objects per call, so this follows the continuation token until
+     * the listing is complete; callers rely on a complete listing (e.g. to
+     * find files whose object is missing).
+     */
     async listFiles(): Promise<StorageItem[]> {
-        const command = new ListObjectsV2Command({
-            Bucket: this.bucketName,
-        });
-        const response = await this.clients.internal.send(
-            command,
-            metadataRequestOptions(),
-        );
-        return (
-            response.Contents?.map((item: _Object) => ({
-                name: item.Key ?? '',
-                lastModified: item.LastModified ?? new Date(),
-                etag: item.ETag ?? '',
-                size: item.Size ?? 0,
-            })) ?? []
-        );
+        const items: StorageItem[] = [];
+        let continuationToken: string | undefined;
+        do {
+            const response = await this.clients.internal.send(
+                new ListObjectsV2Command({
+                    Bucket: this.bucketName,
+                    ContinuationToken: continuationToken,
+                }),
+                metadataRequestOptions(),
+            );
+            for (const item of response.Contents ?? ([] as _Object[])) {
+                items.push({
+                    name: item.Key ?? '',
+                    lastModified: item.LastModified ?? new Date(),
+                    etag: item.ETag ?? '',
+                    size: item.Size ?? 0,
+                });
+            }
+            continuationToken = response.IsTruncated
+                ? response.NextContinuationToken
+                : undefined;
+        } while (continuationToken);
+        return items;
     }
 
     async getFileInfo(
