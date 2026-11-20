@@ -37,7 +37,7 @@ pnpm run migration:generate:clean add-user-profile
 
 ### CI Enforcement
 
-Robust pipelines require valid migrations. Our CI runs a check on every PR to `main` that verifies:
+Robust pipelines require valid migrations. Our CI runs a check on every PR to `main` and `dev` that verifies:
 
 1. All migrations are generated.
 2. Current entities match the migration state.
