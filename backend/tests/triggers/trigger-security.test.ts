@@ -155,7 +155,7 @@ describe('Trigger Security', () => {
 
         // 1. Success case (Has WRITE)
         try {
-            await actionDispatcher.dispatch(template.uuid, mission, user, {});
+            await actionDispatcher.dispatch(template.uuid, mission, user);
         } catch (error: unknown) {
             if (
                 error instanceof Error &&
@@ -179,7 +179,7 @@ describe('Trigger Security', () => {
 
         // 3. Fail case
         await expect(
-            actionDispatcher.dispatch(template.uuid, mission, user, {}),
+            actionDispatcher.dispatch(template.uuid, mission, user),
         ).rejects.toThrow('Creator no longer has access to this mission');
     });
 
@@ -213,7 +213,7 @@ describe('Trigger Security', () => {
 
         // 1. Success case (In Group A with WRITE)
         try {
-            await actionDispatcher.dispatch(template.uuid, mission, user, {});
+            await actionDispatcher.dispatch(template.uuid, mission, user);
         } catch (error: unknown) {
             if (
                 error instanceof Error &&
@@ -248,7 +248,7 @@ describe('Trigger Security', () => {
 
         // 3. Fail case
         await expect(
-            actionDispatcher.dispatch(template.uuid, mission, user, {}),
+            actionDispatcher.dispatch(template.uuid, mission, user),
         ).rejects.toThrow('Creator no longer has access to this mission');
     });
 });

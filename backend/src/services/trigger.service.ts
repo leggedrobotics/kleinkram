@@ -273,7 +273,6 @@ export class TriggerService implements OnModuleInit {
             trigger.template.uuid,
             trigger.mission,
             trigger.creator,
-            payload,
             ActionTriggerSource.WEBHOOK,
             trigger.uuid,
         );

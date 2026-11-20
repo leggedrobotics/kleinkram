@@ -115,8 +115,6 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
         templateUuid: string,
         mission: MissionEntity,
         creator: UserEntity,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        parameters: Record<string, any>,
         triggerSource: ActionTriggerSource = ActionTriggerSource.MANUAL,
         triggerUuid?: string,
         overrides: ActionDispatchOverrides = {},
@@ -187,7 +185,6 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
                 cpuMemory: template.cpuMemory,
                 gpuMemory: template.gpuMemory,
                 maxRuntime: overrides.maxRuntimeHours ?? template.maxRuntime,
-                ...parameters,
             };
 
             // Try to queue
