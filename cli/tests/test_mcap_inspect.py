@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Iterator
 from typing import List
+from typing import Optional
 from typing import Tuple
 from unittest.mock import MagicMock
 
@@ -14,20 +15,23 @@ from typer.testing import CliRunner
 import kleinkram
 import kleinkram.api.routes
 from kleinkram.api import file_transfer
-from kleinkram.api.mcap_summary import McapSummaryUnavailable
+from kleinkram.api.mcap_summary import McapInfo
 from kleinkram.api.mcap_summary import read_mcap_info_from_url
 from kleinkram.errors import FileTypeNotSupported
+from kleinkram.errors import McapSummaryUnavailable
 from kleinkram.models import File
 from kleinkram.printing import _mcap_chunks_text
+from kleinkram.printing import coverage_strip
 from kleinkram.printing import format_log_time
 from kleinkram.printing import mcap_metadata_table
-from tests.test_mcap_partial_download import INTERVAL_NS
-from tests.test_mcap_partial_download import MESSAGES_PER_TOPIC
-from tests.test_mcap_partial_download import TOPICS
-from tests.test_mcap_partial_download import _plain
-from tests.test_mcap_partial_download import _remote_file
-from tests.test_mcap_partial_download import _serve
-from tests.test_mcap_partial_download import _write_mcap
+from kleinkram.printing import mcap_topics_table
+from tests.mcap_helpers import INTERVAL_NS
+from tests.mcap_helpers import MESSAGES_PER_TOPIC
+from tests.mcap_helpers import TOPICS
+from tests.mcap_helpers import plain
+from tests.mcap_helpers import remote_file
+from tests.mcap_helpers import serve
+from tests.mcap_helpers import write_mcap
 
 mcap_writer = pytest.importorskip("mcap.writer")
 
@@ -69,7 +73,7 @@ def _write_annotated_mcap(path: Path, *, compression) -> None:
 def annotated(tmp_path: Path) -> Iterator[Tuple[str, List[Tuple[int, int]], Path]]:
     path = tmp_path / "annotated.mcap"
     _write_annotated_mcap(path, compression=mcap_writer.CompressionType.NONE)
-    with _serve(path) as (url, requests):
+    with serve(path) as (url, requests):
         yield url, requests, path
 
 
@@ -109,10 +113,8 @@ def test_costs_three_requests_and_a_fraction_of_the_file(annotated) -> None:
 
     # The size probe, then footer, summary and header.
     assert len(requests) == 4
-    assert info.requests == 3
-    assert info.file_size == path.stat().st_size
-    assert info.bytes_fetched == sum(end - start + 1 for start, end in requests[1:])
-    assert info.bytes_fetched < info.file_size * 0.1
+    assert info.message_count == 320
+    assert sum(end - start + 1 for start, end in requests[1:]) < path.stat().st_size * 0.1
 
 
 def test_metadata_records_are_only_read_on_request(annotated) -> None:
@@ -120,6 +122,7 @@ def test_metadata_records_are_only_read_on_request(annotated) -> None:
 
     index_only = read_mcap_info_from_url(url)
     assert [(m.name, m.values) for m in index_only.metadata] == [("robot", None), ("operator", None)]
+    index_only_requests = len(requests)
     del requests[:]
 
     full = read_mcap_info_from_url(url, metadata=True)
@@ -127,7 +130,7 @@ def test_metadata_records_are_only_read_on_request(annotated) -> None:
         ("robot", {"name": "anymal-d", "firmware": "24.04"}),
         ("operator", {"name": "test"}),
     ]
-    assert full.requests == index_only.requests + 2
+    assert len(requests) == index_only_requests + 2
 
 
 @pytest.mark.parametrize(
@@ -140,39 +143,39 @@ def test_reports_whether_messages_can_be_addressed_one_by_one(
     path = tmp_path / "recording.mcap"
     _write_annotated_mcap(path, compression=getattr(mcap_writer.CompressionType, compression))
 
-    with _serve(path) as (url, _):
+    with serve(path) as (url, _):
         info = read_mcap_info_from_url(url)
 
     assert info.chunk_count > 1
     assert info.compression == {name: info.chunk_count}
     assert info.message_indexed
-    assert info.per_message_access is per_message
+    assert info._per_message_access is per_message
     assert (info.compressed_size < info.uncompressed_size) is not per_message
 
 
 def test_chunks_without_message_indexes_cannot_be_addressed_per_message(tmp_path: Path) -> None:
     path = tmp_path / "unindexed.mcap"
-    _write_mcap(
+    write_mcap(
         path,
         compression=mcap_writer.CompressionType.NONE,
         index_types=mcap_writer.IndexType.ALL & ~mcap_writer.IndexType.MESSAGE,
     )
 
-    with _serve(path) as (url, _):
+    with serve(path) as (url, _):
         info = read_mcap_info_from_url(url)
 
     assert info.chunk_count > 0
     assert not info.message_indexed
-    assert not info.per_message_access
+    assert not info._per_message_access
     assert "no message index" in _mcap_chunks_text(info)
     assert info.message_count == len(TOPICS) * MESSAGES_PER_TOPIC
 
 
 def test_without_statistics_counts_are_unknown_but_the_time_range_is_not(tmp_path: Path) -> None:
     path = tmp_path / "no-statistics.mcap"
-    _write_mcap(path, compression=mcap_writer.CompressionType.NONE, enable_data_crcs=False, use_statistics=False)
+    write_mcap(path, compression=mcap_writer.CompressionType.NONE, enable_data_crcs=False, use_statistics=False)
 
-    with _serve(path) as (url, _):
+    with serve(path) as (url, _):
         info = read_mcap_info_from_url(url)
 
     assert info.message_count is None
@@ -186,14 +189,14 @@ def test_a_recording_that_was_never_closed_is_reported_as_such(annotated, tmp_pa
     truncated = tmp_path / "truncated.mcap"
     truncated.write_bytes(path.read_bytes()[: path.stat().st_size // 2])
 
-    with _serve(truncated) as (url, _):
+    with serve(truncated) as (url, _):
         with pytest.raises(McapSummaryUnavailable, match="cut off"):
             read_mcap_info_from_url(url)
 
 
 def test_a_file_without_a_summary_section_is_reported_as_such(tmp_path: Path) -> None:
     path = tmp_path / "no-summary.mcap"
-    _write_mcap(
+    write_mcap(
         path,
         compression=mcap_writer.CompressionType.NONE,
         index_types=mcap_writer.IndexType.NONE,
@@ -203,7 +206,7 @@ def test_a_file_without_a_summary_section_is_reported_as_such(tmp_path: Path) ->
         use_summary_offsets=False,
     )
 
-    with _serve(path) as (url, _):
+    with serve(path) as (url, _):
         with pytest.raises(McapSummaryUnavailable, match="no summary section"):
             read_mcap_info_from_url(url)
 
@@ -218,7 +221,7 @@ def test_a_metadata_record_written_twice_is_shown_once(tmp_path: Path) -> None:
         writer.add_metadata(name="rosbag2", data={"message_count": "6324"})
         writer.finish()
 
-    with _serve(path) as (url, _):
+    with serve(path) as (url, _):
         info = read_mcap_info_from_url(url, metadata=True)
 
     # Nothing is dropped from the data, only from the table.
@@ -233,6 +236,160 @@ def test_a_metadata_record_written_twice_is_shown_once(tmp_path: Path) -> None:
     assert "message_count: 0" not in output
 
 
+# --- per-topic coverage --------------------------------------------------------
+
+SECOND = 1_000_000_000
+# 20 s at 10 Hz, in chunks of about half a second.
+COVERAGE_SECONDS = 20
+COVERAGE_HZ = 10
+
+
+def _write_coverage_mcap(path: Path, *, unindexed_after: Optional[float] = None) -> None:
+    """Four topics that each break the whole-recording rate in their own way.
+
+    `unindexed_after` stops writing message indexes that many seconds in, which
+    leaves a file whose first chunks are indexed and whose later ones are not.
+    """
+    with path.open("wb") as handle:
+        writer = mcap_writer.Writer(handle, chunk_size=16 * 1024, compression=mcap_writer.CompressionType.NONE)
+        writer.start(profile="ros2", library="test")
+        schema = writer.register_schema(name="test/Dummy", encoding="jsonschema", data=b"{}")
+        channels = {
+            topic: writer.register_channel(topic=topic, message_encoding="cdr", schema_id=schema)
+            for topic in ("/steady", "/late", "/dropout", "/tf_static")
+        }
+
+        for index in range(3):
+            writer.add_message(channel_id=channels["/tf_static"], log_time=START_NS + index, data=b"s", publish_time=0)
+
+        for index in range(COVERAGE_SECONDS * COVERAGE_HZ):
+            seconds = index / COVERAGE_HZ
+            if unindexed_after is not None and seconds >= unindexed_after:
+                # Not configurable per chunk; recorders that stop indexing half way
+                # (a crash before the index is flushed) leave files just like this.
+                writer._Writer__index_types = mcap_writer.IndexType.ALL & ~mcap_writer.IndexType.MESSAGE
+            log_time = START_NS + index * SECOND // COVERAGE_HZ
+            topics = ["/steady"]
+            if seconds >= 10:
+                topics.append("/late")
+            if seconds < 6 or seconds >= 14:
+                topics.append("/dropout")
+            for topic in topics:
+                writer.add_message(channel_id=channels[topic], log_time=log_time, data=b"x" * 512, publish_time=log_time)
+        writer.finish()
+
+
+@pytest.fixture
+def coverage_info(tmp_path: Path) -> McapInfo:
+    path = tmp_path / "coverage.mcap"
+    _write_coverage_mcap(path)
+    with serve(path) as (url, _):
+        return read_mcap_info_from_url(url)
+
+
+def test_a_topic_that_starts_late_is_rated_over_its_own_span(coverage_info: McapInfo) -> None:
+    topics = {topic.name: topic for topic in coverage_info.topics}
+    late = topics["/late"]
+
+    assert late.message_count == 100
+    # Over the whole recording this would be 5 Hz.
+    assert late.frequency == pytest.approx(COVERAGE_HZ, rel=0.1)
+    assert late.first_seen is not None and late.last_seen is not None
+    assert START_NS + 9 * SECOND < late.first_seen <= START_NS + 10 * SECOND
+    assert late.last_seen == coverage_info.end_time
+    assert late.chunk_count is not None and late.chunk_count >= 5
+    assert topics["/steady"].frequency == pytest.approx(COVERAGE_HZ, rel=0.05)
+
+    assert coverage_info.start_time is not None and coverage_info.end_time is not None
+    strip = coverage_strip(late.coverage or [], coverage_info.start_time, coverage_info.end_time)
+    assert strip == "░" * 9 + "█" * 11 or strip == "░" * 10 + "█" * 10
+
+
+def test_a_dropout_shows_as_two_covered_spans(coverage_info: McapInfo) -> None:
+    dropout = next(topic for topic in coverage_info.topics if topic.name == "/dropout")
+
+    assert dropout.coverage is not None and len(dropout.coverage) == 2
+    (first_start, first_end), (second_start, second_end) = dropout.coverage
+    assert first_start == coverage_info.start_time
+    # Chunk resolution: the spans reach to the edges of the chunks around the
+    # dropout, which run long while only /steady fills them.
+    assert START_NS + 6 * SECOND <= first_end < START_NS + 8 * SECOND
+    assert START_NS + 10 * SECOND < second_start <= START_NS + 14 * SECOND
+    assert second_end == coverage_info.end_time
+
+    assert coverage_info.start_time is not None and coverage_info.end_time is not None
+    strip = coverage_strip(dropout.coverage, coverage_info.start_time, coverage_info.end_time)
+    assert strip.startswith("█" * 6) and strip.endswith("█" * 6)
+    assert strip[8:12] == "░" * 4
+
+
+def test_a_one_shot_topic_has_no_rate(coverage_info: McapInfo) -> None:
+    tf_static = next(topic for topic in coverage_info.topics if topic.name == "/tf_static")
+
+    assert tf_static.message_count == 3
+    assert tf_static.chunk_count == 1
+    assert tf_static.frequency is None
+    assert tf_static.first_seen == coverage_info.start_time
+
+    console = Console(record=True, width=200)
+    console.print(mcap_topics_table(coverage_info))
+    output = console.export_text()
+    assert "mean Hz" in output
+    assert "coverage  0:00 ─── 0:20" in output
+    row = next(line for line in output.splitlines() if "/tf_static" in line)
+    assert "—" in row
+    # Its one chunk, which runs on past the three messages.
+    assert "█" in row and "░" * 18 in row
+
+
+def test_with_some_chunks_unindexed_topic_coverage_is_unknown(tmp_path: Path) -> None:
+    path = tmp_path / "half-indexed.mcap"
+    _write_coverage_mcap(path, unindexed_after=10)
+
+    with serve(path) as (url, _):
+        info = read_mcap_info_from_url(url)
+
+    assert not info.message_indexed
+    for topic in info.topics:
+        assert topic.message_count is not None
+        assert (topic.first_seen, topic.last_seen, topic.chunk_count, topic.coverage) == (None, None, None, None)
+        assert topic.frequency is None
+
+    console = Console(record=True, width=200)
+    console.print(mcap_topics_table(info))
+    output = console.export_text()
+    assert "coverage" not in output
+    assert "█" not in output and "░" not in output and "—" not in output
+
+
+def test_a_corrupt_summary_is_refused(annotated, tmp_path: Path) -> None:
+    _, _, path = annotated
+    data = bytearray(path.read_bytes())
+    # The last copy of the schema is the one in the summary section.
+    at = data.rindex(b"angular_velocity")
+    data[at] ^= 0x20
+    corrupt = tmp_path / "corrupt.mcap"
+    corrupt.write_bytes(bytes(data))
+
+    with serve(corrupt) as (url, _):
+        with pytest.raises(McapSummaryUnavailable, match="summary section is corrupt"):
+            read_mcap_info_from_url(url)
+
+
+def test_a_footer_of_the_wrong_length_is_refused(annotated, tmp_path: Path) -> None:
+    _, _, path = annotated
+    data = bytearray(path.read_bytes())
+    # opcode, then the record length, then the 20 bytes of content and the magic
+    length_at = len(data) - 8 - 20 - 8
+    data[length_at] = 21
+    broken = tmp_path / "broken-footer.mcap"
+    broken.write_bytes(bytes(data))
+
+    with serve(broken) as (url, _):
+        with pytest.raises(McapSummaryUnavailable, match="footer record is 21 bytes"):
+            read_mcap_info_from_url(url)
+
+
 def test_format_log_time_keeps_nanoseconds() -> None:
     assert format_log_time(START_NS + 373_212_789) == "2026-09-18T08:08:28.373212789Z"
     assert format_log_time(0) == "1970-01-01T00:00:00.000000000Z"
@@ -245,7 +402,7 @@ def test_format_log_time_keeps_nanoseconds() -> None:
 def remote(annotated, monkeypatch) -> File:
     """A remote file whose presigned URL points at the local range server."""
     url, _, path = annotated
-    file = _remote_file("annotated.mcap", size=path.stat().st_size)
+    file = remote_file("annotated.mcap", size=path.stat().st_size)
     monkeypatch.setattr(file_transfer, "_get_file_download", lambda client, file_id: url)
     monkeypatch.setattr(kleinkram.api.routes, "get_file", lambda client, query, **kwargs: file)
     return file
@@ -264,10 +421,10 @@ def test_inspecting_anything_but_mcap_fails_before_asking_for_a_url(monkeypatch)
         raise AssertionError("must not request a download url")
 
     monkeypatch.setattr(file_transfer, "_get_file_download", fail)
-    monkeypatch.setattr(kleinkram.api.routes, "get_file", lambda client, query, **kwargs: _remote_file("recording.bag"))
+    monkeypatch.setattr(kleinkram.api.routes, "get_file", lambda client, query, **kwargs: remote_file("recording.bag"))
 
     with pytest.raises(FileTypeNotSupported, match="recording.bag"):
-        kleinkram.inspect_file(_remote_file("recording.bag").id, client=MagicMock())
+        kleinkram.inspect_file(remote_file("recording.bag").id, client=MagicMock())
 
 
 @pytest.fixture
@@ -287,7 +444,7 @@ def test_cli_inspect_prints_the_summary(cli_app, remote: File) -> None:
     outcome = CliRunner().invoke(cli_app, ["file", "inspect", str(remote.id)], env={"COLUMNS": "200"})
 
     assert outcome.exit_code == 0, outcome.output
-    output = _plain(outcome.output)
+    output = plain(outcome.output)
     assert "mcap summary: annotated.mcap" in output
     assert "2026-09-18T08:08:28.000000000Z" in output
     assert "uncompressed" in output
@@ -304,7 +461,7 @@ def test_cli_inspect_prints_schemas_and_metadata_on_request(cli_app, remote: Fil
     outcome = CliRunner().invoke(cli_app, args, env={"COLUMNS": "200"})
 
     assert outcome.exit_code == 0, outcome.output
-    output = _plain(outcome.output)
+    output = plain(outcome.output)
     assert "float64[3] angular_velocity" in output
     assert "binary schema" in output
     assert "firmware: 24.04" in output
@@ -320,4 +477,12 @@ def test_cli_inspect_emits_json_when_not_verbose(cli_app, remote: File) -> None:
     assert payload["per_message_access"] is True
     assert payload["duration"] == pytest.approx(1.99)
     assert {topic["name"]: topic["message_count"] for topic in payload["topics"]} == {"/blob": 20, "/imu": 300}
+    imu = next(topic for topic in payload["topics"] if topic["name"] == "/imu")
+    assert imu["first_seen"] == START_NS
+    assert imu["last_seen"] == START_NS + 199 * INTERVAL_NS
+    assert imu["chunk_count"] >= 5
+    assert imu["coverage"] == [[START_NS, START_NS + 199 * INTERVAL_NS]]
+    assert imu["frequency"] == pytest.approx(300 / 1.99)
+    for removed in ("bytes_fetched", "requests", "file_size"):
+        assert removed not in payload
     assert payload["schemas"][1]["definition"] == IMU_DEFINITION
