@@ -104,4 +104,35 @@ describe('User Role Change', () => {
         expect(response.message).toBe("Can't demote the last admin");
         expect(await roleOf('admin@leggedrobotics.com')).toBe(UserRole.ADMIN);
     });
+
+    test('should keep an admin when promotions and demotions overlap', async () => {
+        const admin = await createUser(
+            'admin@leggedrobotics.com',
+            UserRole.ADMIN,
+        );
+        await createUser('member@leggedrobotics.com', UserRole.USER);
+
+        // promote the member and demote both at the same time, a few times
+        for (let round = 0; round < 5; round++) {
+            await Promise.all([
+                changeRole(admin, 'promote', {
+                    email: 'member@leggedrobotics.com',
+                }),
+                changeRole(admin, 'demote', {
+                    email: 'member@leggedrobotics.com',
+                }),
+                changeRole(admin, 'demote', {
+                    email: 'admin@leggedrobotics.com',
+                }),
+            ]);
+            const admins = await database
+                .getRepository(UserEntity)
+                .count({ where: { role: UserRole.ADMIN } });
+            expect(admins).toBeGreaterThanOrEqual(1);
+            // the caller may have lost its role: restore it for the next round
+            await database
+                .getRepository(UserEntity)
+                .update({ uuid: admin.uuid }, { role: UserRole.ADMIN });
+        }
+    });
 });
