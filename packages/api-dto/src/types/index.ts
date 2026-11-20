@@ -94,6 +94,7 @@ export * from '@api-dto/set-access-group-user-permissions.dto';
 export * from '@api-dto/storage-overview.dto';
 export * from '@api-dto/submit-action-response.dto';
 export * from '@api-dto/submit-action.dto';
+export * from '@api-dto/system-settings.dto';
 export * from '@api-dto/topic.dto';
 export * from '@api-dto/update-file.dto';
 export * from '@api-dto/upload.dto';

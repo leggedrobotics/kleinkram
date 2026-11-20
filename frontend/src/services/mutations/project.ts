@@ -28,11 +28,13 @@ export const updateProject = async (
     name: string,
     description: string,
     autoConvert: boolean,
+    foxglovePreviewEnabled: boolean,
 ) => {
     const response = await axios.put(`/projects/${projectUUID}`, {
         name,
         description,
         autoConvert,
+        foxglovePreviewEnabled,
     });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
