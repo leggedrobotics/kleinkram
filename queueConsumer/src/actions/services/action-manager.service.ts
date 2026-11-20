@@ -29,7 +29,7 @@ import Dockerode from 'dockerode';
 import fs from 'node:fs';
 import path from 'node:path';
 import si from 'systeminformation';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import logger from '../../logger';
 import { DisposableAPIKey } from '../helper/disposable-api-key';
 import { maskSecret } from '../helper/redact-environment';
@@ -369,6 +369,9 @@ export class ActionManagerService implements OnModuleInit {
         }
 
         const apikey = await this.createLiveKey(action);
+        // the container once it exists, so a failed or cancelled run can
+        // still stop it and record its exit (see `recordContainerExit`)
+        let startedContainer: Dockerode.Container | undefined;
         try {
             const {
                 container,
@@ -397,6 +400,7 @@ export class ActionManagerService implements OnModuleInit {
                 },
             );
 
+            startedContainer = container;
             this.cancellationService.registerContainer(action.uuid, container);
 
             if (this.cancellationService.isCancelled(action.uuid)) {
@@ -627,6 +631,10 @@ export class ActionManagerService implements OnModuleInit {
             wideLog.recordError(error);
             wideLog.flush('error');
 
+            if (startedContainer) {
+                await this.recordContainerExit(action.uuid, startedContainer);
+            }
+
             if (this.cancellationService.isCancelled(action.uuid)) {
                 await transitionAction(
                     this.actionRepository.manager,
@@ -658,6 +666,50 @@ export class ActionManagerService implements OnModuleInit {
             this.cancellationService.unregisterContainer(action.uuid);
             await apikey[Symbol.asyncDispose]();
             this.liveKeys.delete(apikey);
+        }
+    }
+
+    /**
+     * Stops the container of a run that failed or was cancelled and records
+     * its exit, as the normal path does after `container.wait()`. Deleting a
+     * mission waits for `actionContainerExitedAt` of every started container
+     * (a cancellation is written before the container is stopped), so it
+     * must be set on every path, but only once the container has really
+     * stopped: if that can't be confirmed, nothing is recorded.
+     */
+    private async recordContainerExit(
+        actionUuid: string,
+        container: Dockerode.Container,
+    ): Promise<void> {
+        try {
+            await container.kill().catch(() => {
+                // already stopped
+            });
+            const stopped = await Promise.race([
+                container.wait().then(() => true),
+                new Promise<boolean>((resolve) =>
+                    setTimeout(() => {
+                        resolve(false);
+                    }, 30_000),
+                ),
+            ]);
+            if (!stopped) {
+                logger.warn(
+                    `Container of action ${actionUuid} didn't stop, its exit isn't recorded`,
+                );
+                return;
+            }
+            await this.actionRepository.update(
+                { uuid: actionUuid, actionContainerExitedAt: IsNull() },
+                {
+                    executionEndedAt: new Date(),
+                    actionContainerExitedAt: new Date(),
+                },
+            );
+        } catch (error: unknown) {
+            logger.error(
+                `Recording the container exit of action ${actionUuid} failed: ${String(error)}`,
+            );
         }
     }
 
