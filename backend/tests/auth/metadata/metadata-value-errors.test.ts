@@ -238,4 +238,52 @@ describe('Metadata Value Errors', () => {
         });
         expect(uppercase.status).toBeLessThan(300);
     });
+
+    test('should treat a whitespace-only value as missing', async () => {
+        const { user, types } = await setup();
+        const suffix = String(Date.now());
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: `required_text_project_${suffix}`,
+                description: 'Test project',
+                requiredMetadataTypes: [types.location],
+            },
+            user,
+        );
+
+        // as the only value of a required type: the mission is not created
+        const blankName = `required_blank_${suffix}`;
+        const blank = await post(user, '/missions', {
+            name: blankName,
+            projectUUID: projectUuid,
+            metadata: { [types.location]: ' '.repeat(3) },
+        });
+        expect(blank.status).toBe(409);
+        expect(
+            await database
+                .getRepository(MissionEntity)
+                .exists({ where: { name: blankName } }),
+        ).toBe(false);
+
+        // replacing a required value with whitespace would remove it
+        const missionUuid = await createMissionUsingPost(
+            {
+                name: `required_text_${suffix}`,
+                projectUUID: projectUuid,
+                metadata: { [types.location]: 'Zurich' },
+            },
+            user,
+        );
+        const replaced = await post(user, `/missions/${missionUuid}/metadata`, {
+            metadata: { [types.location]: ' '.repeat(3) },
+        });
+        expect(replaced.status).toBe(400);
+        const stored = await database.getRepository(MetadataEntity).findOne({
+            where: {
+                mission: { uuid: missionUuid },
+                metadataType: { uuid: types.location },
+            },
+        });
+        expect(stored?.value_location).toBe('Zurich');
+    });
 });

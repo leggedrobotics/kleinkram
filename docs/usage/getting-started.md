@@ -72,7 +72,7 @@ A request with values that don't match is rejected as a whole with `422` and lis
 response has an `errors` list with one entry per invalid value:
 `{ "field": "<metadata type uuid>", "name": "…", "error": "…" }`.
 
-- **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" metadata type for every mission). The server enforces this when a mission is created: a request without a value for every required metadata type is rejected with `409`, unless it sets `ignoreMissingMetadata` (`--ignore-missing-metadata` in the CLI). An empty value counts as missing.
+- **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" metadata type for every mission). The server enforces this when a mission is created: a request without a value for every required metadata type is rejected with `409`, unless it sets `ignoreMissingMetadata` (`--ignore-missing-metadata` in the CLI). An empty or whitespace-only value counts as missing.
 - **Usage**: Use this metadata to quickly find all missions performed by a specific robot or in a specific location.
 
 ::: tip Example: GrandTourDataset

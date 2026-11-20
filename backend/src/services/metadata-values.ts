@@ -75,6 +75,16 @@ const parseDate = (name: string, value: unknown): ParsedMetadataValue => {
 };
 
 /**
+ * Whether a client value means "not set": nothing, or text that is empty or
+ * only whitespace. Such a value is not stored and does not satisfy a
+ * required metadata type. `false` and `0` are values.
+ */
+export const isEmptyMetadataValue = (value: unknown): boolean =>
+    value === undefined ||
+    value === null ||
+    (typeof value === 'string' && value.trim() === '');
+
+/**
  * Converts a client value (JSON from the UI, the CLI or a metadata file) to
  * the column of its metadata type, or explains what the value should look
  * like. Values Postgres can't store (e.g. `abc` for a NUMBER or `13.05.2024`
