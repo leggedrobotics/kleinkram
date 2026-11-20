@@ -43,7 +43,6 @@ const canCreate = computed(() => {
 const createNewMission = (): void => {
     if (!canCreate.value) return;
     $q.dialog({
-        title: 'Create new mission',
         component: CreateMissionDialog,
         componentProps: {
             projectUuid: projectUuid,

@@ -6,6 +6,7 @@
                 align="left"
                 active-color="primary"
                 dense
+                no-caps
                 class="text-grey"
                 @update:model-value="onTabChange"
             >
@@ -72,9 +73,13 @@
     <ActionDefinitionDrawer
         :open="isCreateOpen"
         :mode="drawerMode"
-        :initial-template="selectedTemplate"
+        :initial-template="
+            drawerMode === ActionDrawerMode.ACTION_CREATE
+                ? undefined
+                : selectedTemplate
+        "
         @saved="onTemplateSaved"
-        @close="closeDrawers"
+        @close="closeDefinitionDrawer"
     />
 
     <ActionRevisionsDrawer
@@ -234,8 +239,21 @@ const closeDrawers = async () => {
     });
 };
 
-const onTemplateSaved = (): void => {
+/**
+ * "Create New Action" opens the template drawer on top of the launch drawer.
+ * Closing or saving it then returns to the launch drawer instead of closing
+ * both.
+ */
+const closeDefinitionDrawer = (): void => {
+    if (isLaunchOpen.value) {
+        isCreateOpen.value = false;
+        return;
+    }
     void closeDrawers();
+};
+
+const onTemplateSaved = (): void => {
+    closeDefinitionDrawer();
 };
 
 const closeHistoryDrawer = (): void => {
@@ -243,7 +261,7 @@ const closeHistoryDrawer = (): void => {
 };
 
 const openCreateConfiguration = (): void => {
-    selectedTemplate.value = undefined;
+    // keep `selectedTemplate`: the launch drawer below still shows it
     drawerMode.value = ActionDrawerMode.ACTION_CREATE;
     isCreateOpen.value = true;
     // Optional: add a route for create if desired

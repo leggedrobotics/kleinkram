@@ -51,7 +51,6 @@ const hasPermission = computed(() =>
 const deleteMission = (): void => {
     if (!hasPermission.value || hasFiles.value) return;
     $q.dialog({
-        title: 'Delete Mission',
         component: DeleteMissionDialog,
         componentProps: {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access

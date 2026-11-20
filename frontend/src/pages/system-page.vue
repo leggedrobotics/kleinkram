@@ -12,17 +12,20 @@
             </template>
         </q-banner>
 
-        <div v-else-if="canView" class="q-mt-lg q-mb-lg system-grid">
-            <system-storage-card class="system-grid__storage" />
-            <system-running-actions class="system-grid__actions" />
-            <system-worker-list class="system-grid__workers" />
-        </div>
+        <template v-else-if="canView">
+            <storage-insights class="q-mt-lg" />
+
+            <div class="q-mt-lg q-mb-lg system-grid">
+                <system-running-actions class="system-grid__actions" />
+                <system-worker-list class="system-grid__workers" />
+            </div>
+        </template>
     </div>
 </template>
 
 <script setup lang="ts">
+import StorageInsights from 'components/system/storage-insights.vue';
 import SystemRunningActions from 'components/system/system-running-actions.vue';
-import SystemStorageCard from 'components/system/system-storage-card.vue';
 import SystemWorkerList from 'components/system/system-worker-list.vue';
 import TitleSection from 'components/title-section.vue';
 import { canCreateProject, usePermissionsQuery } from 'src/hooks/query-hooks';
@@ -69,9 +72,8 @@ watch(
 
 <style scoped>
 /*
- * Phones and tablets stack the panels; from 1024px on the storage and the
- * running actions share the first row and the workers get the full width
- * below them.
+ * Below the storage section: the running actions and the workers, each the
+ * full width of the page.
  */
 .system-grid {
     display: flex;
@@ -89,25 +91,8 @@ watch(
         gap: 24px;
     }
 
-    .system-grid__storage,
     .system-grid__actions {
         height: 350px;
-    }
-}
-
-@media (min-width: 1024px) {
-    .system-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        grid-auto-rows: minmax(350px, auto);
-    }
-
-    .system-grid__actions {
-        grid-column: span 2;
-    }
-
-    .system-grid__workers {
-        grid-column: 1 / -1;
     }
 }
 </style>

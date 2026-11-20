@@ -1,6 +1,6 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title> Upload Files</template>
+    <base-dialog ref="dialogRef" size="lg">
+        <template #title>Upload Files</template>
 
         <template #content>
             <create-file
@@ -14,13 +14,19 @@
         </template>
 
         <template #actions>
-            <q-btn
-                flat
-                label="Upload"
-                class="bg-button-primary"
-                :disable="!ready"
-                @click="createFileAction"
-            />
+            <span class="disabled-reason">
+                <q-btn
+                    no-caps
+                    flat
+                    label="Upload"
+                    class="bg-button-primary"
+                    :disable="!ready"
+                    @click="createFileAction"
+                />
+                <q-tooltip v-if="!ready"
+                    >Choose a mission and valid files</q-tooltip
+                >
+            </span>
         </template>
     </base-dialog>
 </template>

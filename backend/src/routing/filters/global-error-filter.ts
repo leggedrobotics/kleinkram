@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import { Response } from 'express';
-import { EntityNotFoundError } from 'typeorm';
+import { EntityNotFoundError, QueryFailedError } from 'typeorm';
 import logger from '../../logger';
 
 /** Fallback for 503s that don't carry an explicit retry hint. */
@@ -111,6 +111,24 @@ export class GlobalErrorFilter implements ExceptionFilter {
             return;
         }
 
+        // Validation failures that list each invalid field (e.g. metadata
+        // values): the client needs `errors` to mark the fields
+        if (exception instanceof HttpException) {
+            const resp: unknown = exception.getResponse();
+            if (
+                typeof resp === 'object' &&
+                resp !== null &&
+                'errors' in resp &&
+                Array.isArray(resp.errors)
+            ) {
+                response.status(exception.getStatus()).json({
+                    statusCode: exception.getStatus(),
+                    ...resp,
+                });
+                return;
+            }
+        }
+
         //////////////////////////////
         // Errors that get logged
         //////////////////////////////
@@ -144,6 +162,20 @@ export class GlobalErrorFilter implements ExceptionFilter {
 
         if (exception instanceof ServiceUnavailableException) {
             this.respondServiceUnavailable(exception, request, response);
+            return;
+        }
+
+        // a unique name constraint, e.g. renaming a file onto a name its
+        // mission already has: a conflict the user can fix, not a server error
+        const duplicateMessage = getDuplicateMessage(exception);
+        if (duplicateMessage !== undefined) {
+            response.status(409).json({
+                statusCode: 409,
+                message: duplicateMessage,
+            });
+            logger.warn(
+                `Duplicate name: endpoint="${request.method} ${request.url}" reason=${duplicateMessage}`,
+            );
             return;
         }
 
@@ -240,3 +272,29 @@ export class GlobalErrorFilter implements ExceptionFilter {
         });
     }
 }
+
+/** Messages for the unique constraints a user can run into by naming things */
+/* eslint-disable @typescript-eslint/naming-convention -- keys are Postgres constraint names */
+const DUPLICATE_MESSAGES: Record<string, string> = {
+    unique_file_name_per_mission:
+        'A file with this name already exists in this mission.',
+    unique_mission_name_per_project:
+        'A mission with this name already exists in this project.',
+    unique_project_name_active: 'A project with this name already exists.',
+    unique_category_name_per_project:
+        'A category with this name already exists in this project.',
+    unique_access_group_name: 'An access group with this name already exists.',
+};
+/* eslint-enable @typescript-eslint/naming-convention */
+
+/**
+ * The message for a violated unique constraint (Postgres code 23505) that
+ * guards a user-chosen name, or undefined for any other error.
+ */
+const getDuplicateMessage = (exception: Error): string | undefined => {
+    if (!(exception instanceof QueryFailedError)) return undefined;
+    const driverError = exception.driverError as
+        { code?: string; constraint?: string } | undefined;
+    if (driverError?.code !== '23505') return undefined;
+    return DUPLICATE_MESSAGES[driverError.constraint ?? ''];
+};

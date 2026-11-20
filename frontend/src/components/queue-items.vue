@@ -1,97 +1,167 @@
 <template>
-    <div class="row items-center queue-filters">
+    <div class="row items-end queue-filters">
         <div
             class="col-12 col-md-5 q-py-md"
             :class="$q.screen.gt.sm ? 'q-pr-md' : ''"
         >
-            <q-input v-model="startDate" filled hint="File Processing since: ">
+            <label :for="sinceId">Processing since</label>
+            <q-input
+                v-model="sinceText"
+                :for="sinceId"
+                outlined
+                dense
+                mask="##.##.#### ##:##"
+                placeholder="DD.MM.YYYY HH:mm"
+                hide-bottom-space
+                no-error-icon
+                :error="!isValidSince(sinceText)"
+                bg-color="white"
+                class="since-field"
+            >
                 <template #prepend>
-                    <q-icon name="sym_o_event" class="cursor-pointer">
-                        <q-popup-proxy
-                            cover
-                            transition-show="scale"
-                            transition-hide="scale"
-                        >
-                            <q-date v-model="startDate" :mask="dateMask">
-                                <div class="row items-center justify-end">
-                                    <q-btn
-                                        v-close-popup
-                                        label="Close"
-                                        color="primary"
-                                        flat
-                                    />
-                                </div>
-                            </q-date>
-                        </q-popup-proxy>
-                    </q-icon>
+                    <q-icon name="sym_o_calendar_today" />
                 </template>
-
-                <template #append>
-                    <q-icon name="sym_o_access_time" class="cursor-pointer">
-                        <q-popup-proxy
-                            cover
-                            transition-show="scale"
-                            transition-hide="scale"
-                        >
-                            <q-time
-                                v-model="startDate"
-                                :mask="dateMask"
-                                format24h
-                            >
-                                <div class="row items-center justify-end">
-                                    <q-btn
-                                        v-close-popup
-                                        label="Close"
-                                        color="primary"
-                                        flat
-                                    />
-                                </div>
-                            </q-time>
-                        </q-popup-proxy>
-                    </q-icon>
-                </template>
+                <q-menu
+                    anchor="bottom left"
+                    self="top left"
+                    :offset="[0, 4]"
+                    no-focus
+                    no-refocus
+                    class="since-picker"
+                >
+                    <q-date
+                        v-model="sinceDay"
+                        mask="DD.MM.YYYY"
+                        minimal
+                        flat
+                        color="button-primary"
+                    />
+                    <div class="since-picker__time">
+                        <label :for="sinceTimeId">Time</label>
+                        <q-input
+                            v-model="sinceTime"
+                            :for="sinceTimeId"
+                            outlined
+                            dense
+                            mask="##:##"
+                            placeholder="HH:mm"
+                            hide-bottom-space
+                            no-error-icon
+                            :error="!isValidTime(sinceTime)"
+                            class="since-picker__time-input"
+                        />
+                    </div>
+                </q-menu>
             </q-input>
         </div>
         <div
             class="col-12 col-md-5 q-py-md"
             :class="$q.screen.gt.sm ? 'q-pr-md' : ''"
         >
-            <q-select
-                v-model="fileStateFilter"
-                multiple
-                clearable
-                :options="FileStateOptions"
-                label="Select filter"
+            <label :for="statusId">Status</label>
+            <q-field
+                :model-value="fileStateFilter"
+                :for="statusId"
+                outlined
+                dense
+                hide-bottom-space
+                bg-color="white"
+                :clearable="fileStateFilter.length > 0"
+                class="status-field cursor-pointer"
+                @clear="clearSelection"
             >
-                <template #selected-item="scope">
-                    <q-chip
-                        removable
-                        :tabindex="scope.tabindex"
-                        dense
-                        :color="
-                            getColor(
-                                QueueState[scope.opt] as unknown as QueueState,
-                            ) as any
-                        "
-                        @remove="() => removeItem(scope.opt)"
+                <template #control>
+                    <div
+                        :id="statusId"
+                        class="status-field__value"
+                        tabindex="0"
+                        role="combobox"
+                        aria-haspopup="listbox"
                     >
-                        {{ scope.opt }}
-                    </q-chip>
-                </template>
-                <template #no-option>
-                    <q-item>
-                        <q-item-section class="text-grey">
-                            No results
-                        </q-item-section>
-                    </q-item>
+                        <span
+                            v-if="fileStateFilter.length === 0"
+                            class="status-field__placeholder"
+                        >
+                            All states
+                        </span>
+                        <template v-else>
+                            {{ statusSummary.text }}
+                            <span
+                                v-if="statusSummary.more > 0"
+                                class="status-field__more"
+                            >
+                                +{{ statusSummary.more }}
+                            </span>
+                        </template>
+                    </div>
                 </template>
                 <template #append>
-                    <q-icon
-                        class="cursor-pointer"
-                        @click.stop="clearSelection"
-                    />
+                    <q-icon name="sym_o_arrow_drop_down" />
                 </template>
-            </q-select>
+                <q-menu
+                    style="min-width: 280px"
+                    anchor="bottom left"
+                    self="top left"
+                    :offset="[0, 4]"
+                >
+                    <q-list
+                        dense
+                        class="status-menu"
+                        role="listbox"
+                        aria-multiselectable="true"
+                    >
+                        <template
+                            v-for="group in STATE_GROUPS"
+                            :key="group.label"
+                        >
+                            <q-item
+                                clickable
+                                class="status-menu__group"
+                                @click="() => toggleGroup(group.states)"
+                            >
+                                <q-item-section side>
+                                    <q-checkbox
+                                        :model-value="groupValue(group.states)"
+                                        dense
+                                        size="sm"
+                                        color="button-primary"
+                                        tabindex="-1"
+                                        class="no-pointer-events"
+                                    />
+                                </q-item-section>
+                                <q-item-section>{{
+                                    group.label
+                                }}</q-item-section>
+                            </q-item>
+                            <q-item
+                                v-for="state in group.states"
+                                :key="state"
+                                clickable
+                                role="option"
+                                :aria-selected="fileStateFilter.includes(state)"
+                                class="status-menu__item"
+                                @click="() => toggleState(state)"
+                            >
+                                <q-item-section side>
+                                    <q-checkbox
+                                        :model-value="
+                                            fileStateFilter.includes(state)
+                                        "
+                                        dense
+                                        size="sm"
+                                        color="button-primary"
+                                        tabindex="-1"
+                                        class="no-pointer-events"
+                                    />
+                                </q-item-section>
+                                <q-item-section>{{
+                                    STATE_LABELS[state]
+                                }}</q-item-section>
+                            </q-item>
+                        </template>
+                    </q-list>
+                </q-menu>
+            </q-field>
         </div>
         <div
             class="col-12 col-md-2 q-py-md"
@@ -269,7 +339,7 @@ import { QTable, useQuasar } from 'quasar';
 import { useRowActivation } from 'src/composables/use-row-activation';
 import ConfirmDeleteFile from 'src/dialogs/confirm-delete-file-dialog.vue';
 import ROUTES from 'src/router/routes';
-import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
+import { formatDate, parseDate } from 'src/services/date-formating';
 import {
     _downloadFile,
     getColor,
@@ -277,7 +347,7 @@ import {
     getSimpleFileStateName,
 } from 'src/services/generic';
 import { findOneByNameAndMission } from 'src/services/queries/file';
-import { computed, ref, Ref, watch } from 'vue';
+import { computed, ref, Ref, useId, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
@@ -315,14 +385,76 @@ const selected = ref<FileQueueEntryDto[]>([]);
 
 const fileStateFilter = ref<string[]>([]);
 
-const FileStateOptions = Object.keys(QueueState).splice(
-    Object.keys(QueueState).length / 2,
-); //  WHY JAVASCRIPT, WHY?
+/** readable names of the queue states, in the order of their lifecycle */
+const STATE_LABELS: Record<string, string> = {
+    AWAITING_UPLOAD: 'Awaiting upload',
+    AWAITING_PROCESSING: 'Awaiting processing',
+    PROCESSING: 'Processing',
+    DOWNLOADING: 'Downloading',
+    CONVERTING_AND_EXTRACTING_TOPICS: 'Converting & extracting topics',
+    UPLOADING: 'Uploading',
+    COMPLETED: 'Completed',
+    ERROR: 'Error',
+    CORRUPTED: 'Corrupted',
+    CANCELED: 'Canceled',
+    UNSUPPORTED_FILE_TYPE: 'Unsupported file type',
+    FILE_ALREADY_EXISTS: 'File already exists',
+};
 
-const removeItem = (value: string): void => {
-    fileStateFilter.value = fileStateFilter.value.filter(
-        (item) => item !== value,
-    );
+/** the states grouped by phase, so a whole phase is one click */
+const STATE_GROUPS: { label: string; states: string[] }[] = [
+    { label: 'Waiting', states: ['AWAITING_UPLOAD', 'AWAITING_PROCESSING'] },
+    {
+        label: 'In progress',
+        states: [
+            'PROCESSING',
+            'DOWNLOADING',
+            'CONVERTING_AND_EXTRACTING_TOPICS',
+            'UPLOADING',
+        ],
+    },
+    { label: 'Done', states: ['COMPLETED'] },
+    {
+        label: 'Failed',
+        states: [
+            'ERROR',
+            'CORRUPTED',
+            'CANCELED',
+            'UNSUPPORTED_FILE_TYPE',
+            'FILE_ALREADY_EXISTS',
+        ],
+    },
+];
+
+/** one line, whatever is selected: the first two names and "+N" */
+const statusSummary = computed(() => {
+    const names = fileStateFilter.value.map((state) => STATE_LABELS[state]);
+    return {
+        text: names.slice(0, 2).join(', '),
+        more: Math.max(0, names.length - 2),
+    };
+});
+
+const toggleState = (state: string): void => {
+    fileStateFilter.value = fileStateFilter.value.includes(state)
+        ? fileStateFilter.value.filter((item) => item !== state)
+        : [...fileStateFilter.value, state];
+};
+
+/** true when all of a group is selected, null (indeterminate) when some */
+const groupValue = (states: string[]): boolean | null => {
+    const count = states.filter((state) =>
+        fileStateFilter.value.includes(state),
+    ).length;
+    if (count === 0) return false;
+    return count === states.length ? true : null;
+};
+
+const toggleGroup = (states: string[]): void => {
+    fileStateFilter.value =
+        groupValue(states) === true
+            ? fileStateFilter.value.filter((state) => !states.includes(state))
+            : [...new Set([...fileStateFilter.value, ...states])];
 };
 
 const clearSelection = (): void => {
@@ -348,6 +480,53 @@ const fileStateFilterEnums = computed(() => {
 });
 
 // Use Composable
+const sinceId = `queue-since-${useId()}`;
+const sinceTimeId = `queue-since-time-${useId()}`;
+const statusId = `queue-status-${useId()}`;
+
+const isValidTime = (time: string): boolean =>
+    /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+
+const isValidSince = (text: string): boolean =>
+    /^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$/.test(text) &&
+    isValidTime(text.slice(11)) &&
+    !Number.isNaN(parseDate(text).getTime());
+
+/** the whole value as typed; applied to `startDate` once it is complete */
+const typedSince = ref<string | undefined>(undefined);
+const sinceText = computed({
+    get: () => typedSince.value ?? startDate.value,
+    set: (text: string | number | null) => {
+        const value = String(text ?? '');
+        typedSince.value = value;
+        if (!isValidSince(value)) return;
+        startDate.value = value;
+        typedSince.value = undefined;
+    },
+});
+
+/** the day part of `startDate` (DD.MM.YYYY), picked in the calendar */
+const sinceDay = computed({
+    get: () => startDate.value.split(' ')[0] ?? '',
+    set: (day: string | null) => {
+        if (!day) return;
+        startDate.value = `${day} ${startDate.value.split(' ')[1] ?? '00:00'}`;
+    },
+});
+
+/** the time part of `startDate` (HH:mm), typed; applied once it is valid */
+const typedTime = ref<string | undefined>(undefined);
+const sinceTime = computed({
+    get: () => typedTime.value ?? startDate.value.split(' ')[1] ?? '',
+    set: (time: string | number | null) => {
+        const value = String(time ?? '');
+        typedTime.value = value;
+        if (!isValidTime(value)) return;
+        startDate.value = `${sinceDay.value} ${value}`;
+        typedTime.value = undefined;
+    },
+});
+
 const startDateIso = computed(() => {
     try {
         return parseDate(startDate.value).toISOString();
@@ -369,7 +548,7 @@ watch(queueEntries, (newValue) => {
     }
 });
 
-const { mutate: removeFile } = useDeleteQueueItem();
+const { mutateAsync: removeFile } = useDeleteQueueItem();
 const { mutate: _cancelProcessing } = useCancelProcessing();
 const { data: permissions } = usePermissionsQuery();
 
@@ -378,12 +557,13 @@ const openDeleteFileDialog = (queueEntry: FileQueueEntryDto): void => {
         component: ConfirmDeleteFile,
         componentProps: {
             filename: queueEntry.displayName,
+            // the dialog runs the delete and shows a failure itself
+            action: () =>
+                removeFile({
+                    missionUUID: queueEntry.mission.uuid,
+                    queueUUID: queueEntry.uuid,
+                }),
         },
-    }).onOk(() => {
-        removeFile({
-            missionUUID: queueEntry.mission.uuid,
-            queueUUID: queueEntry.uuid,
-        });
     });
 };
 
@@ -585,6 +765,15 @@ const columns = [
 </script>
 
 <style scoped>
+/* soft state tag, same shape as the category tags */
+.multi-option__check {
+    padding-right: 8px;
+}
+
+/* the selection shows in the checkbox, the label keeps its colour */
+.multi-option__label {
+    color: #161616;
+}
 /* Stacked filter controls need to span the full width on small screens */
 @media (max-width: 1023px) {
     .queue-filters :deep(.q-field) {
@@ -635,5 +824,46 @@ const columns = [
     .queue-table :deep(.q-table__grid-content) {
         margin: 0;
     }
+}
+
+.status-field__value {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    outline: none;
+}
+
+.status-field__placeholder {
+    color: #6f6f6f; /* $text-placeholder */
+}
+
+.status-field__more {
+    color: #525252; /* $text-secondary */
+    font-weight: 500;
+}
+
+.status-menu__group {
+    color: #525252; /* $text-secondary */
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-menu__item {
+    padding-left: 32px;
+}
+
+.since-picker__time {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px 16px;
+    border-top: 1px solid #e0e0e0; /* $border-subtle */
+}
+
+.since-picker__time-input {
+    width: 96px;
 }
 </style>

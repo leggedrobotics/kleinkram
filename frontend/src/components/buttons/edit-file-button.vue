@@ -49,7 +49,6 @@ const editFile = (): void => {
         componentProps: {
             fileUuid: file.uuid,
         },
-        persistent: true,
     });
 };
 </script>

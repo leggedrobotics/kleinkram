@@ -1,41 +1,51 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title>
-            Move File{{ files.length === 1 ? ' ' + files[0]?.filename : 's' }}
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="isPending"
+        :dirty="dirty"
+        :submit-disabled="alreadyThere || isPending"
+        @submit="saveAction"
+    >
+        <template #title>{{ actionLabel }}</template>
+        <template v-if="files.length === 1" #subtitle>
+            {{ files[0]?.filename }}
         </template>
 
         <template #content>
-            <div class="q-mt-md">
+            <q-form ref="formReference" greedy @submit.prevent>
                 <ScopeSelector
                     v-model:project-uuid="targetProjectUuid"
                     v-model:mission-uuid="targetMissionUuid"
                     layout="column"
                     :required="true"
                 />
-            </div>
+            </q-form>
         </template>
         <template #actions>
-            <q-btn
-                label="Cancel"
-                flat
-                class="q-mr-sm button-border"
-                @click="onDialogCancel"
-            />
-            <q-btn
-                label="Save"
-                class="bg-button-primary"
-                :loading="isPending"
-                :disable="!targetMissionUuid || isPending"
-                @click="saveAction"
-            />
+            <span class="disabled-reason">
+                <q-btn
+                    flat
+                    no-caps
+                    :label="files.length === 1 ? 'Move File' : 'Move Files'"
+                    class="bg-button-primary"
+                    :loading="isPending"
+                    :disable="alreadyThere"
+                    @click="saveAction"
+                />
+                <q-tooltip v-if="alreadyThere"
+                    >Already in this mission</q-tooltip
+                >
+            </span>
         </template>
     </base-dialog>
 </template>
 
 <script setup lang="ts">
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { Notify, useDialogPluginComponent } from 'quasar';
-import { ref } from 'vue';
+import { Notify, QForm, useDialogPluginComponent } from 'quasar';
+import { getDialogErrorMessage } from 'src/services/error-handling';
+import { computed, ref } from 'vue';
 
 // API Types
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
@@ -51,13 +61,24 @@ const props = defineProps<{
     files: FileWithTopicDto[];
 }>();
 
-defineEmits([...useDialogPluginComponent.emits]);
-const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const queryClient = useQueryClient();
 
 // State: Initialize with the current location of the file(s)
 const targetProjectUuid = ref<string | undefined>(props.mission.project.uuid);
 const targetMissionUuid = ref<string | undefined>(props.mission.uuid);
+
+const errorMessage = ref('');
+const actionLabel = computed(() =>
+    props.files.length === 1
+        ? 'Move File'
+        : `Move ${String(props.files.length)} Files`,
+);
+const dirty = computed(() => targetMissionUuid.value !== props.mission.uuid);
+const alreadyThere = computed(
+    () => targetMissionUuid.value === props.mission.uuid,
+);
+const formReference = ref<QForm>();
 
 const { mutate: moveFilesMutation, isPending } = useMutation({
     mutationFn: () => {
@@ -88,24 +109,14 @@ const { mutate: moveFilesMutation, isPending } = useMutation({
         onDialogOK();
     },
     onError(error: unknown) {
-        console.error(error);
-        const message =
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            (error as { response?: { data?: { message?: string } } })?.response
-                ?.data?.message ?? 'Unknown error occurred';
-
-        Notify.create({
-            group: false,
-            message: `Error moving file: ${message}`,
-            color: 'negative',
-            spinner: false,
-            position: 'bottom',
-            timeout: 3000,
-        });
+        errorMessage.value = getDialogErrorMessage(error);
     },
 });
 
-const saveAction = (): void => {
+const saveAction = async (): Promise<void> => {
+    if (alreadyThere.value || isPending.value) return;
+    if (!(await formReference.value?.validate(true))) return;
+    errorMessage.value = '';
     moveFilesMutation();
 };
 </script>

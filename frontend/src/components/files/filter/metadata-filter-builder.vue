@@ -1,70 +1,93 @@
 <template>
-    <div class="metadata-filter-builder column q-gutter-y-md">
-        <!-- Add New Metadata Filter -->
-        <div class="row q-gutter-x-sm items-center">
-            <div class="col-grow">
-                <q-select
-                    v-model="selectedMetadataTypeToAdd"
-                    :options="filteredMetadataTypes"
-                    :placeholder="metadataPlaceholder"
-                    option-label="name"
-                    dense
-                    outlined
-                    use-input
-                    fill-input
-                    hide-selected
-                    input-debounce="0"
-                    clearable
-                    bg-color="white"
-                    @filter="filterMetadataTypes"
-                    @update:model-value="addMetadataTypeFilter"
-                >
-                    <template #no-option>
-                        <q-item>
-                            <q-item-section class="text-grey">
-                                No metadata types found.
-                            </q-item-section>
-                        </q-item>
-                    </template>
-                </q-select>
-            </div>
-        </div>
-
-        <!-- Active Metadata Filters -->
+    <div class="metadata-filter-builder">
         <div
             v-if="Object.keys(localMetadataValues).length === 0"
-            class="text-grey-6 text-center q-pa-sm"
+            class="text-secondary"
         >
             No metadata filters active.
         </div>
 
-        <div v-else class="column q-gutter-y-sm">
+        <div v-else class="row-grid">
             <div
-                v-for="metadataTypeUUID in Object.keys(localMetadataValues)"
+                v-for="(metadataTypeUUID, index) in Object.keys(
+                    localMetadataValues,
+                )"
                 :key="metadataTypeUUID"
-                class="row items-start q-gutter-x-sm bg-grey-1 q-pa-sm rounded-borders"
+                class="row-grid__row"
             >
-                <div class="col-grow">
-                    <MetadataFilterInput
-                        :metadata-type-uuid="metadataTypeUUID"
-                        :metadata-type-lookup="metadataTypeLookup"
-                        :metadata-values="localMetadataValues"
-                        @update:metadata-values="updateLocalMetadataValues"
-                    />
-                </div>
-                <div class="col-auto">
+                <div v-if="index > 0" class="row-grid__separator" />
+                <MetadataFilterInput
+                    :metadata-type-uuid="metadataTypeUUID"
+                    :metadata-type-lookup="metadataTypeLookup"
+                    :metadata-values="localMetadataValues"
+                    @update:metadata-values="updateLocalMetadataValues"
+                />
+                <div class="row-grid__action">
                     <q-btn
                         flat
+                        round
                         dense
-                        icon="sym_o_close"
-                        color="negative"
-                        aria-label="Remove metadata filter"
-                        class="remove-metadata-filter"
+                        icon="sym_o_delete"
+                        class="row-grid__remove remove-metadata-filter"
+                        :aria-label="`Remove ${localMetadataValues[metadataTypeUUID]?.name ?? 'filter'}`"
                         @click="() => removeMetadataType(metadataTypeUUID)"
                     />
                 </div>
             </div>
         </div>
+
+        <q-btn
+            flat
+            no-caps
+            dense
+            icon="sym_o_add"
+            label="Add filter"
+            class="text-link-primary add-button"
+        >
+            <q-menu
+                v-model="menuOpen"
+                style="min-width: 280px"
+                @hide="clearSearch"
+            >
+                <div class="add-menu__search">
+                    <q-input
+                        v-model="search"
+                        dense
+                        outlined
+                        autofocus
+                        color="button-primary"
+                        aria-label="Search metadata"
+                        placeholder="Search metadata"
+                        autocomplete="off"
+                        @keydown.enter.prevent="addFirstResult"
+                    >
+                        <template #prepend>
+                            <q-icon name="sym_o_search" />
+                        </template>
+                    </q-input>
+                </div>
+                <q-list class="add-menu__list">
+                    <q-item v-if="availableMetadataTypes.length === 0">
+                        <q-item-section class="text-secondary">
+                            No metadata types found.
+                        </q-item-section>
+                    </q-item>
+                    <q-item
+                        v-for="metadataType in availableMetadataTypes"
+                        :key="metadataType.uuid"
+                        clickable
+                        @click="() => addMetadataTypeFilter(metadataType)"
+                    >
+                        <q-item-section>
+                            {{ metadataType.name }}
+                        </q-item-section>
+                        <q-item-section side class="add-menu__type">
+                            {{ metadataType.datatype }}
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+            </q-menu>
+        </q-btn>
     </div>
 </template>
 
@@ -118,46 +141,40 @@ function removeMetadataType(uuid: string) {
 }
 
 // --- Metadata Type Search ---
-const selectedMetadataTypeToAdd = ref<MetadataTypeDto | null>(null);
-const filteredMetadataTypes = ref<MetadataTypeDto[]>([]);
+const menuOpen = ref(false);
+const search = ref('');
 
-function filterMetadataTypes(
-    value: string,
-    update: (function_: () => void) => void,
-) {
-    if (!allMetadataTypes.value) {
-        update(() => {
-            filteredMetadataTypes.value = [];
-        });
-        return;
-    }
-    update(() => {
-        const needle = value.toLowerCase();
-        // available = all metadata types NOT yet in localMetadataValues
-        const available = allMetadataTypes.value.filter(
-            (t) => !localMetadataValues.value[t.uuid],
-        );
+const clearSearch = (): void => {
+    search.value = '';
+};
 
-        // Deduplicate suggestions by name
-        const seenNames = new Set<string>();
-        const uniqueMetadataTypes: MetadataTypeDto[] = [];
-
-        for (const metadataType of available) {
-            if (
-                metadataType.name.toLowerCase().includes(needle) &&
-                !seenNames.has(metadataType.name)
-            ) {
-                uniqueMetadataTypes.push(metadataType);
-                seenNames.add(metadataType.name);
-            }
+/** Metadata types not filtered yet, matching the search, one per name */
+const availableMetadataTypes = computed<MetadataTypeDto[]>(() => {
+    const needle = search.value.toLowerCase();
+    const seenNames = new Set<string>();
+    const unique: MetadataTypeDto[] = [];
+    for (const metadataType of allMetadataTypes.value ?? []) {
+        if (
+            !localMetadataValues.value[metadataType.uuid] &&
+            metadataType.name.toLowerCase().includes(needle) &&
+            !seenNames.has(metadataType.name)
+        ) {
+            unique.push(metadataType);
+            seenNames.add(metadataType.name);
         }
+    }
+    return unique;
+});
 
-        filteredMetadataTypes.value = uniqueMetadataTypes;
-    });
-}
+/** Enter in the search adds the first match */
+const addFirstResult = (): void => {
+    const first = availableMetadataTypes.value[0];
+    if (first) addMetadataTypeFilter(first);
+};
 
-function addMetadataTypeFilter(selectedMetadataType: MetadataTypeDto | null) {
-    if (!selectedMetadataType || !allMetadataTypes.value) return;
+function addMetadataTypeFilter(selectedMetadataType: MetadataTypeDto) {
+    if (!allMetadataTypes.value) return;
+    menuOpen.value = false;
 
     // We must use a new object reference to trigger reactivity
     const newVals = { ...localMetadataValues.value };
@@ -177,9 +194,6 @@ function addMetadataTypeFilter(selectedMetadataType: MetadataTypeDto | null) {
     }
 
     updateLocalMetadataValues(newVals);
-
-    // Reset input
-    selectedMetadataTypeToAdd.value = null;
 }
 
 // Metadata Type Lookup for the Input Component
@@ -190,19 +204,75 @@ const metadataTypeLookup = computed(() => {
     }
     return lookup;
 });
-
-// Dynamic placeholder showing example format
-const metadataPlaceholder = computed(() => {
-    return "e.g. description='some description'";
-});
 </script>
 
 <style scoped>
+/* the datatype, right-aligned: small monospace $text-secondary */
+.add-menu__type {
+    color: #525252;
+    font-family: monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+/* rows share their columns: name | value | remove */
+.row-grid {
+    display: grid;
+    grid-template-columns: minmax(100px, 200px) minmax(0, 1fr) 32px;
+    gap: 8px 16px;
+    align-items: center;
+}
+
+.row-grid__row {
+    display: contents;
+}
+
+/* $border-subtle-00 */
+.row-grid__separator {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: #e0e0e0;
+}
+
+.row-grid__action {
+    display: flex;
+    justify-content: center;
+}
+
+/* $icon-secondary */
+.row-grid__remove {
+    color: #525252;
+}
+
+.add-button {
+    margin-top: 8px;
+}
+
+.add-menu__search {
+    padding: 8px;
+}
+
+.add-menu__list {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
 /* Finger-sized delete target on touch devices */
 @media (max-width: 1023px) {
     .remove-metadata-filter {
         min-width: 40px;
         min-height: 40px;
+    }
+}
+
+@media (max-width: 599px) {
+    .row-grid {
+        grid-template-columns: minmax(0, 1fr) 40px;
+    }
+
+    .row-grid :deep(.filter-cells__name) {
+        grid-column: 1 / -1;
+        margin-top: 8px;
     }
 }
 </style>

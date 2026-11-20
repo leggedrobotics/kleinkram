@@ -2,5 +2,6 @@
 export * from './docker-image.validation';
 export * from './filename.validation';
 export * from './files/google-drive.validator';
+export * from './metadata-value.validation';
 export * from './name.validation';
 export * from './validation-logic';

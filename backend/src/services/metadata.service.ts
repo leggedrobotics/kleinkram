@@ -9,6 +9,10 @@ import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/meta
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { DataType, safeLinkUrl } from '@kleinkram/shared';
 import {
+    getMetadataValueError,
+    parseMetadataBoolean,
+} from '@kleinkram/validation';
+import {
     BadRequestException,
     ConflictException,
     Injectable,
@@ -30,6 +34,14 @@ const validateLink = <T>(value: T, name: string): T => {
     }
     return value;
 };
+
+/** One invalid metadata value in a 422 response */
+interface MetadataValueError {
+    /** uuid of the metadata type */
+    field: string;
+    name: string;
+    error: string;
+}
 
 @Injectable()
 export class MetadataService {
@@ -155,7 +167,7 @@ export class MetadataService {
             case DataType.BOOLEAN: {
                 if (typeof value === 'boolean' || isString) {
                     if (isString) {
-                        value = value === 'true';
+                        value = parseMetadataBoolean(value) ?? false;
                     }
                     metadata = this.metadataRepository.create({
                         metadataType,
@@ -251,7 +263,7 @@ export class MetadataService {
             case DataType.BOOLEAN: {
                 if (typeof value === 'boolean' || isString) {
                     if (isString) {
-                        value = value === 'true';
+                        value = parseMetadataBoolean(value) ?? false;
                     }
 
                     existingMetadata.value_boolean = value as boolean;
@@ -306,12 +318,23 @@ export class MetadataService {
      *   the project marks as required
      */
     /**
-     * Rejects the request if a value of a LINK metadata type is not an
-     * absolute `http:` or `https:` URL. Call it before writing anything, so
-     * a bad link cannot leave a half-written mission behind; `addMetadata`
-     * and `updateMetadata` check each value again on their own.
+     * Rejects the request if any value does not fit its metadata type (e.g.
+     * a LINK that is not an absolute `http:` or `https:` URL, a LOCATION that
+     * is not "latitude, longitude"). Every invalid value is reported, not
+     * only the first one:
+     *
+     *     422 { message: 'Invalid metadata: …', errors: [{ field, name, error }] }
+     *
+     * `field` is the metadata type uuid. `storedValues` (by lowercase type
+     * uuid) are the values the mission already has: a value equal to its
+     * stored one is skipped, except for links. Call it before writing anything, so
+     * a bad value cannot leave a half-written mission behind; `addMetadata`
+     * and `updateMetadata` check links again on their own.
      */
-    async validateLinks(metadata: Record<string, unknown>): Promise<void> {
+    async validateMetadataValues(
+        metadata: Record<string, unknown>,
+        storedValues = new Map<string, string>(),
+    ): Promise<void> {
         // PostgreSQL matches uuids case-insensitively but returns them in
         // lowercase, so look the values up by their lowercase key.
         const valuesByUUID = new Map(
@@ -321,16 +344,34 @@ export class MetadataService {
             ]),
         );
         if (valuesByUUID.size === 0) return;
-        const linkTypes = await this.metadataTypeRepository.find({
-            where: {
-                uuid: In([...valuesByUUID.keys()]),
-                datatype: DataType.LINK,
-            },
-            select: { uuid: true, name: true },
+        const metadataTypes = await this.metadataTypeRepository.find({
+            where: { uuid: In([...valuesByUUID.keys()]) },
+            select: { uuid: true, name: true, datatype: true },
         });
-        for (const { uuid, name } of linkTypes) {
-            validateLink(valuesByUUID.get(uuid.toLowerCase()), name);
+
+        const errors: MetadataValueError[] = [];
+        for (const { uuid, name, datatype } of metadataTypes) {
+            const value = valuesByUUID.get(uuid.toLowerCase());
+            // A value that is sent back unchanged is not checked again, so a
+            // value stored before a rule existed (a free-text location) does
+            // not block saving the rest. Links are always checked.
+            if (
+                datatype !== DataType.LINK &&
+                storedValues.get(uuid.toLowerCase()) === String(value)
+            ) {
+                continue;
+            }
+            const error = getMetadataValueError(datatype, value);
+            if (error !== undefined) errors.push({ field: uuid, name, error });
         }
+        if (errors.length === 0) return;
+
+        throw new UnprocessableEntityException({
+            message: `Invalid metadata: ${errors
+                .map(({ name, error }) => `"${name}": ${error}`)
+                .join(' ')}`,
+            errors,
+        });
     }
 
     async replaceMissionMetadata(
@@ -401,9 +442,23 @@ export class MetadataService {
             );
         }
 
-        // Reject invalid links before anything is written, so a bad value
+        // Reject invalid values before anything is written, so a bad value
         // does not leave the mission with a partially replaced metadata set.
-        await this.validateLinks(Object.fromEntries(metadataToUpsert));
+        await this.validateMetadataValues(
+            Object.fromEntries(metadataToUpsert),
+            new Map(
+                mission.metadata.map((existing) => [
+                    (existing.metadataType?.uuid ?? '').toLowerCase(),
+                    String(
+                        existing.value_string ??
+                            existing.value_location ??
+                            existing.value_number ??
+                            existing.value_boolean ??
+                            existing.value_date?.toISOString(),
+                    ),
+                ]),
+            ),
+        );
 
         if (metadataToDelete.length > 0) {
             await this.metadataRepository.remove(metadataToDelete);

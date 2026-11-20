@@ -5,7 +5,9 @@
     >
         <q-separator />
 
+        <!-- a trail of only the current page repeats its title: no bar then -->
         <div
+            v-if="hasPath"
             class="height-xl flex column justify-center scroll-x-nowrap"
             style="padding: 0 var(--page-gutter)"
         >
@@ -68,7 +70,7 @@
                 </template>
             </q-breadcrumbs>
         </div>
-        <q-separator v-if="resolvedCrumbs?.length >= 1" />
+        <q-separator v-if="hasPath" />
     </div>
 </template>
 
@@ -108,7 +110,11 @@ const { data: accessGroup } = useAccessGroup(genericUuid);
 
 const resolvedCrumbs = computed(() => {
     const tab = route.params.tab as string | undefined;
-    const tabName = tab === 'runs' ? 'Executions' : 'Templates';
+    const TAB_NAMES: Record<string, string> = {
+        runs: 'Executions',
+        triggers: 'Triggers',
+    };
+    const tabName = TAB_NAMES[tab ?? ''] ?? 'Templates';
     const accessGroupsTab = route.query.tab === 'users' ? 'Users' : 'Groups';
 
     let _crumbs = crumbs.value.map((crumb: PageBreadCrumb) => {
@@ -176,6 +182,9 @@ const displayCrumbs = computed(() => {
 const isClickable = (crumb: PageBreadCrumb): boolean => {
     return crumb.to !== undefined;
 };
+
+/** whether the trail leads somewhere, i.e. has more than the current page */
+const hasPath = computed(() => resolvedCrumbs.value.length > 1);
 </script>
 
 <style lang="scss" scoped>

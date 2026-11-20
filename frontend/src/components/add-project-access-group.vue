@@ -1,57 +1,97 @@
 <template>
-    <div class="column q-pt-sm">
-        <q-select
-            ref="selectReference"
-            v-model="selectedSearchItem"
-            outlined
-            use-input
-            hide-selected
-            fill-input
-            hide-dropdown-icon
-            input-debounce="300"
-            placeholder="Search projects..."
-            class="q-pb-md"
-            autocomplete="off"
-            :options="_foundProjects"
-            @filter="handleSearchFilter"
-            @click="enableSearchMode"
+    <div v-if="selectedProjects.length > 0" class="row-grid">
+        <div
+            v-for="(project, index) in selectedProjects"
+            :key="project.uuid"
+            class="row-grid__row"
         >
-            <template #append>
-                <q-icon name="sym_o_search" />
-            </template>
+            <div v-if="index > 0" class="row-grid__separator" />
+            <div class="row-grid__name">
+                <div class="row-grid__label">{{ project.name }}</div>
+                <div class="row-grid__type">Project</div>
+            </div>
 
-            <template #no-option>
-                <q-item v-if="isSearchActive && _foundProjects.length === 0">
-                    <q-item-section class="text-grey"
-                        >No results</q-item-section
-                    >
+            <div class="row-grid__setting">
+                <q-select
+                    no-error-icon
+                    :model-value="project.rights"
+                    :options="rightOptions"
+                    :aria-label="`Rights on ${project.name}`"
+                    emit-value
+                    map-options
+                    outlined
+                    dense
+                    color="button-primary"
+                    hide-bottom-space
+                    @update:model-value="
+                        (right: AccessGroupRights) =>
+                            onUpdateRights(project, right)
+                    "
+                />
+            </div>
+
+            <div class="row-grid__action">
+                <q-btn
+                    flat
+                    round
+                    dense
+                    icon="sym_o_delete"
+                    class="row-grid__remove"
+                    :aria-label="`Remove ${project.name}`"
+                    @click="() => onRemoveProject(project)"
+                />
+            </div>
+        </div>
+    </div>
+
+    <q-btn
+        flat
+        no-caps
+        dense
+        icon="sym_o_add"
+        label="Add project"
+        class="text-link-primary"
+        :class="{ 'add-button--below': selectedProjects.length > 0 }"
+    >
+        <q-menu v-model="menuOpen" style="min-width: 320px" @hide="clearSearch">
+            <div class="add-menu__search">
+                <q-input
+                    v-model="search"
+                    no-error-icon
+                    dense
+                    outlined
+                    autofocus
+                    debounce="300"
+                    color="button-primary"
+                    aria-label="Search projects"
+                    placeholder="Search projects"
+                    autocomplete="off"
+                    @keydown.enter.prevent="addFirstResult"
+                >
+                    <template #prepend>
+                        <q-icon name="sym_o_search" />
+                    </template>
+                </q-input>
+            </div>
+            <q-list class="add-menu__list">
+                <q-item v-if="_foundProjects.length === 0">
+                    <q-item-section class="text-secondary">
+                        No results
+                    </q-item-section>
                 </q-item>
-            </template>
-
-            <template #option="{ opt }">
                 <q-item
-                    v-ripple
+                    v-for="opt in _foundProjects"
+                    :key="opt.uuid"
                     clickable
                     :disable="getExistingRight(opt.uuid) !== undefined"
-                    @click.stop="() => handleAddProject(opt)"
+                    @click="() => handleAddProject(opt)"
                 >
                     <q-item-section avatar>
-                        <q-icon
-                            name="sym_o_box"
-                            size="md"
-                            class="text-grey-8"
-                        />
+                        <q-icon name="sym_o_box" class="text-secondary" />
                     </q-item-section>
 
                     <q-item-section>
-                        <q-item-label
-                            :class="{
-                                'text-grey':
-                                    getExistingRight(opt.uuid) !== undefined,
-                            }"
-                        >
-                            {{ opt.name }}
-                        </q-item-label>
+                        <q-item-label>{{ opt.name }}</q-item-label>
                     </q-item-section>
 
                     <q-item-section
@@ -60,7 +100,7 @@
                     >
                         <q-badge
                             color="grey-3"
-                            text-color="primary"
+                            text-color="grey-9"
                             :label="
                                 getAccessRightDescription(
                                     getExistingRight(opt.uuid)!,
@@ -69,88 +109,21 @@
                         />
                     </q-item-section>
                 </q-item>
-            </template>
-        </q-select>
-
-        <q-table
-            v-if="selectedProjects.length > 0"
-            class="table-white q-mt-xs"
-            :columns="columns"
-            :rows="selectedProjects"
-            hide-pagination
-            flat
-            separator="horizontal"
-            bordered
-            style="max-height: 360px"
-            binary-state-sort
-            :rows-per-page-options="[0]"
-        >
-            <template #body-cell-name="props">
-                <q-td :props="props">
-                    <div class="row items-center no-wrap">
-                        <q-icon
-                            name="sym_o_box"
-                            size="md"
-                            class="q-mr-sm text-grey-8"
-                        />
-                        <span style="font-size: 1.2em">{{
-                            props.row.name
-                        }}</span>
-                    </div>
-                </q-td>
-            </template>
-
-            <template #body-cell-rights="props">
-                <q-td :props="props">
-                    <q-btn-dropdown
-                        flat
-                        outlined
-                        class="bg-grey-3"
-                        :label="getAccessRightDescription(props.row.rights)"
-                        auto-close
-                    >
-                        <q-list>
-                            <q-item
-                                v-for="option in accessGroupRightsList"
-                                :key="option"
-                                clickable
-                                @click="() => onUpdateRights(props.row, option)"
-                            >
-                                <q-item-section>
-                                    {{ getAccessRightDescription(option) }}
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
-                </q-td>
-            </template>
-
-            <template #body-cell-actions="props">
-                <q-td :props="props">
-                    <q-btn
-                        flat
-                        round
-                        dense
-                        icon="sym_o_delete"
-                        color="red"
-                        @click="() => onRemoveProject(props.row)"
-                    />
-                </q-td>
-            </template>
-        </q-table>
-    </div>
+            </q-list>
+        </q-menu>
+    </q-btn>
 </template>
 
 <script setup lang="ts">
 import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { Notify, QSelect, QTableColumn } from 'quasar';
+import { Notify } from 'quasar';
 import { accessGroupRightsList } from 'src/enums/access-group-rights-list';
 import { useFilteredProjects } from 'src/hooks/query-hooks';
 import { getAccessRightDescription } from 'src/services/generic';
 import { addAccessGroupToProject } from 'src/services/mutations/access';
-import { computed, ref, Ref } from 'vue';
+import { computed, ref, Ref, watch } from 'vue';
 
 const properties = defineProps<{
     accessGroupUuid: string;
@@ -164,10 +137,8 @@ interface SelectedProject {
     rights: AccessGroupRights;
 }
 
-const selectReference = ref<QSelect>();
+const menuOpen = ref(false);
 const search = ref('');
-const isSearchActive = ref(false);
-const selectedSearchItem = ref(undefined);
 const selectedProjects: Ref<SelectedProject[]> = ref([]);
 
 const searchFilter = computed(() => ({
@@ -186,42 +157,13 @@ const _foundProjects = computed(() =>
     foundProjects.value ? foundProjects.value.data : [],
 );
 
-const columns: QTableColumn<SelectedProject>[] = [
-    {
-        name: 'name',
-        required: true,
-        label: 'Name',
-        align: 'left',
-        field: 'name',
-    },
-    {
-        name: 'rights',
-        required: true,
-        label: 'Rights',
-        align: 'left',
-        field: 'rights',
-    },
-    {
-        name: 'actions',
-        required: true,
-        label: '',
-        align: 'center',
-        field: (row: SelectedProject) => row.uuid,
-    },
-];
+const rightOptions = accessGroupRightsList.map((option) => ({
+    label: getAccessRightDescription(option),
+    value: option,
+}));
 
-const enableSearchMode = (event?: Event): void => {
-    isSearchActive.value = true;
-    event?.stopPropagation();
-};
-
-const handleSearchFilter = (
-    value: string,
-    update: (function_: () => void) => void,
-): void => {
-    search.value = value;
-    enableSearchMode();
-    update(() => ({}));
+const clearSearch = (): void => {
+    search.value = '';
 };
 
 const getExistingRight = (uuid: string): AccessGroupRights | undefined => {
@@ -231,18 +173,21 @@ const getExistingRight = (uuid: string): AccessGroupRights | undefined => {
 const handleAddProject = (project: ProjectDto): void => {
     if (getExistingRight(project.uuid) !== undefined) return;
 
-    selectReference.value?.updateInputValue('', true);
-    selectReference.value?.hidePopup();
-
-    isSearchActive.value = false;
-    selectedSearchItem.value = undefined;
-    search.value = '';
+    menuOpen.value = false;
 
     selectedProjects.value.push({
         uuid: project.uuid,
         name: project.name,
         rights: AccessGroupRights.READ,
     });
+};
+
+/** Enter in the search adds the first project that is not added yet */
+const addFirstResult = (): void => {
+    const first = _foundProjects.value.find(
+        (project) => getExistingRight(project.uuid) === undefined,
+    );
+    if (first) handleAddProject(first);
 };
 
 const onUpdateRights = (
@@ -261,7 +206,7 @@ const onRemoveProject = (project: SelectedProject): void => {
     );
 };
 
-const { mutate } = useMutation({
+const { mutateAsync } = useMutation({
     mutationFn: () => {
         return Promise.all(
             selectedProjects.value.map(async (project) => {
@@ -284,16 +229,97 @@ const { mutate } = useMutation({
             queryKey: ['AccessGroup', properties.accessGroupUuid],
         });
     },
-    onError: () => {
-        Notify.create({
-            message: 'Failed to add some projects to access group',
-            color: 'negative',
-            position: 'bottom',
-        });
-    },
 });
 
-defineExpose({ mutate });
+/** How many are selected, for the dialog's button */
+const count = defineModel<number>('count', { default: 0 });
+watch(
+    () => selectedProjects.value.length,
+    (length) => {
+        count.value = length;
+    },
+    { immediate: true },
+);
+
+defineExpose({ mutateAsync });
 </script>
 
-<style scoped></style>
+<style scoped>
+/* rows share their columns: name | rights | remove */
+.row-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 112px 32px;
+    gap: 8px 16px;
+    align-items: center;
+}
+
+.row-grid__row {
+    display: contents;
+}
+
+/* $border-subtle-00 */
+.row-grid__separator {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: #e0e0e0;
+}
+
+.row-grid__name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* $text-primary */
+.row-grid__label {
+    color: #161616;
+    font-size: 14px;
+    line-height: 18px;
+}
+
+/* $text-secondary */
+.row-grid__type {
+    color: #525252;
+    font-family: monospace;
+    font-size: 11px;
+    line-height: 16px;
+    text-transform: uppercase;
+}
+
+.row-grid__setting {
+    min-width: 0;
+}
+
+.row-grid__action {
+    display: flex;
+    justify-content: center;
+}
+
+/* $icon-secondary */
+.row-grid__remove {
+    color: #525252;
+}
+
+.add-button--below {
+    margin-top: 8px;
+}
+
+.add-menu__search {
+    padding: 8px;
+}
+
+.add-menu__list {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+@media (max-width: 599px) {
+    .row-grid {
+        grid-template-columns: minmax(0, 1fr) 32px;
+    }
+
+    .row-grid__name {
+        grid-column: 1 / -1;
+        margin-top: 8px;
+    }
+}
+</style>

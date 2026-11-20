@@ -217,7 +217,7 @@ describe('Link Metadata Validation', () => {
         });
         expect(response.status).toBe(422);
         const body = (await response.json()) as { message: string };
-        expect(body.message).toMatch(/^Metadata "link_\d+" must be/);
+        expect(body.message).toMatch(/^Invalid metadata: "link_\d+": /);
     });
 
     test('should not validate string metadata as a link', async () => {

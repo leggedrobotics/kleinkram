@@ -1,5 +1,10 @@
 <template>
-    <base-dialog ref="dialogRef">
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="isPending"
+        size="lg"
+    >
         <template #title>Change Access Rights</template>
 
         <template #content>
@@ -12,8 +17,10 @@
         <template #actions>
             <q-btn
                 flat
-                label="Confirm"
+                no-caps
+                label="Save Changes"
                 class="bg-button-primary"
+                :loading="isPending"
                 @click="confirmMakingPublic"
             />
         </template>
@@ -30,6 +37,7 @@ import {
 import AccessRightsManager from 'components/configure-access-rights/access-rights-manager.vue';
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
+import ConfirmDialog from 'src/dialogs/confirm-dialog.vue';
 import { useUpdateAccessRightsMutation } from 'src/hooks/mutation-hooks';
 import {
     canDeleteProject,
@@ -39,8 +47,9 @@ import {
     useUser,
 } from 'src/hooks/query-hooks';
 import { useEditablePaginatedResponse } from 'src/hooks/utility-hooks';
+import { getDialogErrorMessage } from 'src/services/error-handling';
 import { formatSize } from 'src/services/general-formatting';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const { projectUuid: projectUuid } = defineProps<{ projectUuid: string }>();
 
@@ -57,10 +66,8 @@ const canChangeGeneralAccess = computed(() =>
     canDeleteProject(projectUuid, permissions.value),
 );
 
-const { mutate: changeAccessRights } = useUpdateAccessRightsMutation(
-    projectUuid,
-    modifiableAccessRights,
-);
+const { mutateAsync: changeAccessRights, isPending } =
+    useUpdateAccessRightsMutation(projectUuid, modifiableAccessRights);
 
 const hasPublicAccess = (accessRights: ProjectAccessDto[]): boolean =>
     accessRights.some((access) => access.type === AccessGroupType.PUBLIC);
@@ -81,23 +88,15 @@ const confirmMakingPublic = (): void => {
     const size = formatSize(project.value?.size ?? 0);
 
     $q.dialog({
-        title: `Make “${project.value?.name ?? 'this project'}” public?`,
-        message:
-            `All Kleinkram users, including everyone who signs up later, ` +
-            `will be able to view and download this project ` +
-            `(${missions}, ${size}). You can make it restricted again at ` +
-            `any time, but files that were already downloaded cannot be ` +
-            `taken back.`,
-        cancel: {
-            label: 'Cancel',
-            flat: true,
+        component: ConfirmDialog,
+        componentProps: {
+            title: 'Make Project Public',
+            subtitle: project.value?.name,
+            message:
+                `Every Kleinkram user will be able to view and download ` +
+                `its ${missions} (${size}). Downloaded files can't be taken back.`,
+            okLabel: 'Make Public',
         },
-        ok: {
-            label: 'Make public',
-            color: 'positive',
-            flat: true,
-        },
-        persistent: true,
     }).onOk(confirmAccessRightsModification);
 };
 
@@ -124,26 +123,35 @@ const confirmAccessRightsModification: () => void = () => {
 
     if (hadDelete && !hasDelete && user.value.role !== UserRole.ADMIN) {
         $q.dialog({
-            title: 'Warning: Loss of Delete Rights',
-            message:
-                'You are transferring DELETE rights away from yourself. Once confirmed, you may no longer be able to delete this project, or manage its access rights. Are you sure you want to continue?',
-            cancel: {
-                label: 'Cancel',
-                flat: true,
+            component: ConfirmDialog,
+            componentProps: {
+                title: 'Give Up Delete Rights?',
+                message:
+                    'You will no longer be able to delete this project or manage its access rights.',
+                okLabel: 'Transfer Rights',
+                danger: true,
+                // saved while this question stays open; a failure shows here
+                action: () => changeAccessRights(),
             },
-            ok: {
-                label: 'Confirm Transfer',
-                color: 'negative',
-                flat: true,
-            },
-            persistent: true,
         }).onOk(() => {
-            changeAccessRights();
             onDialogOK();
         });
     } else {
-        changeAccessRights();
-        onDialogOK();
+        void saveAccessRights();
     }
 };
+
+const errorMessage = ref('');
+
+/** Saves the access rights; the dialog stays open if that fails */
+async function saveAccessRights(): Promise<void> {
+    errorMessage.value = '';
+    try {
+        await changeAccessRights();
+    } catch (error: unknown) {
+        errorMessage.value = getDialogErrorMessage(error);
+        return;
+    }
+    onDialogOK();
+}
 </script>

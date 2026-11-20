@@ -26,7 +26,6 @@ const manageProjectAccess = () => {
 
     // open the dialog
     $q.dialog({
-        title: 'Manage Access',
         component: AccessRightsDialog,
         componentProps: {
             projectUuid: projectUuid,

@@ -219,6 +219,7 @@ import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import { QTableColumn, useQuasar } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
+import ConfirmDialog from 'src/dialogs/confirm-dialog.vue';
 import {
     hasRightsAnywhere,
     useHandler,
@@ -336,29 +337,23 @@ const closeDrawer = () => {
 
 const confirmDelete = (trigger: ActionTriggerDto) => {
     $q.dialog({
-        title: 'Delete Trigger',
-        message: `Are you sure you want to delete trigger "${trigger.name}"?`,
-        cancel: true,
-        persistent: true,
+        component: ConfirmDialog,
+        componentProps: {
+            title: 'Delete Trigger',
+            subtitle: trigger.name,
+            message: "This can't be undone.",
+            okLabel: 'Delete Trigger',
+            danger: true,
+            // the dialog deletes it and shows a failure itself
+            action: () => ActionService.deleteTrigger(trigger.uuid),
+        },
     }).onOk(() => {
-        void deleteTriggerConfirmed(trigger);
-    });
-};
-
-const deleteTriggerConfirmed = async (trigger: ActionTriggerDto) => {
-    try {
-        await ActionService.deleteTrigger(trigger.uuid);
         $q.notify({
             type: 'positive',
             message: 'Trigger deleted successfully',
         });
-        await loadTriggers();
-    } catch {
-        $q.notify({
-            type: 'negative',
-            message: 'Failed to delete trigger',
-        });
-    }
+        void loadTriggers();
+    });
 };
 
 // Lifecycle

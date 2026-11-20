@@ -15,61 +15,69 @@
                 :style="{
                     width: $q.screen.gt.xs ? '440px' : '100vw',
                     maxWidth: '100vw',
+                    borderRadius: '8px',
                 }"
             >
                 <div class="cli-menu">
-                    <div class="cli-menu__title">
-                        <q-icon name="sym_o_terminal" size="22px" />
-                        Use Kleinkram from the terminal
-                    </div>
-
-                    <div
-                        v-for="(step, index) in steps"
-                        :key="step.title"
-                        class="cli-menu__step"
-                    >
-                        <span class="cli-menu__number">{{ index + 1 }}</span>
-                        <div class="cli-menu__step-body">
-                            <b>{{ step.title }}</b>
-                            <div class="cli-menu__command">
-                                <code>{{ step.command }}</code>
-                                <q-btn
-                                    flat
-                                    dense
-                                    no-caps
-                                    size="sm"
-                                    color="link-primary"
-                                    :label="
-                                        copied === index ? 'Copied' : 'Copy'
-                                    "
-                                    :aria-label="`Copy ${step.command}`"
-                                    @click="() => copy(step.command, index)"
-                                />
-                            </div>
-                            <span v-if="step.hint" class="cli-menu__hint">
-                                {{ step.hint }}
-                            </span>
+                    <div class="cli-menu__header">
+                        <div class="cli-menu__title">
+                            Use Kleinkram from the terminal
+                        </div>
+                        <div v-if="cliConfig" class="cli-menu__subtitle">
+                            Server {{ cliConfig.serverVersion }} · needs CLI ≥
+                            {{ cliConfig.minCliVersion }}
                         </div>
                     </div>
 
-                    <div class="cli-menu__meta">
-                        <span v-if="cliConfig">
-                            Server {{ cliConfig.serverVersion }} · needs CLI ≥
-                            {{ cliConfig.minCliVersion }}
-                        </span>
-                        <span v-else />
-                        <span>
-                            <router-link
-                                v-close-popup
-                                :to="ROUTES.USER_PROFILE.path"
-                            >
-                                API keys for scripts
-                            </router-link>
-                            ·
-                            <a :href="cliDocumentationUrl" target="_blank"
-                                >CLI docs</a
-                            >
-                        </span>
+                    <ol class="cli-menu__steps">
+                        <li
+                            v-for="(step, index) in steps"
+                            :key="step.title"
+                            class="cli-menu__step"
+                        >
+                            <span class="cli-menu__number" aria-hidden="true">
+                                {{ index + 1 }}
+                            </span>
+                            <div class="cli-menu__step-body">
+                                <span class="cli-menu__step-title">
+                                    {{ step.title }}
+                                </span>
+                                <div class="cli-menu__command">
+                                    <code>{{ step.command }}</code>
+                                    <q-btn
+                                        flat
+                                        dense
+                                        round
+                                        size="sm"
+                                        color="grey-8"
+                                        :icon="
+                                            copied === index
+                                                ? 'sym_o_check'
+                                                : 'sym_o_content_copy'
+                                        "
+                                        :aria-label="`Copy ${step.command}`"
+                                        @click="() => copy(step.command, index)"
+                                    >
+                                        <q-tooltip>
+                                            {{
+                                                copied === index
+                                                    ? 'Copied'
+                                                    : 'Copy'
+                                            }}
+                                        </q-tooltip>
+                                    </q-btn>
+                                </div>
+                                <span v-if="step.hint" class="cli-menu__hint">
+                                    {{ step.hint }}
+                                </span>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <div class="cli-menu__footer">
+                        <a :href="cliDocumentationUrl" target="_blank">
+                            CLI docs
+                        </a>
                     </div>
                 </div>
             </q-menu>
@@ -80,7 +88,6 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { useQuasar } from 'quasar';
-import ROUTES from 'src/router/routes';
 import { getCliConfig } from 'src/services/queries/cli';
 import { computed, ref } from 'vue';
 import ENV from '../../../environment';
@@ -108,7 +115,7 @@ const steps = computed(() => [
     {
         title: 'Sign in to this server',
         command: `klein login ${loginUrl.value}`,
-        hint: 'Works over SSH too: you get a code to enter at /cli/activate.',
+        hint: 'Over SSH you get a code to enter at /cli/activate.',
     },
     { title: 'Try it', command: 'klein project list' },
 ]);
@@ -125,83 +132,107 @@ const copy = async (text: string, index: number): Promise<void> => {
 </script>
 
 <style scoped>
+/* Same tokens as BaseDialog: $text-primary #161616, $text-secondary #525252,
+   $layer #f4f4f4, $border-subtle #e0e0e0, $link-primary #0f62fe */
 .cli-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 18px;
+    color: #161616;
+}
+
+.cli-menu__header {
+    padding: 20px 24px 0;
 }
 
 .cli-menu__title {
-    align-items: center;
-    display: flex;
-    font-size: 16px;
+    font-size: 1.25rem;
     font-weight: 600;
-    gap: 8px;
+    line-height: 1.75rem;
+}
+
+.cli-menu__subtitle {
+    margin-top: 2px;
+    color: #525252;
+    font-size: 12px;
+}
+
+.cli-menu__steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 0;
+    padding: 16px 24px 24px;
+    list-style: none;
 }
 
 .cli-menu__step {
     display: grid;
-    gap: 10px;
-    grid-template-columns: 22px minmax(0, 1fr);
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 8px;
 }
 
 .cli-menu__number {
-    align-items: center;
-    background: #e6efff;
-    border-radius: 50%;
-    color: #0f62fe; /* $link-primary */
     display: flex;
-    font-size: 12px;
-    font-weight: 600;
-    height: 22px;
+    align-items: center;
     justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    font-size: 11px;
+    font-weight: 600;
 }
 
 .cli-menu__step-body {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     min-width: 0;
 }
 
+.cli-menu__step-title {
+    font-weight: 500;
+}
+
 .cli-menu__command {
-    align-items: center;
-    background: #f6f7f9;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
     display: flex;
+    align-items: center;
     gap: 8px;
-    padding: 4px 4px 4px 10px;
+    height: 36px;
+    padding: 0 4px 0 12px;
+    border-radius: 4px;
+    background: #f4f4f4;
 }
 
 .cli-menu__command code {
     flex: 1 1 auto;
-    font-size: 12px;
     min-width: 0;
     overflow-x: auto;
+    font-size: 13px;
     white-space: nowrap;
 }
 
 .cli-menu__hint {
-    color: #6b7280;
+    color: #525252;
     font-size: 12px;
 }
 
-.cli-menu__meta {
-    border-top: 1px solid #e0e0e0;
-    color: #6b7280;
+.cli-menu__footer {
     display: flex;
     flex-wrap: wrap;
-    font-size: 12px;
-    gap: 8px;
-    justify-content: space-between;
-    padding-top: 10px;
+    gap: 16px;
+    padding: 12px 24px;
+    border-top: 1px solid #e0e0e0;
+    background: #f4f4f4;
+    font-size: 13px;
 }
 
-.cli-menu__meta a {
-    color: #0f62fe; /* $link-primary */
+.cli-menu__footer a {
+    color: #0f62fe;
     font-weight: 500;
     text-decoration: none;
+}
+
+.cli-menu__footer a:hover {
+    text-decoration: underline;
 }
 </style>

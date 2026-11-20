@@ -1,82 +1,85 @@
 <template>
-    <q-select
-        ref="selectReference"
-        v-model="selectedSearchItem"
-        outlined
-        use-input
-        hide-selected
-        fill-input
-        hide-dropdown-icon
-        input-debounce="300"
-        placeholder="Search users or groups..."
-        class="q-pb-md"
-        autocomplete="off"
-        :options="searchResults"
-        @filter="handleSearchFilter"
-        @click="enableSearchMode"
-    >
-        <template #append>
-            <q-icon name="sym_o_search" />
-        </template>
-
-        <template #no-option>
-            <q-item v-if="isSearchActive && searchResults.length > 0">
-                <q-item-section class="text-grey">No results</q-item-section>
-            </q-item>
-        </template>
-
-        <template #option="{ opt }">
-            <q-item
-                v-ripple
-                clickable
-                :disable="getExistingRight(opt.uuid) !== undefined"
-                @click.stop="() => handleAddAccessGroup(opt)"
-            >
-                <q-item-section avatar>
-                    <AccessGroupAvatar :type="opt.type" />
-                </q-item-section>
-
-                <q-item-section>
-                    <q-item-label
-                        :class="{
-                            'text-grey':
-                                getExistingRight(opt.uuid) !== undefined,
-                        }"
-                    >
-                        {{ opt.name }}
-                    </q-item-label>
-                    <q-item-label
-                        v-if="opt.type !== AccessGroupType.PRIMARY"
-                        caption
-                    >
-                        {{ opt.memberCount }}
-                        {{ opt.memberCount === 1 ? 'member' : 'members' }}
-                    </q-item-label>
-                </q-item-section>
-
-                <q-item-section
-                    v-if="getExistingRight(opt.uuid) !== undefined"
-                    side
-                >
-                    <q-badge
-                        color="grey-3"
-                        text-color="primary"
-                        :label="
-                            getAccessRightDescription(
-                                getExistingRight(opt.uuid)!,
-                            )
-                        "
-                    />
-                </q-item-section>
-            </q-item>
-        </template>
-    </q-select>
-
     <AccessRightsTable
         :access-rights="groupAccessRights"
         @update-rights="onUpdateRights"
         @remove="onRemoveGroup"
     />
+
+    <q-btn
+        flat
+        no-caps
+        dense
+        icon="sym_o_add"
+        label="Add user or group"
+        class="text-link-primary add-button"
+        :class="{ 'add-button--below': groupAccessRights.length > 0 }"
+    >
+        <q-menu v-model="menuOpen" style="min-width: 320px" @hide="clearSearch">
+            <div class="add-menu__search">
+                <q-input
+                    v-model="searchQuery"
+                    no-error-icon
+                    dense
+                    outlined
+                    autofocus
+                    debounce="300"
+                    color="button-primary"
+                    aria-label="Search users or groups"
+                    placeholder="Search users or groups"
+                    autocomplete="off"
+                    @keydown.enter.prevent="addFirstResult"
+                >
+                    <template #prepend>
+                        <q-icon name="sym_o_search" />
+                    </template>
+                </q-input>
+            </div>
+            <q-list class="add-menu__list">
+                <q-item v-if="searchResults.length === 0">
+                    <q-item-section class="text-secondary">
+                        No results
+                    </q-item-section>
+                </q-item>
+                <q-item
+                    v-for="opt in searchResults"
+                    :key="opt.uuid"
+                    clickable
+                    :disable="getExistingRight(opt.uuid) !== undefined"
+                    @click="() => handleAddAccessGroup(opt)"
+                >
+                    <q-item-section avatar>
+                        <AccessGroupAvatar :type="opt.type" />
+                    </q-item-section>
+
+                    <q-item-section>
+                        <q-item-label>{{ opt.name }}</q-item-label>
+                        <q-item-label
+                            v-if="opt.type !== AccessGroupType.PRIMARY"
+                            caption
+                        >
+                            {{ opt.memberCount }}
+                            {{ opt.memberCount === 1 ? 'member' : 'members' }}
+                        </q-item-label>
+                    </q-item-section>
+
+                    <q-item-section
+                        v-if="getExistingRight(opt.uuid) !== undefined"
+                        side
+                    >
+                        <q-badge
+                            color="grey-3"
+                            text-color="grey-9"
+                            :label="
+                                getAccessRightDescription(
+                                    getExistingRight(opt.uuid)!,
+                                )
+                            "
+                        />
+                    </q-item-section>
+                </q-item>
+            </q-list>
+        </q-menu>
+    </q-btn>
 
     <GeneralAccessSelector
         v-model="isPublic"
@@ -96,7 +99,6 @@ import {
 import AccessGroupAvatar from 'components/configure-access-rights/access-group-avatar.vue';
 import AccessRightsTable from 'components/configure-access-rights/access-rights-table.vue';
 import GeneralAccessSelector from 'components/configure-access-rights/general-access-selector.vue';
-import { QSelect } from 'quasar';
 import { useSearchAccessGroup } from 'src/hooks/query-hooks';
 import { getAccessRightDescription } from 'src/services/generic';
 import { computed, ref } from 'vue';
@@ -142,39 +144,25 @@ const isPublic = computed({
 });
 
 // State
-const selectReference = ref<QSelect>();
+const menuOpen = ref(false);
 const searchQuery = ref('');
-const isSearchActive = ref(false);
-const selectedSearchItem = ref(undefined);
 
-// Query Hook
+// Query Hook (searches on the server)
 const { data: foundAccessGroups } = useSearchAccessGroup(searchQuery);
 
-const searchResults = computed<AccessGroupDto[]>(() => {
-    return (
-        foundAccessGroups.value?.data.map((r) => ({
-            // eslint-disable-next-line @typescript-eslint/no-misused-spread
-            ...r,
+const searchResults = computed<(AccessGroupDto & { memberCount: number })[]>(
+    () => {
+        return (
+            foundAccessGroups.value?.data.map((r) => ({
+                // eslint-disable-next-line @typescript-eslint/no-misused-spread
+                ...r,
 
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            memberCount: r.memberships?.length ?? 0,
-        })) ?? []
-    );
-});
-
-const enableSearchMode = (event?: Event): void => {
-    isSearchActive.value = true;
-    event?.stopPropagation();
-};
-
-const handleSearchFilter = (
-    value: string,
-    update: (function_: () => void) => void,
-): void => {
-    searchQuery.value = value;
-    enableSearchMode();
-    update(() => ({}));
-};
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                memberCount: r.memberships?.length ?? 0,
+            })) ?? []
+        );
+    },
+);
 
 const getExistingRight = (uuid: string): AccessGroupRights | undefined => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -183,17 +171,7 @@ const getExistingRight = (uuid: string): AccessGroupRights | undefined => {
 
 const handleAddAccessGroup = (group: AccessGroupDto): void => {
     if (getExistingRight(group.uuid) !== undefined) return;
-
-    // Clear input WITHOUT triggering the filter event (true = noFilter)
-    // This prevents the "reopening" loop
-    selectReference.value?.updateInputValue('', true);
-
-    // Force close the dropdown
-    selectReference.value?.hidePopup();
-
-    // Reset internal state
-    isSearchActive.value = false;
-    selectedSearchItem.value = undefined;
+    menuOpen.value = false;
 
     // Add the data
     const newEntry: DefaultRightDto = {
@@ -205,6 +183,18 @@ const handleAddAccessGroup = (group: AccessGroupDto): void => {
     };
 
     accessRights.value = [...accessRights.value, newEntry];
+};
+
+const clearSearch = (): void => {
+    searchQuery.value = '';
+};
+
+/** Enter in the search adds the first result that is not added yet */
+const addFirstResult = (): void => {
+    const first = searchResults.value.find(
+        (group) => getExistingRight(group.uuid) === undefined,
+    );
+    if (first) handleAddAccessGroup(first);
 };
 
 const onUpdateRights = (
@@ -227,3 +217,18 @@ const onRemoveGroup = (group: DefaultRightDto): void => {
     );
 };
 </script>
+
+<style scoped>
+.add-button--below {
+    margin-top: 8px;
+}
+
+.add-menu__search {
+    padding: 8px;
+}
+
+.add-menu__list {
+    max-height: 320px;
+    overflow-y: auto;
+}
+</style>

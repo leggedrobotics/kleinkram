@@ -1,88 +1,105 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title> Membership Expiration</template>
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="running"
+        :dirty="isDirty"
+        :submit-disabled="!canSave || running"
+        @submit="saveExpiration"
+    >
+        <template #title>Membership Expiration</template>
 
         <template #content>
-            <div class="column q-gutter-y-md">
-                <div class="row q-gutter-sm">
-                    <q-btn
-                        v-for="option in options"
-                        :key="String(option.value)"
-                        :label="option.label"
-                        :icon="option.icon"
-                        flat
-                        dense
-                        no-caps
-                        class="button-border q-px-sm"
-                        :class="
-                            expirationShortcutState === option.value
-                                ? 'bg-white text-grey-10'
-                                : 'bg-grey-2 text-grey-8'
-                        "
-                        @click="() => onExpirationSelectionUpdate(option.value)"
-                    />
-                </div>
+            <div class="row q-gutter-sm">
+                <q-btn
+                    v-for="option in options"
+                    :key="String(option.value)"
+                    :label="option.label"
+                    :icon="option.icon"
+                    flat
+                    dense
+                    no-caps
+                    class="button-border q-px-sm"
+                    :class="
+                        expirationShortcutState === option.value
+                            ? 'bg-button-secondary text-white'
+                            : 'bg-grey-2 text-grey-8'
+                    "
+                    :aria-pressed="
+                        expirationShortcutState === option.value
+                            ? 'true'
+                            : 'false'
+                    "
+                    @click="() => onExpirationSelectionUpdate(option.value)"
+                />
+            </div>
 
-                <div style="min-height: 380px">
-                    <div
-                        v-if="expirationShortcutState === 'custom'"
-                        class="flex justify-center"
+            <div class="q-mt-md">
+                <template v-if="expirationShortcutState === 'custom'">
+                    <q-input
+                        v-model="datePart"
+                        no-error-icon
+                        aria-label="Expiration date"
+                        outlined
+                        dense
+                        mask="##.##.####"
+                        placeholder="DD.MM.YYYY"
+                        hide-bottom-space
                     >
-                        <q-date
-                            v-model="expirationDate"
-                            mask="DD.MM.YYYY HH:mm"
-                            color="button-primary"
-                            flat
-                            bordered
-                        />
-                    </div>
-                    <div
-                        v-else
-                        class="flex column items-center justify-center text-grey-6"
-                        style="height: 100%; min-height: 380px"
-                    >
-                        <q-icon
-                            :name="
-                                expirationShortcutState === 'never'
-                                    ? 'sym_o_all_inclusive'
-                                    : 'sym_o_event_available'
-                            "
-                            size="64px"
-                            class="q-mb-md"
-                        />
-                        <div class="text-h6 text-weight-regular">
-                            {{
-                                expirationShortcutState === 'never'
-                                    ? 'No Expiration'
-                                    : 'Expiration Updated'
-                            }}
-                        </div>
-                        <div class="text-caption">
-                            {{
-                                expirationShortcutState === 'never'
-                                    ? 'This user will have access indefinitely.'
-                                    : `Access will expire on ${expirationDate}`
-                            }}
-                        </div>
-                    </div>
-                </div>
+                        <template #append>
+                            <q-icon
+                                name="sym_o_event"
+                                class="cursor-pointer"
+                                aria-label="Pick a date"
+                                role="img"
+                            >
+                                <q-popup-proxy
+                                    cover
+                                    transition-show="scale"
+                                    transition-hide="scale"
+                                >
+                                    <q-date
+                                        v-model="datePart"
+                                        mask="DD.MM.YYYY"
+                                        color="button-primary"
+                                    >
+                                        <div class="row justify-end">
+                                            <q-btn
+                                                v-close-popup
+                                                flat
+                                                no-caps
+                                                label="Close"
+                                                class="text-button-primary"
+                                            />
+                                        </div>
+                                    </q-date>
+                                </q-popup-proxy>
+                            </q-icon>
+                        </template>
+                    </q-input>
+                </template>
+                <template v-else-if="expirationShortcutState === 'never'">
+                    Never expires
+                </template>
+                <template v-else>
+                    Expires <b>{{ datePart }}</b>
+                </template>
             </div>
         </template>
 
         <template #actions>
-            <q-btn
-                v-close-popup
-                flat
-                label="Cancel"
-                class="text-button-primary"
-                style="margin-right: 8px"
-            />
-            <q-btn
-                flat
-                label="Save"
-                class="bg-button-primary"
-                @click="saveExpiration"
-            />
+            <span class="disabled-reason">
+                <q-btn
+                    flat
+                    no-caps
+                    label="Save"
+                    class="bg-button-primary"
+                    :disable="!canSave"
+                    :loading="running"
+                    @click="saveExpiration"
+                />
+                <q-tooltip v-if="!canSave">Pick a date</q-tooltip>
+            </span>
         </template>
     </base-dialog>
 </template>
@@ -90,24 +107,63 @@
 <script setup lang="ts">
 import type { GroupMembershipDto } from '@kleinkram/api-dto/types/access-control/group-membership.dto';
 import { useDialogPluginComponent } from 'quasar';
+import { useDialogAction } from 'src/composables/use-dialog-action';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { formatDate, parseDate } from 'src/services/date-formating';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const properties = defineProps<{
     agu: GroupMembershipDto;
+    /** Saves the date (null: never expires); the dialog closes on success */
+    action: (expirationDate: Date | null) => Promise<unknown>;
 }>();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
+/** 'DD.MM.YYYY HH:mm', the format of formatDate and parseDate */
 const expirationDate = ref<string | undefined>(
     properties.agu.expirationDate
-        ? formatDate(properties.agu.expirationDate)
+        ? formatDate(new Date(properties.agu.expirationDate))
         : undefined,
 );
 
 const expirationShortcutState = ref<string>(
     properties.agu.expirationDate ? 'custom' : 'never',
+);
+
+const initialState = expirationShortcutState.value;
+const initialDate = expirationDate.value;
+
+const isDirty = computed(
+    () =>
+        expirationShortcutState.value !== initialState ||
+        (expirationShortcutState.value !== 'never' &&
+            expirationDate.value !== initialDate),
+);
+
+/** The day of the expiration, edited in the date field; keeps the time */
+const datePart = computed<string>({
+    get: () => expirationDate.value?.split(' ')[0] ?? '',
+    set: (value: string | null) => {
+        const time = expirationDate.value?.split(' ')[1] ?? '00:00';
+        expirationDate.value = value ? `${value} ${time}` : undefined;
+    },
+});
+
+const isValidDate = computed(() => {
+    const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(datePart.value);
+    if (!match || !expirationDate.value) return false;
+    const date = parseDate(expirationDate.value);
+    // rejects dates that roll over, e.g. 31.02.
+    return (
+        !Number.isNaN(date.getTime()) &&
+        date.getDate() === Number(match[1]) &&
+        date.getMonth() + 1 === Number(match[2])
+    );
+});
+
+const canSave = computed(
+    () => expirationShortcutState.value === 'never' || isValidDate.value,
 );
 
 const options = [
@@ -140,18 +196,21 @@ function onExpirationSelectionUpdate(
     }
 }
 
-function saveExpiration() {
+const { running, errorMessage, run } = useDialogAction(() => {
+    onDialogOK();
+});
+
+/** Saves through the caller's `action`; closes only when that succeeds */
+async function saveExpiration(): Promise<void> {
     if (expirationShortcutState.value === 'never') {
-        onDialogOK();
+        await run(() => properties.action(null));
         return;
     }
 
-    if (!expirationDate.value) {
+    if (!canSave.value || !expirationDate.value) {
         return;
     }
     const expirationDateConverted = parseDate(expirationDate.value);
-    onDialogOK(expirationDateConverted);
+    await run(() => properties.action(expirationDateConverted));
 }
 </script>
-
-<style scoped></style>

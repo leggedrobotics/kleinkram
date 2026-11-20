@@ -129,8 +129,7 @@
                     v-for="cat in sortedCats(props.row)"
                     :key="cat.uuid"
                     :label="cat.name"
-                    :color="hashUUIDtoColor(cat.uuid)"
-                    style="color: white"
+                    :style="categoryTagStyle(cat.uuid)"
                     dense
                     clickable
                     class="q-mr-sm"
@@ -372,8 +371,7 @@
                                 v-for="cat in sortedCats(props.row)"
                                 :key="cat.uuid"
                                 :label="cat.name"
-                                :color="hashUUIDtoColor(cat.uuid)"
-                                style="color: white"
+                                :style="categoryTagStyle(cat.uuid)"
                                 dense
                                 clickable
                                 class="q-mr-xs q-ml-none"
@@ -461,10 +459,10 @@ import { formatDate, parseDate } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 import {
     _downloadFile,
+    categoryTagStyle,
     getColorFileState,
     getIcon,
     getTooltip,
-    hashUUIDtoColor,
 } from 'src/services/generic';
 import { filesOfMission } from 'src/services/queries/file';
 import { TableRequest } from 'src/services/query-handler';

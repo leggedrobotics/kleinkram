@@ -45,7 +45,6 @@ const addCategories = (): void => {
             missionUuid: mission.uuid,
             files: files,
         },
-        persistent: true,
     });
 };
 </script>

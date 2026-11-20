@@ -30,10 +30,7 @@ const $router = useRouter();
 const moveMission = (): void => {
     if (!canModify.value) return;
     $q.dialog({
-        title: 'Move mission',
         component: MoveMission,
-        persistent: false,
-        style: 'max-width: 1500px',
 
         componentProps: { mission: mission },
     }).onOk((newProjectUUID: string) => {

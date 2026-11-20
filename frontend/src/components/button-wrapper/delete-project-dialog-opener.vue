@@ -36,7 +36,6 @@ const deleteProject = (): void => {
 
     // open the dialog
     $q.dialog({
-        title: 'Delete Project',
         component: DeleteProjectDialog,
         componentProps: {
             projectUuid: projectUuid,

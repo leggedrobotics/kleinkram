@@ -90,7 +90,9 @@ export * from '@api-dto/queue/bull-queue.dto';
 export * from '@api-dto/queue/stop-job-response.dto';
 export * from '@api-dto/set-access-group-user-expiration.dto';
 export * from '@api-dto/set-access-group-user-permissions.dto';
+export * from '@api-dto/storage-insights.dto';
 export * from '@api-dto/storage-overview.dto';
+export * from '@api-dto/storage-uploaders.dto';
 export * from '@api-dto/submit-action-response.dto';
 export * from '@api-dto/submit-action.dto';
 export * from '@api-dto/topic.dto';
@@ -105,6 +107,7 @@ export * from '@api-dto/user/user.dto';
 
 export * from '@api-dto/message.dto';
 export * from '@api-dto/success-response.dto';
+export * from '@api-dto/user/user-search.dto';
 export * from '@api-dto/user/users.dto';
 
 export * from '@api-dto/metadata/add-metadata-type.dto';

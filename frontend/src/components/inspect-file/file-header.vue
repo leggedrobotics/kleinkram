@@ -1,13 +1,28 @@
 <template>
     <title-section :title="`File: ${file?.filename ?? 'Loading...'}`">
         <template #title>
-            <h1 class="text-h5 text-md-h3 q-ma-none file-header__title">
-                <span v-if="!$q.screen.xs">File: </span>
-                {{ file?.filename ?? 'Loading...' }}
-                <q-tooltip v-if="file?.filename">
-                    {{ file.filename }}
-                </q-tooltip>
-            </h1>
+            <div class="file-header__heading">
+                <h1 class="text-h5 text-md-h3 q-ma-none file-header__title">
+                    {{ file?.filename ?? 'Loading...' }}
+                    <q-tooltip v-if="file?.filename">
+                        {{ file.filename }}
+                    </q-tooltip>
+                </h1>
+                <span v-if="file?.type" class="file-header__type">
+                    {{ file.type }}
+                </span>
+                <span
+                    v-if="file"
+                    class="file-header__state"
+                    :class="`file-header__state--${stateTone}`"
+                >
+                    <q-icon :name="getIcon(file.state)" size="16px" />
+                    {{ stateLabel }}
+                    <q-tooltip>
+                        {{ getTooltip(file.state, file.stateComment) }}
+                    </q-tooltip>
+                </span>
+            </div>
         </template>
 
         <template #buttons>
@@ -105,129 +120,92 @@
                         </q-menu>
                     </q-btn>
                 </button-group>
-                <div class="col-auto">
-                    <KleinDownloadFile v-if="file" :file="file" />
-                </div>
             </div>
         </template>
 
         <template #subtitle>
-            <div class="q-gutter-md q-mt-xs file-header__body">
-                <div class="row items-start q-gutter-y-sm file-header__meta">
-                    <div class="col-12 col-md-2">
-                        <div class="file-header__meta-item">
-                            <div class="text-placeholder">Project</div>
-                            <div class="text-subtitle1 text-primary ellipsis">
-                                {{ file?.mission.project.name }}
-                                <q-tooltip>
-                                    {{ file?.mission.project.name }}
-                                </q-tooltip>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-2">
-                        <div class="file-header__meta-item">
-                            <div class="text-placeholder">Mission</div>
-                            <div class="text-subtitle1 text-primary ellipsis">
-                                {{ file?.mission.name }}
-                                <q-tooltip>{{ file?.mission.name }}</q-tooltip>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-2">
-                        <div class="file-header__meta-item">
-                            <div class="text-placeholder">Start Date</div>
-                            <div class="text-subtitle1 text-primary">
-                                {{
-                                    recordingStart
-                                        ? formatDate(recordingStart, true)
-                                        : '-'
-                                }}
-                                <q-tooltip v-if="!recordingStart">
-                                    The recording start is only known once the
-                                    messages of this file have been indexed.
-                                </q-tooltip>
-                            </div>
-                            <div
-                                v-if="duration"
-                                class="text-caption text-placeholder"
-                            >
-                                Duration {{ duration }}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-2">
-                        <div class="file-header__meta-item">
-                            <div class="text-placeholder">Uploaded</div>
-                            <div class="text-subtitle1 text-primary">
-                                {{
-                                    file?.createdAt
-                                        ? formatDate(file.createdAt, true)
-                                        : '-'
-                                }}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-2">
-                        <div
-                            v-if="file?.creator"
-                            class="file-header__meta-item"
-                        >
-                            <div class="text-placeholder">Creator</div>
-                            <div class="text-subtitle1 text-primary ellipsis">
-                                {{ file?.creator.name }}
-                                <q-tooltip>{{ file?.creator.name }}</q-tooltip>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-1">
-                        <div class="file-header__meta-item">
-                            <div class="text-placeholder">File State</div>
-                            <q-icon
-                                :name="getIcon(file?.state ?? FileState.OK)"
-                                :color="
-                                    getColorFileState(
-                                        file?.state ?? FileState.OK,
-                                    )
-                                "
-                                size="sm"
-                            >
-                                <q-tooltip>
-                                    {{
-                                        getTooltip(
-                                            file?.state,
-                                            file?.stateComment,
-                                        )
-                                    }}
-                                </q-tooltip>
-                            </q-icon>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-1">
-                        <div class="file-header__meta-item">
-                            <div class="text-placeholder">Size</div>
-                            <div class="text-subtitle1 text-primary">
-                                {{
-                                    file?.size ? formatSize(file?.size) : '...'
-                                }}
-                            </div>
-                        </div>
-                    </div>
+            <div
+                v-if="file?.categories.length"
+                class="row items-start q-gutter-xs file-header__categories"
+            >
+                <q-chip
+                    v-for="cat in file.categories"
+                    :key="cat.uuid"
+                    :label="cat.name"
+                    :style="categoryTagStyle(cat.uuid)"
+                    size="sm"
+                >
+                    <q-tooltip v-if="cat.description">
+                        {{ cat.description }}
+                    </q-tooltip>
+                </q-chip>
+            </div>
+            <dl v-if="file" class="file-header__facts">
+                <div class="file-header__fact">
+                    <dt>Project</dt>
+                    <dd>
+                        <router-link :to="projectPath">
+                            {{ file.mission.project.name }}
+                        </router-link>
+                    </dd>
                 </div>
-                <div class="row items-start q-gutter-xs">
-                    <q-chip
-                        v-for="cat in file?.categories"
-                        :key="cat.uuid"
-                        :label="cat.name"
-                        :style="{ backgroundColor: hashUUIDtoColor(cat.uuid) }"
-                        text-color="white"
-                        size="sm"
-                    >
-                        <q-tooltip v-if="cat.description">
-                            {{ cat.description }}
+                <div class="file-header__fact">
+                    <dt>Mission</dt>
+                    <dd>
+                        <router-link :to="missionPath">
+                            {{ file.mission.name }}
+                        </router-link>
+                    </dd>
+                </div>
+                <div class="file-header__fact">
+                    <dt>Recording</dt>
+                    <dd v-if="recordingStart">
+                        {{ formatDate(recordingStart) }}
+                        <span v-if="duration" class="file-header__secondary">
+                            · {{ duration }}
+                        </span>
+                    </dd>
+                    <dd v-else class="file-header__muted">
+                        Not recorded
+                        <q-tooltip>
+                            The recording start is only known once the messages
+                            of this file have been indexed.
                         </q-tooltip>
-                    </q-chip>
+                    </dd>
                 </div>
+                <div class="file-header__fact">
+                    <dt>Size</dt>
+                    <dd>{{ formatSize(file.size) }}</dd>
+                </div>
+                <div class="file-header__fact">
+                    <dt>Uploaded</dt>
+                    <dd>
+                        {{ formatDate(file.createdAt) }}
+                        <span
+                            v-if="file.creator"
+                            class="file-header__secondary"
+                        >
+                            by {{ file.creator.name }}
+                        </span>
+                    </dd>
+                </div>
+            </dl>
+        </template>
+
+        <template #footer>
+            <div v-if="file" class="file-header__cli">
+                <span class="file-header__cli-label">CLI</span>
+                <code class="file-header__cli-command">{{ cliCommand }}</code>
+                <q-btn
+                    flat
+                    dense
+                    no-caps
+                    class="file-header__cli-copy"
+                    :icon="copied ? 'sym_o_check' : 'sym_o_content_copy'"
+                    :label="copied ? 'Copied' : 'Copy'"
+                    aria-label="Copy CLI command"
+                    @click="copyCli"
+                />
             </div>
         </template>
     </title-section>
@@ -239,20 +217,11 @@ import { FileState } from '@kleinkram/shared';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import EditFileButton from 'components/buttons/edit-file-button.vue';
-import KleinDownloadFile from 'components/cli-links/klein-download-file.vue';
 import TitleSection from 'components/title-section.vue';
-import { useQuasar } from 'quasar';
 import { formatDate, formatDuration } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
-import {
-    getColorFileState,
-    getIcon,
-    getTooltip,
-    hashUUIDtoColor,
-} from 'src/services/generic';
-import { computed } from 'vue';
-
-const $q = useQuasar();
+import { categoryTagStyle, getIcon, getTooltip } from 'src/services/generic';
+import { computed, ref } from 'vue';
 
 const properties = defineProps<{ file: FileWithTopicDto }>();
 const emit = defineEmits([
@@ -267,16 +236,20 @@ const emit = defineEmits([
  * `date` falls back to the upload time for files we could not read a recording
  * start from, so the header only ever shows `recordingStartDate`.
  */
-const recordingStart = computed(
-    () =>
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        properties.file?.recordingStartDate ?? undefined,
-);
+const recordingStart = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    const start = properties.file?.recordingStartDate ?? undefined;
+    // a start at the Unix epoch is a placeholder, not a recording time
+    if (start === undefined || new Date(start).getTime() <= 0) return;
+    return start;
+});
 
 const duration = computed(() => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const seconds = properties.file?.durationSeconds ?? undefined;
-    return seconds === undefined ? undefined : formatDuration(seconds);
+    return seconds === undefined || seconds <= 0
+        ? undefined
+        : formatDuration(seconds);
 });
 
 const isDownloadDisabled = computed(() =>
@@ -292,6 +265,60 @@ const isInvalid = computed(
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         properties.file?.state === FileState.ERROR,
 );
+
+/** short state names; the tooltip keeps the full explanation */
+const STATE_LABELS: Record<FileState, string> = {
+    [FileState.OK]: 'Ready',
+    [FileState.FOUND]: 'Ready',
+    [FileState.UPLOADING]: 'Uploading',
+    [FileState.CONVERTING]: 'Converting',
+    [FileState.ERROR]: 'Error',
+    [FileState.CONVERSION_ERROR]: 'Conversion failed',
+    [FileState.CORRUPTED]: 'Corrupted',
+    [FileState.LOST]: 'Missing in storage',
+    [FileState.CANCELED]: 'Canceled',
+};
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+const stateLabel = computed(() => STATE_LABELS[properties.file?.state] ?? '');
+
+/** colour family of the state pill: done, running, failed or neutral */
+const stateTone = computed(() => {
+    switch (properties.file.state) {
+        case FileState.OK:
+        case FileState.FOUND: {
+            return 'ok';
+        }
+        case FileState.UPLOADING:
+        case FileState.CONVERTING: {
+            return 'running';
+        }
+        case FileState.CANCELED: {
+            return 'neutral';
+        }
+        default: {
+            return 'failed';
+        }
+    }
+});
+
+const projectPath = computed(
+    () => `/project/${properties.file.mission.project.uuid}/missions`,
+);
+const missionPath = computed(
+    () =>
+        `/project/${properties.file.mission.project.uuid}/mission/${properties.file.mission.uuid}/files`,
+);
+
+const cliCommand = computed(
+    () => `klein download --dest=. ${properties.file.uuid}`,
+);
+const copied = ref(false);
+const copyCli = async (): Promise<void> => {
+    await navigator.clipboard.writeText(cliCommand.value);
+    copied.value = true;
+    setTimeout(() => (copied.value = false), 1500);
+};
 
 const handleDownload = (): void => {
     emit('download');
@@ -315,9 +342,126 @@ const handleCopyFoxglove = (): void => {
 </script>
 
 <style scoped>
-.text-placeholder {
+.file-header__heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.file-header__type {
+    flex: none;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #e0e0e0;
+    color: #161616;
     font-size: 12px;
-    color: #666;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.file-header__state {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px 2px 6px;
+    border-radius: 12px;
+    font-size: 12.5px;
+    font-weight: 500;
+}
+
+.file-header__state--ok {
+    background: #defbe6;
+    color: #0e6027;
+}
+
+.file-header__state--running {
+    background: #edf5ff;
+    color: #0043ce;
+}
+
+.file-header__state--failed {
+    background: #fff1f1;
+    color: #a2191f;
+}
+
+.file-header__state--neutral {
+    background: #e0e0e0;
+    color: #161616;
+}
+
+.file-header__categories {
+    margin-top: -8px;
+    margin-bottom: 8px;
+}
+
+/* one row of facts, each as wide as its value; wraps on narrow screens */
+.file-header__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 32px;
+    margin: 0;
+}
+
+.file-header__fact dt {
+    margin-bottom: 2px;
+    color: #6f6f6f; /* $text-placeholder */
+    font-size: 12px;
+}
+
+.file-header__fact dd {
+    margin: 0;
+    color: #161616;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.file-header__fact a {
+    color: #0f62fe; /* $link-primary */
+    text-decoration: none;
+}
+
+.file-header__fact a:hover {
+    text-decoration: underline;
+}
+
+.file-header__secondary {
+    color: #525252; /* $text-secondary */
+}
+
+.file-header__muted {
+    color: #6f6f6f;
+}
+
+.file-header__cli {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.file-header__cli-label {
+    flex: none;
+    color: #525252;
+    font-size: 12px;
+}
+
+.file-header__cli-command {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.file-header__cli-copy {
+    flex: none;
+    padding: 0 10px;
+    border: 1px solid #c6c6c6;
+    border-radius: 4px;
+    background: #fff;
 }
 .button-border {
     border: 1px solid #ddd;
@@ -352,15 +496,6 @@ const handleCopyFoxglove = (): void => {
         margin-top: 12px !important;
     }
 
-    .file-header__meta {
-        margin-top: 0 !important;
-    }
-
-    .file-header__meta > * {
-        padding-top: 0;
-        margin-top: 10px;
-    }
-
     /* Actions stretch to the full width so nothing sticks out to the right */
     .file-header__actions {
         align-items: stretch;
@@ -368,14 +503,7 @@ const handleCopyFoxglove = (): void => {
         min-width: 0;
     }
 
-    /* Stacked label/value pairs: small label above a wrapping value */
-    .file-header__meta .file-header__meta-item {
-        min-width: 0;
-    }
-
-    .file-header__meta .file-header__meta-item > :last-child {
-        min-width: 0;
-        overflow: visible;
+    .file-header__fact dd {
         white-space: normal;
         overflow-wrap: anywhere;
     }

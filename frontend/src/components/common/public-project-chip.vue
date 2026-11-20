@@ -2,8 +2,7 @@
     <q-chip
         dense
         size="sm"
-        color="green-1"
-        text-color="green-9"
+        text-color="primary"
         icon="sym_o_public"
         class="text-weight-medium q-px-sm public-project-chip"
     >
@@ -19,7 +18,9 @@ const { label = 'Public' } = defineProps<{ label?: string }>();
 </script>
 
 <style scoped>
+/* neutral grey tag ($tag-background-gray / $tag-color-gray) */
 .public-project-chip {
     vertical-align: middle;
+    background: #e0e0e0;
 }
 </style>

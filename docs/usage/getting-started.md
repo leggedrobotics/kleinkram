@@ -46,14 +46,24 @@ that is changed must follow the rules.
 
 Kleinkram allows you to organize and search your data using metadata on missions and categories on files.
 
-| Level   | What                 | Defined       | Example                                  |
-| ------- | -------------------- | ------------- | ---------------------------------------- |
-| Mission | Metadata (key-value) | Instance-wide | `Robot ID: anymal-d`, `Location: Zurich` |
-| File    | Categories (labels)  | Per project   | `Raw Data`, `Calibration`                |
+| Level   | What                 | Defined       | Example                              |
+| ------- | -------------------- | ------------- | ------------------------------------ |
+| Mission | Metadata (key-value) | Instance-wide | `Robot ID: anymal-d`, `Site: Zurich` |
+| File    | Categories (labels)  | Per project   | `Raw Data`, `Calibration`            |
 
 #### Mission Level: Metadata
 
-You can add key-value pairs as metadata to missions. Each key is a **metadata type**, which defines the name and datatype (e.g. string, number, boolean, date, location, link) of a value; the value set on a mission is its **metadata**. This allows for powerful filtering and organization. A value of type link must be an absolute `http://` or `https://` URL; other values are rejected.
+You can add key-value pairs as metadata to missions. Each key is a **metadata type**, which defines the name and datatype (e.g. string, number, boolean, date, location, link) of a value; the value set on a mission is its **metadata**. This allows for powerful filtering and organization. Values are checked against their type when a mission is created or its metadata is saved:
+
+| Type     | Accepted value                                                   |
+| -------- | ---------------------------------------------------------------- |
+| link     | An absolute `http://` or `https://` URL                          |
+| location | `latitude, longitude` in decimal degrees, e.g. `47.3769, 8.5417` |
+| number   | A number, e.g. `12.5`                                            |
+| date     | A date, e.g. `2026-11-13`                                        |
+| boolean  | `true` or `false`, in any case (`True` from Python is fine)      |
+
+Invalid values are rejected with `422` and a list of every invalid value: `{ "message": "…", "errors": [{ "field": "<metadata type uuid>", "name": "…", "error": "…" }] }`. A value that a mission already has and that is sent back unchanged is not checked again (links excepted), so a location stored as free text before this rule existed does not block other changes; it has to follow the format once it is edited.
 
 - **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" metadata type for every mission).
 - **Usage**: Use this metadata to quickly find all missions performed by a specific robot or in a specific location.

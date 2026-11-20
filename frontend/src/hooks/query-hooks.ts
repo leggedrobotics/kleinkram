@@ -19,10 +19,12 @@ import type {
 } from '@kleinkram/api-dto/types/permissions.dto';
 import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/types/project/project-with-required-metadata-types.dto';
 import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
+import type { StorageInsightsDto } from '@kleinkram/api-dto/types/storage-insights.dto';
 import type { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
+import type { StorageUploadersDto } from '@kleinkram/api-dto/types/storage-uploaders.dto';
 import type { ApiKeysDto } from '@kleinkram/api-dto/types/user/api-keys.dto';
 import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
-import type { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
+import type { UserSearchResultsDto } from '@kleinkram/api-dto/types/user/user-search.dto';
 import {
     AccessGroupRights,
     AccessGroupType,
@@ -50,6 +52,8 @@ import {
     getFileEvents,
     getIsUploading,
     getStorage,
+    getStorageInsights,
+    getStorageUploaders,
 } from 'src/services/queries/file';
 import {
     getFilteredMetadataTypes,
@@ -569,6 +573,27 @@ export const useStorageOverview = (): UseQueryReturnType<
     });
 };
 
+export const useStorageInsights = (): UseQueryReturnType<
+    StorageInsightsDto | undefined,
+    Error
+> => {
+    return useQuery<StorageInsightsDto>({
+        queryFn: () => getStorageInsights(),
+        queryKey: ['storage', 'insights'],
+    });
+};
+
+/** Stored data per uploader; only fetched when `enabled` (admins) */
+export const useStorageUploaders = (
+    enabled: Ref<boolean>,
+): UseQueryReturnType<StorageUploadersDto | undefined, Error> => {
+    return useQuery<StorageUploadersDto>({
+        queryFn: () => getStorageUploaders(),
+        queryKey: ['storage', 'uploaders'],
+        enabled,
+    });
+};
+
 export const useFilteredProjects = (
     take: number | ComputedRef<number> | Ref<number>,
     skip: number | ComputedRef<number> | Ref<number>,
@@ -632,8 +657,8 @@ export const useWorkers = (): UseQueryReturnType<
 
 export const useUserSearch = (
     search: Ref<string>,
-): UseQueryReturnType<UsersDto | undefined, Error> => {
-    return useQuery<UsersDto>({
+): UseQueryReturnType<UserSearchResultsDto | undefined, Error> => {
+    return useQuery<UserSearchResultsDto>({
         queryKey: ['userSearch', search],
         queryFn: () => {
             if (search.value === '')
