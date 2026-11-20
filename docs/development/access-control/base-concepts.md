@@ -59,6 +59,27 @@ action templates (everything guarded by `@CanCreate()`, see `ProjectGuardService
 matter here: members of a group with `"rights": 0` can still create projects. Users who are in no affiliation group
 cannot create any of these, unless they are admins.
 
+### How a Login is Bound to the Browser
+
+Signing in with Google, GitHub or the fake OAuth provider ends at `/auth/<provider>/callback`, where the provider sends
+the browser back with a one-time `code`. Following [RFC 6749, section 10.12](https://www.rfc-editor.org/rfc/rfc6749#section-10.12)
+and [RFC 9700, section 4.7](https://www.rfc-editor.org/rfc/rfc9700#section-4.7), the API only accepts a callback in the
+browser that started this login. Otherwise an attacker could get a code for their own account and make a victim's
+browser open the callback with it, which would sign the victim in to the attacker's account (login CSRF).
+
+- **Start** (`/auth/<provider>`): the browser gets an `oauthlogin` cookie (`httpOnly`, `Secure`, `SameSite=Lax`, path
+  `/auth`, 10 minutes). Redis keeps a one-time entry under a random `state`: the hash of that cookie, the PKCE code
+  verifier and where the login ends. The provider only sees the `state` and the PKCE challenge (`S256`).
+- **Callback:** the entry is taken out of Redis, so each login finishes once, and only counts if the browser sends the
+  matching `oauthlogin` cookie. The provider only hands out the account when it gets the PKCE verifier.
+- A callback without a matching login (another browser, older than 10 minutes, or used before) is redirected to the
+  login page of the frontend with the message "This login was not started in this browser or took too long".
+
+The CLI asks for its end of the login (a local callback port, the page that shows the tokens, or a fake OAuth test
+login) with `?state=cli-port-<port>`, `cli-no-redirect` or `cli-direct` when it starts the login; the API stores this
+with the login and does not take it from the callback. Logins started in two tabs at the same time share the cookie and
+each keep their own `state`.
+
 ### Restricting Sign-In to Internal Users
 
 By default anyone with a Google or GitHub account can sign in; users whose email matches no entry in `emails` get an

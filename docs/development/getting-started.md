@@ -257,3 +257,8 @@ The `--user` parameter only works with the `fake-oauth` provider. Using it with 
 ::: info
 When using `--user`, the authentication happens entirely programmatically without opening a browser, making it perfect for automated scripts and testing.
 :::
+
+To log in a fake user from your own script or test, start the login at the API like a browser does, then follow the
+redirects and keep the `oauthlogin` cookie: `GET /auth/fake-oauth?user=<id>` redirects to the fake provider, which
+redirects back to `/auth/fake-oauth/callback` with a code. Opening the callback with a code directly is refused, see
+[How a Login is Bound to the Browser](./access-control/base-concepts.md#how-a-login-is-bound-to-the-browser).

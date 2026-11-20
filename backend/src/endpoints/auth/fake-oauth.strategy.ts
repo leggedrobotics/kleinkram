@@ -1,4 +1,8 @@
 import { AuthService } from '@/services/auth.service';
+import {
+    loginStateOptions,
+    OAuthLoginStateService,
+} from '@/services/oauth-login-state.service';
 import env from '@kleinkram/backend-common/environment';
 import { Providers } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
@@ -18,8 +22,15 @@ export class FakeOauthStrategy extends PassportStrategy(
     OAuth2Strategy,
     Providers.FakeOAuth,
 ) {
-    constructor(private authService: AuthService) {
+    constructor(
+        private authService: AuthService,
+        oauthLoginState: OAuthLoginStateService,
+    ) {
         super({
+            // binds the login to this browser (state + PKCE), see
+            // OAuthLoginStateService
+            pkce: true,
+            store: oauthLoginState.store,
             authorizationURL: 'http://localhost:8004/oauth/authorize',
             tokenURL: 'http://fake-oauth:5000/oauth/token',
             // no need to pass clientID and clientSecret as this is a fake OAuth provider
@@ -34,13 +45,20 @@ export class FakeOauthStrategy extends PassportStrategy(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     authenticate(request: e.Request, options?: any) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        options.state = request.query.state;
+        options.state = loginStateOptions(request);
         // Pass the user parameter to the OAuth provider for auto-login
         if (request.query.user) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             options.user = request.query.user;
         }
         super.authenticate(request, options);
+    }
+
+    /** sends `user` on to fake-oauth, which then logs in without a page */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    authorizationParams(options: any): object {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+        return options.user ? { user: options.user } : {};
     }
 
     async validate(
