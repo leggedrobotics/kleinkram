@@ -15,8 +15,10 @@ Every Pull Request is validated by GitHub Actions. The following checks must pas
 | Formatting (JS/TS/Markdown)   | `eslint.yml`           | `.` (root)        | `pnpm run prettier:check`                                              |
 | Queue consumer unit tests     | `api-tests.yml`        | `./queueConsumer` | `pnpm test --ci`                                                       |
 | API tests                     | `api-tests.yml`        | `./backend`       | `pnpm test --ci`                                                       |
-| CLI tests (Python 3.10, 3.13) | `cli-tests.yml`        | `./cli`           | `pytest tests/ -v --tb=short`                                          |
+| CLI tests (Python, see below) | `cli-tests.yml`        | `./cli`           | `pytest tests/ -v --tb=short`                                          |
 | Migrations                    | `check-migrations.yml` | `./backend`       | `pnpm run migration:check`                                             |
+
+The CLI tests run on Python 3.14 for PRs to `dev`, and on every supported version (3.10 to 3.14) for PRs to `main`.
 
 `pnpm lint` and `pnpm prettier` (without `:check`) rewrite files instead of only checking them. The lint and formatting
 checks only run on PRs to `dev`.

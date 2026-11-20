@@ -7,21 +7,21 @@ save time and avoid cluttering the commit history with `fix ci` commits.
 
 All workflows live in `.github/workflows` and run on `ubuntu-latest`.
 
-| Workflow                          | Runs on                                       | What it does                                                                          |
-| --------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `eslint.yml`                      | PRs to `dev`, pushes to `dev`                 | Pre-commit hooks, type check, ESLint and Prettier                                     |
-| `api-tests.yml`                   | PRs to `main` and `dev`                       | Queue consumer unit tests and API tests against the test stack                        |
-| `cli-tests.yml`                   | PRs to `main` and `dev`                       | CLI tests against the test stack, on Python 3.10 and 3.13                             |
-| `check-migrations.yml`            | PRs to `main` and `dev`                       | Checks that the migrations match the entities                                         |
-| `check-version-number.yml`        | PRs to `main`                                 | Checks that the version was bumped and is the same in every package                   |
-| `python-lint.yml`                 | Pushes to `dev` that change `cli/`            | Black                                                                                 |
-| `dev-build.yml`                   | Pushes to `dev`                               | Builds and pushes the Docker images of the dev deployment                             |
-| `production-build.yml`            | Pushes to `main`                              | Builds and pushes the Docker images of the production deployment                      |
-| `create-release.yml`              | Pushes to `main`                              | Creates the GitHub release                                                            |
-| `update-pypi.yml`                 | Pushes to `main` and `dev` that change `cli/` | Publishes the CLI to PyPI, then calls `build-sample-actions.yml`                      |
-| `build-sample-actions.yml`        | Called by `update-pypi.yml`                   | Builds the example action images with the CLI wheel that was just published           |
-| `automated-dependency-update.yml` | Mondays at midnight (UTC), or by hand         | Updates the npm dependencies within their ranges, bumps the patch version, opens a PR |
-| `draft-pdf.yml`                   | Pushes that change `openjournals/`            | Builds the draft of the JOSS paper                                                    |
+| Workflow                          | Runs on                                       | What it does                                                                                   |
+| --------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `eslint.yml`                      | PRs to `dev`, pushes to `dev`                 | Pre-commit hooks, type check, ESLint and Prettier                                              |
+| `api-tests.yml`                   | PRs to `main` and `dev`                       | Queue consumer unit tests and API tests against the test stack                                 |
+| `cli-tests.yml`                   | PRs to `main` and `dev`                       | CLI tests against the test stack: Python 3.14 for PRs to `dev`, 3.10 to 3.14 for PRs to `main` |
+| `check-migrations.yml`            | PRs to `main` and `dev`                       | Checks that the migrations match the entities                                                  |
+| `check-version-number.yml`        | PRs to `main`                                 | Checks that the version was bumped and is the same in every package                            |
+| `python-lint.yml`                 | Pushes to `dev` that change `cli/`            | Black                                                                                          |
+| `dev-build.yml`                   | Pushes to `dev`                               | Builds and pushes the Docker images of the dev deployment                                      |
+| `production-build.yml`            | Pushes to `main`                              | Builds and pushes the Docker images of the production deployment                               |
+| `create-release.yml`              | Pushes to `main`                              | Creates the GitHub release                                                                     |
+| `update-pypi.yml`                 | Pushes to `main` and `dev` that change `cli/` | Publishes the CLI to PyPI, then calls `build-sample-actions.yml`                               |
+| `build-sample-actions.yml`        | Called by `update-pypi.yml`                   | Builds the example action images with the CLI wheel that was just published                    |
+| `automated-dependency-update.yml` | Mondays at midnight (UTC), or by hand         | Updates the npm dependencies within their ranges, bumps the patch version, opens a PR          |
+| `draft-pdf.yml`                   | Pushes that change `openjournals/`            | Builds the draft of the JOSS paper                                                             |
 
 ## Prerequisites
 
