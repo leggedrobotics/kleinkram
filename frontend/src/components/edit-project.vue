@@ -160,13 +160,16 @@ async function save_changes(): Promise<void> {
         throw error as Error;
     });
 
+    // Missions carry their project, including the Foxglove preview switch
+    // the mission page reads, so they are refreshed as well.
     const cache = queryClient.getQueryCache();
     const filtered = cache
         .getAll()
         .filter(
             (query) =>
                 query.queryKey[0] === 'projects' ||
-                query.queryKey[0] === 'project',
+                query.queryKey[0] === 'project' ||
+                query.queryKey[0] === 'mission',
         );
     await Promise.all(
         filtered.map((query) =>
