@@ -12,6 +12,7 @@ from kleinkram.naming import get_file_name_validation_error
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import check_filename_is_sanatized
+from kleinkram.utils import file_extension
 from kleinkram.utils import get_filename
 from kleinkram.utils import get_filename_map
 from kleinkram.utils import is_valid_uuid4
@@ -205,3 +206,19 @@ def test_upper_camel_case_to_words() -> None:
     assert upper_camel_case_to_words("not_camel_case") == ["not_camel_case"]
     assert upper_camel_case_to_words("*#?-_") == ["*#?-_"]
     assert upper_camel_case_to_words("helloWorld") == ["hello", "World"]
+
+
+@pytest.mark.parametrize(
+    "name, extension",
+    [
+        ("run_01.bag", ".bag"),
+        ("REC.MCAP", ".mcap"),
+        ("calib.2024-05-14.bag", ".bag"),
+        ("...bag", ".bag"),
+        (".hidden", ""),
+        ("README", ""),
+    ],
+)
+def test_file_extension_does_not_depend_on_the_python_version(name, extension):
+    """`Path.suffix` splits names with leading dots differently from Python 3.14 on"""
+    assert file_extension(Path(name)) == extension
