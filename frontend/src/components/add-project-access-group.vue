@@ -52,6 +52,7 @@
         label="Add project"
         class="text-link-primary"
         :class="{ 'add-button--below': selectedProjects.length > 0 }"
+        :disable="atLimit"
     >
         <q-menu v-model="menuOpen" style="min-width: 320px" @hide="clearSearch">
             <div class="add-menu__search">
@@ -112,11 +113,18 @@
             </q-list>
         </q-menu>
     </q-btn>
+    <p v-if="atLimit" class="limit-hint" role="status">
+        {{ MAX_ACCESS_GROUP_BATCH_SIZE }} selected, the most for one step. Add
+        these, then add more.
+    </p>
 </template>
 
 <script setup lang="ts">
 import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
-import { AccessGroupRights } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    MAX_ACCESS_GROUP_BATCH_SIZE,
+} from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { accessGroupRightsList } from 'src/enums/access-group-rights-list';
@@ -170,8 +178,14 @@ const getExistingRight = (uuid: string): AccessGroupRights | undefined => {
     return selectedProjects.value.find((p) => p.uuid === uuid)?.rights;
 };
 
+// One request adds the group to at most this many projects: at the limit
+// "Add project" is disabled and a line below says why.
+const atLimit = computed(
+    () => selectedProjects.value.length >= MAX_ACCESS_GROUP_BATCH_SIZE,
+);
+
 const handleAddProject = (project: ProjectDto): void => {
-    if (getExistingRight(project.uuid) !== undefined) return;
+    if (atLimit.value || getExistingRight(project.uuid) !== undefined) return;
 
     menuOpen.value = false;
 
@@ -245,6 +259,13 @@ defineExpose({ mutateAsync });
 </script>
 
 <style scoped>
+/* $text-secondary, as a field hint */
+.limit-hint {
+    margin: 4px 0 0;
+    color: #525252;
+    font-size: 12px;
+}
+
 /* rows share their columns: name | rights | remove */
 .row-grid {
     display: grid;

@@ -1,6 +1,7 @@
 import {
     AccessGroupRights,
     GRANTABLE_ACCESS_GROUP_RIGHTS,
+    MAX_ACCESS_GROUP_BATCH_SIZE,
 } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -13,7 +14,6 @@ import {
     IsUUID,
     ValidateNested,
 } from 'class-validator';
-import { MAX_ACCESS_GROUP_BATCH_SIZE } from './add-users-access-group.dto';
 
 export class AccessGroupProjectRightsDto {
     @IsUUID()

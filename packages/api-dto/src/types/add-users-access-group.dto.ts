@@ -1,3 +1,4 @@
+import { MAX_ACCESS_GROUP_BATCH_SIZE } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
@@ -11,9 +12,6 @@ import {
     Validate,
 } from 'class-validator';
 import { IsDateOrNeverConstraint } from './is-date-or-never.constraint';
-
-/** How many users or projects one request may add to an access group. */
-export const MAX_ACCESS_GROUP_BATCH_SIZE = 100;
 
 export class AddUsersToAccessGroupDto {
     @IsArray()

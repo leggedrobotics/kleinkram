@@ -14,7 +14,8 @@ The valid operations that can be performed on an access group are:
 
 You can add several users, or add the group to several projects, in one step. Kleinkram then adds all of them or none:
 if one user is already a member, or you lack the rights on one of the projects, nothing changes and the dialog shows
-the reason, so you can correct the selection and try again.
+the reason, so you can correct the selection and try again. One step takes at most 100 users or projects; the
+dialog stops at 100, so add those first and then the rest.
 
 ## Group Types
 
