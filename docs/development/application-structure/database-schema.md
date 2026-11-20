@@ -373,16 +373,17 @@ Defined in: `project/project.entity.ts`
 
 ### Columns
 
-| Column                  | Type                                                         | Constraints  | Description                                                                                                   |
-| :---------------------- | :----------------------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------ |
-| `name`                  | `string`                                                     | Not Null     | The name of the project. This is the name that will be displayed in the UI. The name must be globally unique. |
-| `missions`              | [MissionEntity](#missionentity-mission)[]                    | OneToMany    |                                                                                                               |
-| `project_accesses`      | [ProjectAccessEntity](#projectaccessentity-project_access)[] | OneToMany    |                                                                                                               |
-| `description`           | `string`                                                     | Not Null     |                                                                                                               |
-| `creator`               | [UserEntity](#userentity-user)                               | FK, Nullable |                                                                                                               |
-| `requiredMetadataTypes` | [MetadataTypeEntity](#metadatatypeentity-metadata_type)[]    | ManyToMany   |                                                                                                               |
-| `categories`            | [CategoryEntity](#categoryentity-category)[]                 | OneToMany    |                                                                                                               |
-| `autoConvert`           | `boolean`                                                    | Nullable     |                                                                                                               |
+| Column                   | Type                                                         | Constraints  | Description                                                                                                   |
+| :----------------------- | :----------------------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------ |
+| `name`                   | `string`                                                     | Not Null     | The name of the project. This is the name that will be displayed in the UI. The name must be globally unique. |
+| `missions`               | [MissionEntity](#missionentity-mission)[]                    | OneToMany    |                                                                                                               |
+| `project_accesses`       | [ProjectAccessEntity](#projectaccessentity-project_access)[] | OneToMany    |                                                                                                               |
+| `description`            | `string`                                                     | Not Null     |                                                                                                               |
+| `creator`                | [UserEntity](#userentity-user)                               | FK, Nullable |                                                                                                               |
+| `requiredMetadataTypes`  | [MetadataTypeEntity](#metadatatypeentity-metadata_type)[]    | ManyToMany   |                                                                                                               |
+| `categories`             | [CategoryEntity](#categoryentity-category)[]                 | OneToMany    |                                                                                                               |
+| `autoConvert`            | `boolean`                                                    | Nullable     |                                                                                                               |
+| `foxglovePreviewEnabled` | `boolean`                                                    | Not Null     | Shows the Foxglove preview tab in the project's missions. Default `true`                                      |
 
 ---
 
@@ -419,6 +420,23 @@ so revoking a session takes effect on the next request.
 | Index Definition                                     |
 | :--------------------------------------------------- |
 | `idx_user_session_user` on (`userUuid`, `revokedAt`) |
+
+---
+
+<h2 id="systemsettingentity-system_setting">SystemSettingEntity (system_setting)</h2>
+
+Defined in: `system/system-setting.entity.ts`
+
+Instance-wide settings that admins change at runtime, one row per key. A missing row means the setting has its default
+value. Keys: `foxglovePreviewEnabled` (default `true`).
+
+### Columns
+
+| Column      | Type          | Constraints | Description          |
+| :---------- | :------------ | :---------- | :------------------- |
+| `key`       | `string`      | PK          | Name of the setting  |
+| `value`     | `jsonb`       | Not Null    | Value of the setting |
+| `updatedAt` | `timestamptz` | Not Null    |                      |
 
 ---
 

@@ -729,6 +729,9 @@ export class ProjectService {
             description: project.description,
             creator: creator,
             requiredMetadataTypes,
+            ...(project.foxglovePreviewEnabled === undefined
+                ? {}
+                : { foxglovePreviewEnabled: project.foxglovePreviewEnabled }),
         });
 
         const accessGroupsDefaultIds = new Set(
@@ -814,6 +817,9 @@ export class ProjectService {
             ...(project.autoConvert === undefined
                 ? {}
                 : { autoConvert: project.autoConvert }),
+            ...(project.foxglovePreviewEnabled === undefined
+                ? {}
+                : { foxglovePreviewEnabled: project.foxglovePreviewEnabled }),
         });
         const updatedProject = await this.projectRepository.findOneOrFail({
             where: { uuid },

@@ -38,7 +38,7 @@ export const BodyUUID = (parameterName: string, parameterDescription: string) =>
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            const value = request.body[data];
+            const value = request.body?.[data];
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(UUIDValidate, { value });
             await validateOrReject(object as object).catch(() => {
@@ -68,7 +68,7 @@ export const BodyString = (
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            const value = request.body[data];
+            const value = request.body?.[data];
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(StringValidate, { value });
@@ -100,7 +100,7 @@ export const BodyOptionalString = (
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            const value = request.body[data];
+            const value = request.body?.[data];
 
             if (value === undefined) return;
 
@@ -134,7 +134,7 @@ export const BodyOptionalSource = (
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            const value = request.body[data];
+            const value = request.body?.[data];
 
             if (value === undefined) return;
 
@@ -168,7 +168,7 @@ export const BodyNotNull = (
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            const value = request.body[data];
+            const value = request.body?.[data];
 
             if (value === undefined || value === null) {
                 throw new BadRequestException('Parameter is empty');
@@ -195,7 +195,7 @@ export const BodyUUIDArray = (
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            const value = request.body[data];
+            const value = request.body?.[data];
 
             if (!Array.isArray(value)) {
                 throw new BadRequestException('Parameter is not an array');

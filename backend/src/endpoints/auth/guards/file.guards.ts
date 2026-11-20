@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { BaseGuard } from './base.guards';
+import { readUuidArray } from './body-fields';
 
 interface FileBody {
     fileUUIDs?: string[];
@@ -71,9 +72,9 @@ export class MoveFilesGuard extends BaseGuard {
 
         // `PATCH /files`: both the moved files and the target mission are only
         // ever read from the request body.
-        const body = request.body as FileBody;
-        const fileUUIDs = body.fileUUIDs;
-        const missionUUID = body.missionUUID;
+        const body = request.body as FileBody | undefined;
+        const fileUUIDs = readUuidArray(body, 'fileUUIDs');
+        const missionUUID = body?.missionUUID;
 
         if (!fileUUIDs || fileUUIDs.length === 0 || !missionUUID) {
             return false; // Deny access if required parameters not provided
@@ -113,9 +114,9 @@ export class CopyFilesGuard extends BaseGuard {
 
         // `POST /files/copy`: both the copied files and the target mission are only
         // ever read from the request body.
-        const body = request.body as FileBody;
-        const fileUUIDs = body.fileUUIDs;
-        const missionUUID = body.missionUUID;
+        const body = request.body as FileBody | undefined;
+        const fileUUIDs = readUuidArray(body, 'fileUUIDs');
+        const missionUUID = body?.missionUUID;
 
         if (!fileUUIDs || fileUUIDs.length === 0 || !missionUUID) {
             return false; // Deny access if required parameters not provided
