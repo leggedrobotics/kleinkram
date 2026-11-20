@@ -21,7 +21,9 @@ export const containsNulCharacter = (value: unknown): boolean => {
         if (typeof current === 'string') {
             if (current.includes(NUL)) return true;
         } else if (Array.isArray(current)) {
-            pending.push(...(current as unknown[]));
+            // one at a time: spreading a wide array (e.g. 200,000 numbers)
+            // into `push` exceeds the argument limit and throws
+            for (const entry of current as unknown[]) pending.push(entry);
         } else if (current !== null && typeof current === 'object') {
             for (const [key, nested] of Object.entries(current)) {
                 if (key.includes(NUL)) return true;

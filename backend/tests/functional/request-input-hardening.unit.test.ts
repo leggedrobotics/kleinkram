@@ -32,6 +32,13 @@ describe('Request Input Hardening', () => {
             expect(containsNulCharacter(value)).toBe(true);
         });
 
+        test('should check a very wide array without failing', () => {
+            const wide: unknown[] = Array.from({ length: 300_000 }, () => 0);
+            expect(containsNulCharacter(wide)).toBe(false);
+            wide.push('a\u0000b');
+            expect(containsNulCharacter(wide)).toBe(true);
+        });
+
         test.each([
             ['undefined', undefined],
             ['null', null],
