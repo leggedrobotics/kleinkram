@@ -14,6 +14,7 @@ import {
     AccessGroupEntity,
 } from '@kleinkram/backend-common';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
+import { MissionAccessEntity } from '@kleinkram/backend-common/entities/auth/mission-access.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
@@ -22,9 +23,13 @@ import {
     AccessGroupRights,
     AccessGroupType,
 } from '@kleinkram/shared';
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+    ConflictException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, Not, Repository } from 'typeorm';
+import { EntityManager, In, Not, QueryFailedError, Repository } from 'typeorm';
 import logger from '../logger';
 import { AccessQueryService } from './access-query.service';
 import { notExpired } from './membership-filters';
@@ -35,6 +40,12 @@ import {
     isPublicAccessGroup,
     PUBLIC_ACCESS_MANAGE_RIGHTS,
 } from './public-access';
+
+const accessGroupNameTaken = (name: string): ConflictException =>
+    new ConflictException(`A group named "${name}" already exists`);
+
+/** Rolls back a group deletion that has to start over, see `deleteAccessGroup`. */
+class RetryAccessGroupDeletion extends Error {}
 
 @Injectable()
 export class AccessModificationService {
@@ -62,6 +73,12 @@ export class AccessModificationService {
             where: { uuid: auth.user.uuid },
         });
 
+        // group names are unique among all groups, personal and affiliation
+        // groups included (`unique_access_group_name`)
+        if (await this.accessGroupRepository.exists({ where: { name } })) {
+            throw accessGroupNameTaken(name);
+        }
+
         const newGroup = this.accessGroupRepository.create({
             name,
             type: AccessGroupType.CUSTOM,
@@ -74,7 +91,20 @@ export class AccessModificationService {
             creator: user,
         });
 
-        const savedGroup = await this.accessGroupRepository.save(newGroup);
+        let savedGroup: AccessGroupEntity;
+        try {
+            savedGroup = await this.accessGroupRepository.save(newGroup);
+        } catch (error) {
+            // a concurrent request took the name after the check above
+            if (
+                error instanceof QueryFailedError &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                error.driverError?.code === '23505'
+            ) {
+                throw accessGroupNameTaken(name);
+            }
+            throw error;
+        }
 
         this.accessGroupAuditService
             .log(
@@ -460,12 +490,110 @@ export class AccessModificationService {
     async deleteAccessGroup(uuid: string): Promise<void> {
         assertNotPublicAccessGroup(uuid);
 
-        const accessGroup = await this.accessGroupRepository.findOneOrFail({
+        // A grant added meanwhile for a project not locked yet makes the
+        // attempt start over with that project included (see below).
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const projectUuids = await this.projectsWithGrantsOf(
+                this.entityManager,
+                uuid,
+            );
+            try {
+                await this.entityManager.transaction((transaction) =>
+                    this.deleteAccessGroupLocked(
+                        transaction,
+                        uuid,
+                        projectUuids,
+                    ),
+                );
+                return;
+            } catch (error) {
+                if (!(error instanceof RetryAccessGroupDeletion)) throw error;
+            }
+        }
+        throw new ConflictException(
+            'The access of this group keeps changing, try again',
+        );
+    }
+
+    /** The projects a group has a grant on, sorted (the lock order). */
+    private async projectsWithGrantsOf(
+        manager: EntityManager,
+        groupUuid: string,
+    ): Promise<string[]> {
+        const grants = await manager.find(ProjectAccessEntity, {
+            where: { accessGroup: { uuid: groupUuid } },
+            relations: { project: true },
+        });
+        // a grant on a deleted project loads its project as null: it is
+        // removed with the group, but there is nothing to lock or check
+        const uuids = grants
+            .map((grant) => grant.project?.uuid)
+            .filter((projectUuid): projectUuid is string => !!projectUuid);
+        // `toSorted` isn't available in this target; the array is new
+        // eslint-disable-next-line unicorn/no-array-sort
+        return [...new Set(uuids)].sort();
+    }
+
+    /**
+     * Deletes the group and its access, with the given projects locked.
+     *
+     * Locks are taken in the same order as `updateProjectAccess` does: the
+     * project first, then the group (adding a grant takes a key share lock
+     * on its group). The exclusive lock on the group keeps grants from being
+     * added while it is deleted; grants committed before it are read again
+     * afterwards. If one is on a project that isn't locked, locking it now
+     * would invert the order and could deadlock, so the transaction is
+     * rolled back and the caller starts over with that project.
+     *
+     * @throws RetryAccessGroupDeletion if the caller has to start over
+     */
+    private async deleteAccessGroupLocked(
+        transaction: EntityManager,
+        uuid: string,
+        projectUuids: string[],
+    ): Promise<void> {
+        for (const projectUuid of projectUuids) {
+            await this.lockProjectForAccessChange(transaction, projectUuid);
+        }
+        const accessGroup = await transaction.findOneOrFail(AccessGroupEntity, {
             where: { uuid },
+            lock: { mode: 'pessimistic_write' },
+        });
+        const current = await this.projectsWithGrantsOf(transaction, uuid);
+        if (
+            current.some((projectUuid) => !projectUuids.includes(projectUuid))
+        ) {
+            throw new RetryAccessGroupDeletion();
+        }
+
+        await transaction.delete(ProjectAccessEntity, {
+            accessGroup: { uuid },
+        });
+        await transaction.delete(MissionAccessEntity, {
+            accessGroup: { uuid },
         });
 
-        await this.accessGroupRepository.remove(accessGroup);
-        return;
+        // Every project keeps at least one group with delete rights,
+        // otherwise only an administrator could manage it again.
+        for (const projectUuid of current) {
+            const remaining = await transaction.count(ProjectAccessEntity, {
+                where: {
+                    rights: AccessGroupRights.DELETE,
+                    project: { uuid: projectUuid },
+                },
+            });
+            if (remaining === 0) {
+                const project = await transaction.findOneOrFail(ProjectEntity, {
+                    where: { uuid: projectUuid },
+                    select: { name: true },
+                });
+                throw new ConflictException(
+                    `"${accessGroup.name}" is the only group with delete rights on project "${project.name}". Give another group delete rights first.`,
+                );
+            }
+        }
+
+        await transaction.remove(accessGroup);
     }
 
     private async uncheckedProjectAccessTransactionalUpdate(
@@ -678,6 +806,15 @@ export class AccessModificationService {
         for (const access of newProjectAccess) {
             assertGrantableAccessRights(access.rights);
             assertValidPublicAccessRights(access.uuid, access.rights);
+        }
+
+        // e.g. a group deleted while the access dialog was open
+        const groupUuids = [...new Set(newProjectAccess.map((a) => a.uuid))];
+        const existingGroups = await this.accessGroupRepository.count({
+            where: { uuid: In(groupUuids) },
+        });
+        if (existingGroups !== groupUuids.length) {
+            throw new NotFoundException('Access group not found');
         }
 
         await this.entityManager.transaction(

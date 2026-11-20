@@ -4,11 +4,19 @@
         v-model:error="errorMessage"
         :busy="running"
         size="sm"
-        :submit-disabled="!confirmed || running"
+        :submit-disabled="!confirmed || isBlocked || running"
         @submit="confirm"
     >
         <template #title>{{ actionLabel }}</template>
-        <template #content>
+        <template v-if="isBlocked" #content>
+            <p class="q-mb-none">
+                Used by <b>{{ template.triggerCount }}</b>
+                {{ template.triggerCount === 1 ? 'trigger' : 'triggers' }}.
+                Delete or change
+                {{ template.triggerCount === 1 ? 'it' : 'them' }} first.
+            </p>
+        </template>
+        <template v-else #content>
             <p v-if="isArchiving">
                 This template has
                 <b>{{ template.executionCount }}</b> executions, so it is
@@ -35,13 +43,14 @@
                 <q-btn
                     flat
                     no-caps
-                    :disable="!confirmed"
+                    :disable="!confirmed || isBlocked"
                     :label="actionLabel"
                     class="bg-button-danger"
                     :loading="running"
                     @click="confirm"
                 />
-                <q-tooltip v-if="!confirmed"
+                <q-tooltip v-if="isBlocked">Used by a trigger</q-tooltip>
+                <q-tooltip v-else-if="!confirmed"
                     >Type the name to confirm</q-tooltip
                 >
             </span>
@@ -51,8 +60,8 @@
 
 <script setup lang="ts">
 /**
- * Only asks for confirmation: the caller deletes (or archives) the template
- * in its `.onOk` handler.
+ * Runs the caller's `action` (delete or archive) on confirm and closes when
+ * it succeeds. A template a trigger still uses cannot be deleted.
  */
 import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
 import { useDialogPluginComponent } from 'quasar';
@@ -74,6 +83,8 @@ const inputId = `delete-template-${useId()}`;
 const nameCheck = ref('');
 const confirmed = computed(() => nameCheck.value === template.name);
 const isArchiving = computed(() => template.executionCount > 0);
+// triggers keep running a template, so it can't go away while one uses it
+const isBlocked = computed(() => template.triggerCount > 0);
 const actionLabel = computed(() =>
     isArchiving.value ? 'Archive Template' : 'Delete Template',
 );

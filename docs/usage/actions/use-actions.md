@@ -60,6 +60,10 @@ Only the creator of a template (the person who saved its first version) and admi
 or delete it. If you want to change a template someone else made, save your changes as a new template with its own
 name. See [Access Control for Actions](../access-control/action.md#action-template).
 
+Deleting a template removes it if it never ran. A template with executions is archived instead, so the executions keep
+their template. A template that a [trigger](triggers.md) still runs can't be deleted or archived: delete the trigger or
+change it to another template first.
+
 ::: tip
 We recommend using version tags while specifying Docker images in your action templates. This ensures that your actions
 are always reproducible and not affected by changes in the `latest` image. E.g., use `python:3.10-slim` instead of
