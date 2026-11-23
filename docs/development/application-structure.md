@@ -29,7 +29,7 @@ The operational containers are again split into publicly accessible and non-publ
 #### Private Network (Not Publicly Accessible)
 
 - [queue-processor](./application-structure/queue-processor.md) - The service worker processing the queues
-- [postgres](application-structure/database-schema.md) - The Postres database
+- [postgres](application-structure/database-schema.md) - The Postgres database
 - [redis](application-structure/infrastructure.md#redis-queue-cache) - Database to manage the Queue
 - `action containers` - custom containers scheduled by the `queue-processor` to perform user specific actions
 

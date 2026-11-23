@@ -74,14 +74,6 @@ RUN mkdir -p development/api/generated
 # Copy generated markdown files
 COPY --from=swagger-builder /app/backend/*.md development/api/generated/
 
-# build postgres entity documentation
-COPY packages/backend-common/src /app/packages/backend-common/src
-
-# Run the locally installed tsx binary directly to avoid pnpm exec lookup issues
-RUN mkdir -p development/application-structure && \
-    pnpm exec tsx scripts/generate-entity-documentation.ts && \
-    test -f development/application-structure/postgres.md
-
 # Build the docs
 RUN pnpm run docs:build:${MODE}
 
