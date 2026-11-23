@@ -36,6 +36,7 @@
             flat
             bordered
             :pagination="{ rowsPerPage: 15 }"
+            :sort-method="sortTopics"
         >
             <template #header-cell-coverage="props">
                 <q-th :props="props">
@@ -356,15 +357,47 @@ const allColumns: QTableColumn[] = [
         label: 'mean Hz',
         field: (row: TopicRow) => meanHzOf(row),
         format: (hz: number | undefined): string => formatHz(hz),
-        // Topics without a rate sort below every topic with one.
-        sort: (a: number | undefined, b: number | undefined): number =>
-            (a ?? -1) - (b ?? -1),
         sortable: true,
         align: 'right',
         classes: 'kk-num',
         headerClasses: 'kk-num',
     },
 ];
+
+const valueOf = (column: QTableColumn, row: TopicRow): unknown =>
+    typeof column.field === 'function'
+        ? column.field(row)
+        : (row as unknown as Record<string, unknown>)[column.field];
+
+const compareValues = (a: unknown, b: unknown): number => {
+    if (typeof a === 'string' && typeof b === 'string') {
+        return a.localeCompare(b);
+    }
+    return Number(a) - Number(b);
+};
+
+/**
+ * Sorts like QTable, except that rows without a value (a topic without a
+ * rate) stay at the bottom in both directions. QTable's own sort puts them
+ * first when ascending and reverses every comparison when descending.
+ */
+const sortTopics = (
+    rows: readonly TopicRow[],
+    sortBy: string,
+    descending: boolean,
+): readonly TopicRow[] => {
+    const column = allColumns.find((each) => each.name === sortBy);
+    if (!column) return rows;
+    const direction = descending ? -1 : 1;
+    return rows.toSorted((rowA, rowB) => {
+        const a = valueOf(column, rowA);
+        const b = valueOf(column, rowB);
+        const aMissing = a === undefined || a === null;
+        const bMissing = b === undefined || b === null;
+        if (aMissing || bMissing) return Number(aMissing) - Number(bMissing);
+        return compareValues(a, b) * direction;
+    });
+};
 
 /**
  * Phones only have room for the topic and the message count; the datatype
