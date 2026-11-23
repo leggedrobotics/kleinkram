@@ -206,6 +206,7 @@ export function useRosmsgPreview(): {
         from: bigint,
         until: bigint,
         playhead: bigint,
+        onFailed?: () => void,
     ) => Promise<void>;
     reset: () => void;
     dbSchema?: Ref<string | null>;
@@ -234,6 +235,8 @@ export function useRosmsgPreview(): {
     /** Counts `init` calls, so a slow one cannot replace a newer file. */
     let generation = 0;
     let costModels: Record<string, SampleCostModel | null> = {};
+    /** Whether the open file's reader honours `ReadOptions.window`. */
+    let supportsWindow = false;
     const dbSchema = ref<string | null>(null);
     // Holds bigints and large maps that nothing mutates, so it is not made
     // deeply reactive.
@@ -278,6 +281,7 @@ export function useRosmsgPreview(): {
         dbSchema.value = null;
         insights.value = null;
         costModels = {};
+        supportsWindow = false;
         for (const controller of [
             ...abortControllers.values(),
             ...windowControllers.values(),
@@ -311,6 +315,7 @@ export function useRosmsgPreview(): {
             if (current !== generation) return;
             if (type === 'db3') dbSchema.value = opened.schema;
             costModels = opened.sampleCostModels;
+            supportsWindow = opened.supportsWindow;
             insights.value = opened.insights;
             isReaderReady.value = true;
         } catch (error: unknown) {
@@ -434,8 +439,10 @@ export function useRosmsgPreview(): {
         from: bigint,
         until: bigint,
         playhead: bigint,
+        onFailed?: () => void,
     ): Promise<void> {
-        if (!client || !isReaderReady.value) return;
+        // Formats without windowed reads would read the whole topic each time
+        if (!client || !isReaderReady.value || !supportsWindow) return;
         windowControllers.get(topicName)?.abort();
         const controller = new AbortController();
         windowControllers.set(topicName, controller);
@@ -488,6 +495,7 @@ export function useRosmsgPreview(): {
             // The sample stays usable, playback just shows fewer frames
             if (!controller.signal.aborted) {
                 console.warn(`Error reading ${topicName} ahead`, error);
+                onFailed?.();
             }
         } finally {
             if (controller.signal.aborted) {

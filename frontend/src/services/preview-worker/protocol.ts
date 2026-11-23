@@ -30,6 +30,8 @@ export interface OpenedFile {
     schema: string | null;
     /** Per topic, the input to `sampleCostOf`; see `sampleCostModels`. */
     sampleCostModels: Record<string, SampleCostModel | null>;
+    /** Whether reads honour `ReadOptions.window` (playback windows). */
+    supportsWindow: boolean;
 }
 
 /** `ReadOptions` as they cross the thread boundary. */

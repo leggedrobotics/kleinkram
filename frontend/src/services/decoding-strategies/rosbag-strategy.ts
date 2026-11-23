@@ -51,6 +51,8 @@ export class RosbagStrategy extends DecodingStrategy {
     private bag: Bag | undefined = undefined;
     private httpReader: UniversalHttpReader | null = null;
 
+    override readonly supportsWindow = true;
+
     async init(httpReader: UniversalHttpReader): Promise<void> {
         this.httpReader = httpReader;
         this.bag = new Bag(
@@ -251,6 +253,7 @@ export class RosbagStrategy extends DecodingStrategy {
                 const reader = readers.get(record.conn);
                 const messageObject: LogMessage = {
                     logTime,
+                    index: chunkOffset + seen - 1,
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                     data: reader
                         ? reader.readMessage(record.data)
@@ -326,6 +329,8 @@ export class RosbagStrategy extends DecodingStrategy {
             if (seen++ % keepEvery !== 0) continue;
             const messageObject = {
                 logTime: toNano(result.timestamp),
+                // Counted from the topic's start unless the read began later
+                index: start === undefined ? seen - 1 : undefined,
                 data: result.message,
             };
             msgs.push(messageObject);

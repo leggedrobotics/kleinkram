@@ -76,6 +76,7 @@ export function servePreview(endpoint: Endpoint): void {
             insights: opened.getInsights(),
             schema: opened.getSchema(),
             sampleCostModels: opened.sampleCostModels(),
+            supportsWindow: opened.supportsWindow,
         };
     }
 

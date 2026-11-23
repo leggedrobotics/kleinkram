@@ -27,6 +27,12 @@ export abstract class DecodingStrategy {
         return {};
     }
 
+    /**
+     * Whether `getMessages` honours `ReadOptions.window`. A strategy that
+     * ignores it would read the whole topic for every playback window.
+     */
+    readonly supportsWindow: boolean = false;
+
     getSchema(): string | null {
         return null;
     }

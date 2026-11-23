@@ -100,6 +100,7 @@
                 :is-loading="isLoading"
                 :sample-stride="sampleStride ?? 1"
                 :can-refine="canRefine ?? false"
+                :topic-message-count="topicMessageCount ?? 0"
                 @load-required="loadRequired"
                 @load-more="loadMore"
                 @load-window="loadWindow"
@@ -145,6 +146,8 @@ const properties = defineProps<{
     sampleStride?: number;
     /** Whether a sampled topic can be refined with more messages */
     canRefine?: boolean;
+    /** Messages of the topic in the recording, loaded or not */
+    topicMessageCount?: number;
 }>();
 
 const emit = defineEmits([
@@ -202,8 +205,13 @@ const loadMore = (): void => {
     emit('load-more');
 };
 
-const loadWindow = (from: bigint, until: bigint, playhead: bigint): void => {
-    emit('load-window', from, until, playhead);
+const loadWindow = (
+    from: bigint,
+    until: bigint,
+    playhead: bigint,
+    onFailed: () => void,
+): void => {
+    emit('load-window', from, until, playhead, onFailed);
 };
 
 const emitPausePreview = (): void => {

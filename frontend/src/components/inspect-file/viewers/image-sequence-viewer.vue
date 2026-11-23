@@ -128,10 +128,13 @@
 
                 <q-space />
 
-                <div class="text-caption text-grey-6 q-mr-sm gt-xs">
-                    Frame {{ currentIndex + 1 }} / {{ messages.length }}
-                    <template v-if="sampleStride > 1">
-                        · every {{ sampleStride }}th
+                <div
+                    v-if="frameNumber !== undefined"
+                    class="frame-number text-caption text-grey-6 q-mr-sm gt-xs"
+                >
+                    Frame {{ formatCount(frameNumber) }}
+                    <template v-if="topicMessageCount > 0">
+                        / {{ formatCount(topicMessageCount) }}
                     </template>
                 </div>
 
@@ -208,8 +211,15 @@ const properties = withDefaults(
         sampleStride?: number;
         /** Whether more frames can still be loaded in the background */
         canRefine?: boolean;
+        /** Messages of the topic in the recording, loaded or not */
+        topicMessageCount?: number;
     }>(),
-    { isLoading: false, sampleStride: 1, canRefine: false },
+    {
+        isLoading: false,
+        sampleStride: 1,
+        canRefine: false,
+        topicMessageCount: 0,
+    },
 );
 
 const emit = defineEmits(['load-more', 'pause-preview', 'load-window']);
@@ -255,6 +265,19 @@ const currentIndex = computed(() => {
 const currentMessage = computed(() => properties.messages[currentIndex.value]);
 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
 const currentData = computed(() => currentMessage.value?.data);
+
+/**
+ * Number of the shown frame in the recording, from 1. It stays the same
+ * whether the frame came from the sample or from full-rate playback, and is
+ * hidden when the reader could not place the frame exactly.
+ */
+const frameNumber = computed<number | undefined>(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const index = currentMessage.value?.index;
+    return typeof index === 'number' ? index + 1 : undefined;
+});
+
+const formatCount = (value: number): string => value.toLocaleString('en-US');
 
 const playedFraction = computed(() =>
     duration.value > 0 ? Math.min(1, playhead.value / duration.value) : 0,
@@ -342,9 +365,23 @@ const WINDOW_REFILL_S = 4;
  */
 const WINDOW_MAX_SPEED = 2;
 
-/** Requested window, in seconds since the first frame. */
+/**
+ * Full-rate frames this far behind the playhead are kept by the loader at
+ * each request; older ones are dropped (`WINDOW_KEEP_BEHIND_NS`).
+ */
+const WINDOW_KEEP_BEHIND_S = 2;
+/** Wait this long before asking again after a window failed to load. */
+const WINDOW_RETRY_MS = 2000;
+
+/**
+ * Full-rate range held or being loaded, in seconds since the first frame.
+ * Its start follows the loader's eviction, so seeking back into a range
+ * whose frames were dropped loads them again.
+ */
 let windowFrom = NaN;
 let windowUntil = NaN;
+let windowRequest = 0;
+let retryAfter = 0;
 
 const requestWindow = (): void => {
     if (properties.sampleStride <= 1 || speed.value > WINDOW_MAX_SPEED) {
@@ -352,15 +389,34 @@ const requestWindow = (): void => {
     }
     const at = playhead.value;
     if (at >= windowFrom && at + WINDOW_REFILL_S <= windowUntil) return;
+    if (performance.now() < retryAfter) return;
     // Continue where the current window ends, unless the playhead jumped
-    const from = at >= windowFrom && at <= windowUntil ? windowUntil : at;
+    const continues = at >= windowFrom && at <= windowUntil;
+    const from = continues ? windowUntil : at;
     const until = Math.min(duration.value, at + WINDOW_AHEAD_S);
     if (until <= from) return;
-    windowFrom = at >= windowFrom && at <= windowUntil ? windowFrom : at;
+    windowFrom = Math.max(
+        continues ? windowFrom : at,
+        at - WINDOW_KEEP_BEHIND_S,
+    );
     windowUntil = until;
+    const request = ++windowRequest;
+    const onFailed = (): void => {
+        // A newer request already replaced this one's range
+        if (request !== windowRequest) return;
+        windowFrom = NaN;
+        windowUntil = NaN;
+        retryAfter = performance.now() + WINDOW_RETRY_MS;
+    };
     const toLogTime = (seconds: number): bigint =>
         startTime.value + BigInt(Math.round(seconds * 1e9));
-    emit('load-window', toLogTime(from), toLogTime(until), toLogTime(at));
+    emit(
+        'load-window',
+        toLogTime(from),
+        toLogTime(until),
+        toLogTime(at),
+        onFailed,
+    );
 };
 
 const tick = (now: number): void => {
@@ -685,6 +741,10 @@ const magicBytes = computed(() => {
     border-radius: 50%;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
     pointer-events: none;
+}
+
+.frame-number {
+    font-variant-numeric: tabular-nums;
 }
 
 .time-display {
