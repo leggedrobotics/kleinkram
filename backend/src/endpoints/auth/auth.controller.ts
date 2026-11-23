@@ -1,4 +1,5 @@
 import { OutputDto } from '@/decorators';
+import { loginRouteOf } from '@/services/oauth-login-state.service';
 import {
     ACCESS_TOKEN_LIFETIME,
     AccessTokenPayload,
@@ -108,10 +109,11 @@ export class AuthController {
         @Res() response: Response,
     ): Promise<void> {
         const user = request.user as UserEntity;
-        const state = request.query.state;
-        // logins started by the CLI pass a `cli…` state (local callback
-        // port, token page, fake-oauth test login)
-        const isCli = typeof state === 'string' && state.startsWith('cli');
+        // where the login ends was stored when it started (the CLI asks for
+        // its local callback port, the token page or a fake-oauth test
+        // login); the `state` the provider sends back is only a random key
+        const route = loginRouteOf(request);
+        const isCli = route.kind !== 'web';
         const { tokens: token, session } = await this.sessionService.create(
             user,
             isCli
@@ -122,25 +124,21 @@ export class AuthController {
                   },
         );
 
-        if (state === 'cli') {
+        if (route.kind === 'cli-legacy-port') {
             response.redirect(
                 `http://localhost:8000/cli/callback?${CookieNames.AUTH_TOKEN}=${token[CookieNames.AUTH_TOKEN]}&${CookieNames.REFRESH_TOKEN}=${token[CookieNames.REFRESH_TOKEN]}`,
             );
             return;
         }
 
-        if (typeof state === 'string' && state.startsWith('cli-port-')) {
-            const portString = state.replace('cli-port-', '');
-            const port = Number.parseInt(portString, 10);
-            if (!Number.isNaN(port) && port >= 1 && port <= 65_535) {
-                response.redirect(
-                    `http://localhost:${String(port)}/cli/callback?${CookieNames.AUTH_TOKEN}=${token[CookieNames.AUTH_TOKEN]}&${CookieNames.REFRESH_TOKEN}=${token[CookieNames.REFRESH_TOKEN]}`,
-                );
-                return;
-            }
+        if (route.kind === 'cli-port') {
+            response.redirect(
+                `http://localhost:${String(route.port)}/cli/callback?${CookieNames.AUTH_TOKEN}=${token[CookieNames.AUTH_TOKEN]}&${CookieNames.REFRESH_TOKEN}=${token[CookieNames.REFRESH_TOKEN]}`,
+            );
+            return;
         }
 
-        if (state === 'cli-no-redirect') {
+        if (route.kind === 'cli-no-redirect') {
             const authToken = token[CookieNames.AUTH_TOKEN];
             const refreshToken = token[CookieNames.REFRESH_TOKEN];
             response.status(200).send(`

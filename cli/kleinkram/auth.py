@@ -36,6 +36,8 @@ from kleinkram.errors import UpdateCLIVersion
 DEFAULT_CALLBACK_PORT = 8000
 CLI_CALLBACK_ENDPOINT = "/cli/callback"
 OAUTH_SLUG = "/auth/"
+# binds a browser login to the client that started it (set by the API)
+OAUTH_LOGIN_COOKIE = "oauthlogin"
 AUTH_TOKEN_FETCH_ERROR = "Failed to fetch authentication tokens."
 
 
@@ -134,69 +136,63 @@ def _create_callback_server(preferred_port: int = DEFAULT_CALLBACK_PORT) -> tupl
 
 def _direct_oauth_auth(*, endpoint: str, provider: str, user: str) -> None:
     """
-    Directly authenticate with fake OAuth by programmatically following the OAuth flow.
-    This bypasses the browser entirely for automated testing.
+    Log in as a fake-oauth user without a browser (development and tests).
+
+    Takes the same steps as a browser: start the login at the API, which ties
+    it to this client with a cookie and a random `state`; let fake-oauth log
+    in `user`; finish at the API's callback with that cookie. A callback the
+    API did not see start is refused.
     """
     import requests
 
     print(f"Authenticating as user {user} with {provider}...")
 
+    redirects = (301, 302, 303, 307, 308)
     try:
-        # Step 1: Get the authorization code from fake OAuth
-        # The fake OAuth server will auto-redirect when user parameter is provided
-        fake_oauth_url = "http://localhost:8004/oauth/authorize"
-        callback_url = f"{endpoint}/auth/{provider}/callback"
+        # Step 1: start the login at the API
+        start = requests.get(
+            f"{endpoint}{OAUTH_SLUG}{provider}",
+            params={"state": "cli-direct", "user": user},
+            allow_redirects=False,
+        )
+        provider_url = start.headers.get("Location")
+        if start.status_code not in redirects or not provider_url:
+            raise RuntimeError(f"Expected a redirect to the OAuth provider, got {start.status_code}")
 
-        params = {
-            "client_id": "some-random-string-it-does-not-matter",
-            "redirect_uri": callback_url,
-            "response_type": "code",
-            "state": "cli-direct",
-            "user": user,
-        }
+        # the cookie is `Secure`, and requests does not send those back over
+        # http://localhost, so it is passed on by hand (servers older than
+        # 0.67 set none)
+        binding = start.cookies.get(OAUTH_LOGIN_COOKIE)
 
-        # Make request to fake OAuth - it will redirect with the auth code
-        response = requests.get(fake_oauth_url, params=params, allow_redirects=False)
-
-        if response.status_code not in [301, 302, 303, 307, 308]:
-            raise RuntimeError(f"Expected redirect from OAuth provider, got {response.status_code}")
-
-        # Extract the redirect location
-        location = response.headers.get("Location")
-        if not location:
-            raise RuntimeError("No redirect location from OAuth provider")
-
-        # Parse the callback URL to extract the auth code
-        parsed = urllib.parse.urlparse(location)
-        query_params = urllib.parse.parse_qs(parsed.query)
-
-        if "code" not in query_params:
-            raise RuntimeError(f"No authorization code in redirect: {location}")
-
-        auth_code = query_params["code"][0]
-        state = query_params.get("state", [None])[0]
+        # Step 2: fake-oauth logs in `user` and redirects back with a code
+        # (older servers do not pass `user` on)
+        parsed = urllib.parse.urlparse(provider_url)
+        query = dict(urllib.parse.parse_qsl(parsed.query))
+        query.setdefault("user", user)
+        provider_url = urllib.parse.urlunparse(parsed._replace(query=urllib.parse.urlencode(query)))
+        authorized = requests.get(provider_url, allow_redirects=False)
+        callback_url = authorized.headers.get("Location")
+        if authorized.status_code not in redirects or not callback_url:
+            raise RuntimeError(f"Expected a redirect from the OAuth provider, got {authorized.status_code}")
 
         print("Received authorization code, exchanging for tokens...")
 
-        # Step 2: Exchange the code for tokens by calling the backend callback
-        # Use a session to preserve cookies
+        # Step 3: finish the login at the API, which sets the tokens as cookies
         session = requests.Session()
-        callback_params = {"code": auth_code}
-        if state:
-            callback_params["state"] = state
-
-        callback_response = session.get(callback_url, params=callback_params, allow_redirects=False)
-
-        # The backend should set cookies and redirect
-        if callback_response.status_code not in [301, 302, 303, 307, 308]:
+        callback_response = session.get(
+            callback_url,
+            headers={"Cookie": f"{OAUTH_LOGIN_COOKIE}={binding}"} if binding else {},
+            allow_redirects=False,
+        )
+        if callback_response.status_code not in redirects:
             raise RuntimeError(f"Expected redirect from callback, got {callback_response.status_code}")
 
-        # Extract tokens from cookies
         auth_token = session.cookies.get("authtoken")
         refresh_token = session.cookies.get("refreshtoken")
 
         if not auth_token or not refresh_token:
-            raise RuntimeError("Failed to get tokens from callback response")
+            location = callback_response.headers.get("Location", "")
+            raise RuntimeError(f"Failed to get tokens from callback response ({location})")
 
         # Save tokens
         config = get_config()
