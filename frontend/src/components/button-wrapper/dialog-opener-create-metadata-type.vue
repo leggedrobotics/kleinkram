@@ -17,7 +17,6 @@ const canCreate = computed(() => canCreateProject(permissions.value));
 const createNewMetadataType = (): void => {
     if (!canCreate.value) return;
     $q.dialog({
-        title: 'Create new metadata type',
         component: CreateMetadataTypeDialog,
     });
 };

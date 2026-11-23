@@ -3,8 +3,8 @@
         :selected="selected"
         :project-uuid="file.mission?.project?.uuid"
         @update:selected="updateSelected"
+        @update:creating="updateCreating"
     />
-    <CategoryCreator :project-uuid="file.mission?.project?.uuid" />
 </template>
 <script setup lang="ts">
 import { ref, watch } from 'vue';
@@ -12,10 +12,9 @@ import { ref, watch } from 'vue';
 import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
 
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import CategoryCreator from 'components/category-creator.vue';
 import CategorySelector from 'components/category-selector.vue';
 
-const emit = defineEmits(['update:selected']);
+const emit = defineEmits(['update:selected', 'update:creating']);
 const { file } = defineProps<{
     file: FileWithTopicDto;
 }>();
@@ -28,6 +27,10 @@ watch(
         emit('update:selected', value);
     },
 );
+
+const updateCreating = (creating: boolean): void => {
+    emit('update:creating', creating);
+};
 
 const updateSelected = (value: CategoryDto[]): void => {
     selected.value = value;

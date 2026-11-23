@@ -749,6 +749,11 @@ export const QuerySkip = (
                 throw new BadRequestException('QuerySkip is too small');
             }
 
+            // Postgres' OFFSET is a bigint; larger values fail the query
+            if (value > Number.MAX_SAFE_INTEGER) {
+                throw new BadRequestException('QuerySkip is too large');
+            }
+
             const object = plainToInstance(NumberValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(

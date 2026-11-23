@@ -69,3 +69,64 @@ export const getErrorMessage = (
 
     return fallback;
 };
+
+/**
+ * The per-field errors of a rejected request, keyed by field, e.g. the
+ * metadata type uuid of each invalid metadata value:
+ * `{ message, errors: [{ field, error }] }`. Undefined if the response
+ * carries none.
+ */
+export const getFieldErrors = (
+    error: unknown,
+): Record<string, string> | undefined => {
+    if (!isAxiosError(error)) return undefined;
+    const data: unknown = error.response?.data;
+    const errors = (data as { errors?: unknown } | undefined)?.errors;
+    if (!Array.isArray(errors)) return undefined;
+
+    const fieldErrors: Record<string, string> = {};
+    for (const entry of errors as unknown[]) {
+        const { field, error: message } = (entry ?? {}) as {
+            field?: unknown;
+            error?: unknown;
+        };
+        if (typeof field === 'string' && typeof message === 'string')
+            fieldErrors[field] = message;
+    }
+    return Object.keys(fieldErrors).length > 0 ? fieldErrors : undefined;
+};
+
+/**
+ * The message for a dialog's error strip: the server's own message, or a
+ * hint to retry when the server could not be reached. No "Error …:" prefix,
+ * the dialog already says what failed.
+ */
+export const getDialogErrorMessage = (error: unknown): string => {
+    if (isAxiosError(error) && error.response === undefined)
+        return 'Could not reach the server. Try again.';
+    return getErrorMessage(error);
+};
+
+/**
+ * Whether the server rejected the name the user entered: a name that is
+ * already taken or not allowed. Such errors are shown on the name field, not
+ * in the dialog's error strip. Not every 409 is about the name (e.g. missing
+ * required metadata), so the message has to say so.
+ */
+export const isNameError = (error: unknown): boolean => {
+    const status = getErrorStatus(error);
+    if (status !== 400 && status !== 409) return false;
+    return /\bname\b|already exists/i.test(getErrorMessage(error));
+};
+
+/** Focuses a field by its id (after the error is rendered) and shows it */
+export const focusField = (id: string): void => {
+    // the error message renders on the next frame
+    requestAnimationFrame(() => {
+        const element = document.querySelector<HTMLElement>(
+            `#${CSS.escape(id)}`,
+        );
+        element?.scrollIntoView({ block: 'nearest' });
+        element?.focus();
+    });
+};

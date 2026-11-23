@@ -10,8 +10,8 @@ import {
     AccessGroupAuditLogsDto,
     AccessGroupDto,
     AccessGroupsDto,
-    AddAccessGroupToProjectDto,
-    AddUserToAccessGroupDto,
+    AddAccessGroupToProjectsDto,
+    AddUsersToAccessGroupDto,
     CreateAccessGroupDto,
     DeleteAccessGroupResponseDto,
     GetFilteredAccessGroupsDto,
@@ -24,8 +24,10 @@ import {
 } from '@kleinkram/api-dto';
 import {
     Body,
+    ConflictException,
     Controller,
     Delete,
+    ForbiddenException,
     Get,
     NotFoundException,
     Post,
@@ -40,7 +42,6 @@ import {
     CanCreate,
     CanDeleteProject,
     CanEditGroup,
-    CanWriteProject,
     fromParameter,
     UserOnly,
 } from '../auth/roles.decorator';
@@ -149,28 +150,36 @@ export class AccessController {
     }
 
     @ApiOperation({
-        summary: 'Add User to Access Group',
+        summary: 'Add Users to Access Group',
+        description:
+            'Adds one or more users in a single transaction: either all of them are added or none.',
     })
     @ApiCreatedResponse({
         type: AccessGroupDto,
-        description: 'The Access Group the user was added to.',
+        description: 'The Access Group the users were added to.',
     })
     @ApiResponse({
         status: 404,
         type: NotFoundException,
-        description: 'Access Group not found.',
+        description:
+            'The Access Group or one of the users was not found. No user was added.',
+    })
+    @ApiResponse({
+        status: 409,
+        type: ConflictException,
+        description: 'One of the users is already a member. No user was added.',
     })
     @Post(':uuid/users')
     @CanEditGroup()
-    async addUserToAccessGroup(
+    async addUsersToAccessGroup(
         @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
-        @Body() body: AddUserToAccessGroupDto,
+        @Body() body: AddUsersToAccessGroupDto,
         @AddUser() requestUser: AuthHeader,
     ): Promise<AccessGroupDto> {
         await this.accessModificationService
-            .addUserToAccessGroup(
+            .addUsersToAccessGroup(
                 uuid,
-                body.userUuid,
+                body.userUuids,
                 body.canEditGroup,
                 body.expireDate,
                 requestUser,
@@ -242,25 +251,32 @@ export class AccessController {
     }
 
     @ApiOperation({
-        summary: 'Add Access Group to Project',
-        description: 'Adds an Access Group to a Project with the given rights.',
+        summary: 'Add Access Group to Projects',
+        description:
+            'Adds an Access Group to one or more Projects with the given rights, in a single transaction: either it is added to all of them or to none. The caller needs Modify rights on every listed Project.',
     })
     @ApiCreatedResponse({
-        description: 'Returns the Project',
-        type: ProjectDto,
+        description: 'Returns the Projects, in the order of the request',
+        type: [ProjectDto],
     })
-    @Post(':uuid/projects/:projectUuid')
-    @CanWriteProject(fromParameter('projectUuid'))
-    async addAccessGroupToProject(
+    @ApiResponse({
+        status: 403,
+        type: ForbiddenException,
+        description:
+            'The user does not have Modify permissions on every listed project. The Access Group was added to none.',
+    })
+    @Post(':uuid/projects')
+    // The projects are a list in the body, which `@CanWriteProject()` cannot
+    // read: the service checks WRITE rights on each of them instead.
+    @UserOnly()
+    async addAccessGroupToProjects(
         @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
-        @ParameterUID('projectUuid', 'UUID of Project') projectUuid: string,
-        @Body() body: AddAccessGroupToProjectDto,
+        @Body() body: AddAccessGroupToProjectsDto,
         @AddUser() user: AuthHeader,
-    ): Promise<ProjectDto> {
-        return this.accessModificationService.addAccessGroupToProject(
-            projectUuid,
+    ): Promise<ProjectDto[]> {
+        return this.accessModificationService.addAccessGroupToProjects(
             uuid,
-            body.rights,
+            body.projects,
             user,
         );
     }

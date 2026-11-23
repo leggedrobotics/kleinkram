@@ -113,6 +113,10 @@ export class TriggerQueueProcessorProvider {
         });
 
         for (const trigger of triggers) {
+            // the mission was deleted before its triggers were deleted with
+            // it: the relation is null although its type says otherwise
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            if (!trigger.mission) continue;
             const config = trigger.config as { cron: string };
             if (!config.cron || !isValidCron(config.cron)) {
                 continue;

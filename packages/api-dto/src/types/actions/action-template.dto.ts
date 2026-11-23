@@ -87,4 +87,11 @@ export class ActionTemplateDto {
     @ApiProperty()
     @IsNumber()
     executionCount!: number;
+
+    @ApiProperty({
+        description:
+            'Triggers that run this template. A template in use by a trigger cannot be deleted.',
+    })
+    @IsNumber()
+    triggerCount!: number;
 }

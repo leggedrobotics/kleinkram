@@ -25,7 +25,6 @@ const createNewProject = (): void => {
 
     // open the dialog
     $q.dialog({
-        title: 'Create new project',
         component: CreateProjectDialog,
     });
 };

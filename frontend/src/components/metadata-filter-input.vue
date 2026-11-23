@@ -1,18 +1,14 @@
 <template>
-    <div class="row items-center q-gutter-x-sm full-width">
-        <div class="col-5 row items-center no-wrap">
-            <q-icon
-                :name="
-                    datatypeIcon(metadataTypeLookup[metadataTypeUuid]?.datatype)
-                "
-                size="20px"
-                class="datatype-icon q-mr-sm"
-            />
-            <span class="text-weight-medium ellipsis">
-                {{ metadataValues[metadataTypeUuid].name }}
-            </span>
+    <div class="filter-cells">
+        <div class="filter-cells__name">
+            <div class="filter-cells__label">
+                {{ metadataValues[metadataTypeUuid]?.name }}
+            </div>
+            <div class="filter-cells__type">
+                {{ metadataTypeLookup[metadataTypeUuid]?.datatype }}
+            </div>
         </div>
-        <div v-if="metadataTypeLookup[metadataTypeUuid]" class="col-grow">
+        <div class="filter-cells__input">
             <q-input
                 v-if="
                     metadataTypeLookup[metadataTypeUuid]?.datatype !==
@@ -24,8 +20,10 @@
                         metadataTypeLookup[metadataTypeUuid]?.datatype,
                     )
                 "
+                :aria-label="metadataValues[metadataTypeUuid]?.name"
                 outlined
                 dense
+                color="button-primary"
                 clearable
                 :type="
                     inputFieldTypeMapping(
@@ -70,21 +68,32 @@
                     </div>
                 </template>
             </q-input>
-            <q-toggle
+            <div
                 v-if="
                     metadataTypeLookup[metadataTypeUuid]?.datatype ===
                     DataType.BOOLEAN
                 "
-                v-model="internalValue"
-                :label="
-                    internalValue === undefined
-                        ? '-'
-                        : internalValue
-                          ? 'True'
-                          : 'False'
-                "
-                dense
-            />
+                role="radiogroup"
+                :aria-label="metadataValues[metadataTypeUuid]?.name"
+                class="boolean-choice"
+            >
+                <q-btn
+                    v-for="choice in [true, false]"
+                    :key="String(choice)"
+                    flat
+                    no-caps
+                    dense
+                    role="radio"
+                    :aria-checked="internalValue === choice"
+                    :label="choice ? 'True' : 'False'"
+                    class="boolean-choice__option"
+                    :class="{
+                        'boolean-choice__option--selected':
+                            internalValue === choice,
+                    }"
+                    @click="() => toggleBoolean(choice)"
+                />
+            </div>
         </div>
     </div>
 </template>
@@ -106,32 +115,6 @@ const internalValue = ref(
     properties.metadataValues[properties.metadataTypeUuid]?.value,
 );
 
-const datatypeIcon = (datatype: DataType | undefined): string => {
-    switch (datatype) {
-        case DataType.STRING: {
-            return 'sym_o_description';
-        }
-        case DataType.NUMBER: {
-            return 'sym_o_tag';
-        }
-        case DataType.BOOLEAN: {
-            return 'sym_o_check_box';
-        }
-        case DataType.DATE: {
-            return 'sym_o_event';
-        }
-        case DataType.LOCATION: {
-            return 'sym_o_place';
-        }
-        case DataType.LINK: {
-            return 'sym_o_link';
-        }
-        default: {
-            return 'sym_o_label';
-        }
-    }
-};
-
 const inputPlaceholder = (datatype: DataType | undefined): string => {
     switch (datatype) {
         case DataType.NUMBER: {
@@ -141,7 +124,7 @@ const inputPlaceholder = (datatype: DataType | undefined): string => {
             return 'dd.mm.yyyy';
         }
         default: {
-            return 'Enter value...';
+            return '';
         }
     }
 };
@@ -182,6 +165,11 @@ watch(internalValue, (newValue) => {
     emit('update:metadataValues', updatedMetadataValues);
 });
 
+/** Picks True or False; picking the selected one clears the filter value */
+const toggleBoolean = (choice: boolean): void => {
+    internalValue.value = internalValue.value === choice ? undefined : choice;
+};
+
 const clearValue = (): void => {
     const updatedMetadataValues = Object.fromEntries(
         Object.entries(properties.metadataValues).filter(
@@ -193,10 +181,54 @@ const clearValue = (): void => {
 </script>
 
 <style scoped>
-.datatype-icon {
-    border: 1.5px solid currentColor;
+/* the cells take part in the grid of metadata-filter-builder */
+.filter-cells {
+    display: contents;
+}
+
+.filter-cells__name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* $text-primary */
+.filter-cells__label {
+    color: #161616;
+    font-size: 14px;
+    line-height: 18px;
+}
+
+/* $text-secondary */
+.filter-cells__type {
+    color: #525252;
+    font-family: monospace;
+    font-size: 11px;
+    line-height: 16px;
+    text-transform: uppercase;
+}
+
+.filter-cells__input {
+    min-width: 0;
+}
+
+/* True / False choice: like the expiration chips, selected is $button-secondary */
+.boolean-choice {
+    display: flex;
+    gap: 8px;
+}
+
+.boolean-choice__option {
+    min-width: 72px;
+    height: 40px;
+    border: 1px solid #e0e0e0;
     border-radius: 4px;
-    padding: 2px;
-    color: #616161;
+    background: #eeeeee;
+    color: #161616;
+}
+
+.boolean-choice__option--selected {
+    border-color: #393939;
+    background: #393939;
+    color: #ffffff;
 }
 </style>

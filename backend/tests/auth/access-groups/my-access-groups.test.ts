@@ -154,11 +154,18 @@ describe('List own access groups', () => {
         const creatorHeaders = new HeaderCreator(creator);
         creatorHeaders.addHeader('Content-Type', 'application/json');
         const linked = await fetch(
-            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects`,
             {
                 method: 'POST',
                 headers: creatorHeaders.getHeaders(),
-                body: JSON.stringify({ rights: AccessGroupRights.READ }),
+                body: JSON.stringify({
+                    projects: [
+                        {
+                            projectUuid: projectUuid,
+                            rights: AccessGroupRights.READ,
+                        },
+                    ],
+                }),
             },
         );
         expect(linked.status).toBeLessThan(300);

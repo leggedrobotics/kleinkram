@@ -1101,7 +1101,7 @@ const dropColumns = (cols: any[], label: string) => {
     return cols.filter((col) => col.label !== label);
 };
 
-const { mutate: setAccessGroup } = useMutation({
+const { mutateAsync: setAccessGroup } = useMutation({
     mutationFn: (data: {
         uuid: string;
         userUuid: string;
@@ -1130,13 +1130,7 @@ const { mutate: setAccessGroup } = useMutation({
             position: 'bottom',
         });
     },
-    onError: () => {
-        Notify.create({
-            message: 'Error setting expiration date',
-            color: 'negative',
-            position: 'bottom',
-        });
-    },
+    // a failure is shown in the dialog, which stays open
 });
 
 const openSetExpirationDialog = (agu: GroupMembershipDto): void => {
@@ -1144,13 +1138,13 @@ const openSetExpirationDialog = (agu: GroupMembershipDto): void => {
         component: SetAccessGroupExpirationDialog,
         componentProps: {
             agu: agu,
+            action: (expirationDate: Date | null) =>
+                setAccessGroup({
+                    uuid: accessGroup.value?.uuid ?? '',
+                    userUuid: agu.user.uuid,
+                    expirationDate,
+                }),
         },
-    }).onOk((expirationDate: Date | null) => {
-        setAccessGroup({
-            uuid: accessGroup.value?.uuid ?? '',
-            userUuid: agu.user.uuid,
-            expirationDate,
-        });
     });
 };
 

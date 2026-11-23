@@ -11,7 +11,8 @@ The valid operations that can be performed on a mission are:
 | move          | Move a Mission                   | <Delete hint="Delete Rights are required on the Project it is removed from, Create where it is added"/> |
 | delete        | Delete a Mission                 | <Delete/>                                                                                               |
 
-- **Delete**: Can delete the mission.
+- **Delete**: Can delete the mission. Only a mission without files can be deleted, and not while one of its actions is
+  still running. Its triggers are deleted with it; its past action executions are hidden together with the mission.
 
 ### Example
 

@@ -1,16 +1,36 @@
 import { ref, Ref, watch } from 'vue';
-import { renderMessageToCanvas } from '../services/decoding-strategies/image-utilities';
+import { FrameDecoder } from '../services/decoding-strategies/image-decoders';
+import {
+    getBytesFromPayload,
+    renderMessageToCanvas,
+    RosImageMessage,
+} from '../services/decoding-strategies/image-utilities';
 
-// Maximum number of attempts before aborting compressed image loading
-const MAX_COMPRESSED_ATTEMPTS = 1000;
+/**
+ * Compressed frames that may fail to decode in a row before the preview gives
+ * up. Counting only failures in a row matters for playback: a long sequence
+ * draws thousands of frames, and counting every draw stopped it part-way.
+ */
+const MAX_FAILED_IN_A_ROW = 1000;
 // Maximum parallel image load requests to avoid flooding
 const MAX_PARALLEL_REQUESTS = 100;
+
+/** Decoded frames held ahead of the one shown. */
+const DECODE_AHEAD = 6;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isCompressedImage = (data: any): boolean =>
+    'format' in data ||
+    (!('encoding' in data) && !('width' in data) && !('height' in data));
 
 export function useImageDecoder(
     canvasReference: Ref<HTMLCanvasElement | null>,
     messageData: Ref,
 ): {
     draw: () => void;
+    /** Start decoding frames that are about to be shown. */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    prefetch: (upcoming: any[]) => void;
     renderError: Ref<string | undefined, string>;
     isDecoded: Ref<boolean>;
     isUltraWide: Ref<boolean>;
@@ -18,25 +38,20 @@ export function useImageDecoder(
     const renderError = ref<string | undefined>(undefined);
     const isDecoded = ref(false);
     const isUltraWide = ref(false);
-    // Track total attempts for compressed images
-    const compressedAttempts = ref(0);
+    const failedInARow = ref(0);
     // Track currently pending image load requests
     const parallelRequests = ref(0);
+    const decoder = new FrameDecoder(DECODE_AHEAD + 2);
+    // Identifies the latest draw request; older decodes are dropped
+    let drawSequence = 0;
+
     const draw = (): void => {
         if (!canvasReference.value || !messageData.value) return;
 
-        // Determine if this is a compressed image
-        const isCompressed =
-            'format' in messageData.value ||
-            (!('encoding' in messageData.value) &&
-                !('width' in messageData.value) &&
-                !('height' in messageData.value));
+        const isCompressed = isCompressedImage(messageData.value);
 
-        // Abort if too many attempts for compressed images
-        if (
-            isCompressed &&
-            compressedAttempts.value >= MAX_COMPRESSED_ATTEMPTS
-        ) {
+        // Abort if too many compressed frames failed in a row
+        if (isCompressed && failedInARow.value >= MAX_FAILED_IN_A_ROW) {
             renderError.value = 'Loading aborted after too many attempts';
             return;
         }
@@ -46,18 +61,19 @@ export function useImageDecoder(
             return;
         }
 
-        // Increment counters for compressed images
-        if (isCompressed) {
-            compressedAttempts.value++;
-            parallelRequests.value++;
-        }
+        if (isCompressed) parallelRequests.value++;
+        const sequence = ++drawSequence;
+        const settle = (): void => {
+            if (isCompressed) parallelRequests.value--;
+        };
 
         renderError.value = undefined;
         const canvas = canvasReference.value;
 
         const onError = (error: Error): void => {
+            settle();
+            if (isCompressed) failedInARow.value++;
             renderError.value = error.message;
-            if (isCompressed) parallelRequests.value--;
         };
 
         try {
@@ -65,73 +81,40 @@ export function useImageDecoder(
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 messageData.value,
                 canvas,
-                () => {
-                    onRendered(canvas, isCompressed);
+                {
+                    onRender: () => {
+                        settle();
+                        failedInARow.value = 0;
+                        onRendered(canvas);
+                    },
+                    onError,
+                    isCurrent: () => sequence === drawSequence,
+                    onStale: settle,
                 },
-                onError,
+                decoder,
             );
         } catch (error) {
             onError(error instanceof Error ? error : new Error(String(error)));
         }
     };
 
-    // Callback after rendering (async for compressed images)
-    const onRendered = (
-        canvas: HTMLCanvasElement,
-        isCompressed: boolean,
-    ): void => {
-        const targetWidth = 600;
-        const targetHeight = 400;
-        {
-            const aspectRatio = canvas.width / canvas.height;
-            isUltraWide.value = aspectRatio > 2.5;
-
-            // Resize logic
-            let newWidth = canvas.width;
-            let newHeight = canvas.height;
-            let needsResize = false;
-
-            if (isUltraWide.value) {
-                if (canvas.height > targetHeight) {
-                    const ratio = targetHeight / canvas.height;
-                    newWidth = Math.round(canvas.width * ratio);
-                    newHeight = targetHeight;
-                    needsResize = true;
-                }
-            } else {
-                if (
-                    canvas.width > targetWidth ||
-                    canvas.height > targetHeight
-                ) {
-                    const ratio = Math.min(
-                        targetWidth / canvas.width,
-                        targetHeight / canvas.height,
-                    );
-                    newWidth = Math.round(canvas.width * ratio);
-                    newHeight = Math.round(canvas.height * ratio);
-                    needsResize = true;
-                }
-            }
-
-            if (needsResize) {
-                const temporaryCanvas = document.createElement('canvas');
-                temporaryCanvas.width = canvas.width;
-                temporaryCanvas.height = canvas.height;
-                const temporaryContext = temporaryCanvas.getContext('2d');
-                temporaryContext?.drawImage(canvas, 0, 0);
-
-                canvas.width = newWidth;
-                canvas.height = newHeight;
-                const context = canvas.getContext('2d');
-                context?.drawImage(temporaryCanvas, 0, 0, newWidth, newHeight);
-            }
-
-            isDecoded.value = true;
-            if (isCompressed) {
-                // Decrement parallel request count after completion
-                parallelRequests.value--;
-            }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const prefetch = (upcoming: any[]): void => {
+        if (!FrameDecoder.supported) return;
+        const frames: Uint8Array[] = [];
+        for (const data of upcoming.slice(0, DECODE_AHEAD)) {
+            if (!data || !isCompressedImage(data)) continue;
+            const bytes = getBytesFromPayload((data as RosImageMessage).data);
+            if (bytes && bytes.length > 0) frames.push(bytes);
         }
+        decoder.prefetch(frames);
+    };
+
+    // Callback after rendering (async for compressed images). The canvas is
+    // already sized for the preview by the renderer.
+    const onRendered = (canvas: HTMLCanvasElement): void => {
+        isUltraWide.value = canvas.width / canvas.height > 2.5;
+        isDecoded.value = true;
     };
 
     // Automatically redraw when data changes
@@ -140,6 +123,7 @@ export function useImageDecoder(
     // Expose manual draw if needed (e.g. on mount)
     return {
         draw,
+        prefetch,
         renderError,
         isDecoded,
         isUltraWide,

@@ -1,8 +1,15 @@
 import { ActionState } from '@kleinkram/shared';
 import { IsSkip, IsTake } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+    IsArray,
+    IsBoolean,
+    IsEnum,
+    IsOptional,
+    IsString,
+    IsUUID,
+} from 'class-validator';
 
 export class SubmitActionMulti {
     @IsString({ each: true })
@@ -55,9 +62,23 @@ export class ActionQuery {
     @IsBoolean()
     exactMatch?: boolean | undefined;
 
-    @ApiProperty()
+    @ApiProperty({ enum: ActionState, isArray: true, required: false })
     @IsOptional()
-    @IsString({ each: true })
+    // `?states=DONE` arrives as a string, `?states=DONE&states=FAILED` and
+    // `?states[]=DONE` as an array: accept both, and split `DONE,FAILED`
+    @Transform(({ value }: { value: unknown }) =>
+        typeof value === 'string'
+            ? value
+                  .split(',')
+                  .map((state) => state.trim())
+                  .filter((state) => state !== '')
+            : value,
+    )
+    @IsArray()
+    @IsEnum(ActionState, {
+        each: true,
+        message: `states must be one or more of ${Object.values(ActionState).join(', ')}`,
+    })
     states?: ActionState[] | undefined;
 
     @ApiProperty()

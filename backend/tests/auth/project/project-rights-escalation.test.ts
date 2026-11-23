@@ -104,11 +104,14 @@ describe('Project Rights Escalation', () => {
         const { writer, writerGroup, projectUuid } = await setup();
 
         expect(
-            await post(
-                writer,
-                `/access-groups/${writerGroup.uuid}/projects/${projectUuid}`,
-                { rights: AccessGroupRights._ADMIN },
-            ),
+            await post(writer, `/access-groups/${writerGroup.uuid}/projects`, {
+                projects: [
+                    {
+                        projectUuid: projectUuid,
+                        rights: AccessGroupRights._ADMIN,
+                    },
+                ],
+            }),
         ).toBe(400);
         expect(await rightsOf(projectUuid, writerGroup.uuid)).toBe(
             AccessGroupRights.WRITE,
@@ -144,11 +147,14 @@ describe('Project Rights Escalation', () => {
             }),
         ).toBe(409);
         expect(
-            await post(
-                writer,
-                `/access-groups/${writerGroup.uuid}/projects/${projectUuid}`,
-                { rights: AccessGroupRights.DELETE },
-            ),
+            await post(writer, `/access-groups/${writerGroup.uuid}/projects`, {
+                projects: [
+                    {
+                        projectUuid: projectUuid,
+                        rights: AccessGroupRights.DELETE,
+                    },
+                ],
+            }),
         ).toBe(409);
         expect(await rightsOf(projectUuid, writerGroup.uuid)).toBe(
             AccessGroupRights.WRITE,

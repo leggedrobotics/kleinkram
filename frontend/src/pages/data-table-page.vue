@@ -90,8 +90,7 @@
                     v-for="category in sortedCategories(props.row)"
                     :key="category.uuid"
                     :label="category.name"
-                    :color="hashUUIDtoColor(category.uuid)"
-                    text-color="white"
+                    :style="categoryTagStyle(category.uuid)"
                     dense
                     class="q-ml-none q-mr-xs"
                 >
@@ -304,10 +303,10 @@ import ROUTES from 'src/router/routes';
 import { formatDate, formatDuration } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 import {
+    categoryTagStyle,
     getColorFileState,
     getIcon,
     getTooltip,
-    hashUUIDtoColor,
 } from 'src/services/generic';
 import { fetchFilteredFiles } from 'src/services/queries/file';
 import { computed, Ref, ref, watch } from 'vue';

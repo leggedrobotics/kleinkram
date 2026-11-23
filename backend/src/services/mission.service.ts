@@ -13,16 +13,20 @@ import {
     MissionsDto,
     MissionWithFilesDto,
 } from '@kleinkram/api-dto';
+import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
+import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/metadata-type.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import { UserRole } from '@kleinkram/shared';
+import { ActionState, UserRole } from '@kleinkram/shared';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Not, Repository } from 'typeorm';
+import { Brackets, ILike, Not, Repository } from 'typeorm';
 import logger from '../logger';
+import { isEmptyMetadataValue } from './metadata-values';
 import { MetadataService } from './metadata.service';
+import { updateStorageTags } from './storage-tags';
 import { UserService } from './user.service';
 import {
     addFileStats,
@@ -87,6 +91,14 @@ const sortLikeIds = (
     );
 };
 
+/** States of an action that hasn't finished yet. */
+const RUNNING_ACTION_STATES = [
+    ActionState.PENDING,
+    ActionState.STARTING,
+    ActionState.PROCESSING,
+    ActionState.STOPPING,
+];
+
 @Injectable()
 export class MissionService {
     constructor(
@@ -120,7 +132,16 @@ export class MissionService {
 
         // `tags` / `ignoreTags` are deprecated aliases kept for old clients;
         // the canonical fields win when both are given.
-        const metadata = createMission.metadata ?? createMission.tags ?? {};
+        // An empty or whitespace-only value means "not set", as when a
+        // mission's metadata is saved later: it is not written and does not
+        // satisfy a requirement.
+        // The keys are metadata type UUIDs; the database returns them in
+        // lowercase, so they are compared in lowercase.
+        const metadata = Object.fromEntries(
+            Object.entries(createMission.metadata ?? createMission.tags ?? {})
+                .filter(([, value]) => !isEmptyMetadataValue(value))
+                .map(([key, value]) => [key.toLowerCase(), value]),
+        );
         const ignoreMissingMetadata =
             createMission.ignoreMissingMetadata ??
             createMission.ignoreTags ??
@@ -129,11 +150,7 @@ export class MissionService {
         if (!ignoreMissingMetadata) {
             const missingMetadataTypes = project.requiredMetadataTypes.filter(
                 (metadataType: MetadataTypeEntity) =>
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                    metadata[metadataType.uuid] === undefined &&
-                    metadata[metadataType.uuid] === '' &&
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                    metadata[metadataType.uuid] === null,
+                    !(metadataType.uuid in metadata),
             );
             if (missingMetadataTypes.length > 0) {
                 const missingNames = missingMetadataTypes
@@ -166,7 +183,9 @@ export class MissionService {
             );
         }
 
-        await this.metadataService.validateLinks(metadata);
+        // every value is checked before the mission is saved, so a bad value
+        // can't leave a half-created mission behind
+        await this.metadataService.validateValues(metadata);
 
         const mission = this.missionRepository.create({
             name: createMission.name,
@@ -445,9 +464,10 @@ export class MissionService {
 
         if (mission.files === undefined) throw new Error('Files not loaded');
 
+        // the move is saved: tags are best effort from here on
         await Promise.all(
             mission.files.map(async (file) =>
-                this.dataStorage.addTags(file.uuid, {
+                updateStorageTags(this.dataStorage, file, {
                     filename: file.filename,
                     missionUuid: missionUUID,
                     projectUuid: projectUUID,
@@ -470,7 +490,68 @@ export class MissionService {
                 'Mission cannot be deleted because it contains files',
             );
         }
-        await this.missionRepository.softRemove(mission);
+
+        await this.missionRepository.manager.transaction(async (manager) => {
+            // Exclusive lock: an action being submitted holds a shared lock
+            // on the mission while it saves, so it is either counted below
+            // or sees afterwards that the mission is gone.
+            await manager.findOne(MissionEntity, {
+                where: { uuid },
+                select: { uuid: true },
+                lock: { mode: 'pessimistic_write' },
+            });
+            // a running action would keep working on a deleted mission
+            // An action counts as running while its state says so, or while
+            // its container started and the worker hasn't recorded its exit:
+            // a cancellation is written before the worker stops the
+            // container, so CANCELLED alone doesn't prove it stopped. A
+            // container is only waited for up to its maximum runtime (plus a
+            // margin), when the janitor kills it, so a crashed worker can't
+            // block the deletion for good.
+            const running = await manager
+                .createQueryBuilder(ActionEntity, 'action')
+                .innerJoin('action.template', 'template')
+                .innerJoin('action.mission', 'actionMission')
+                .where('actionMission.uuid = :uuid', { uuid })
+                .andWhere(
+                    new Brackets((query) => {
+                        query
+                            .where('action.state IN (:...states)', {
+                                states: RUNNING_ACTION_STATES,
+                            })
+                            .orWhere(
+                                new Brackets((container) => {
+                                    container
+                                        .where(
+                                            'action.actionContainerStartedAt IS NOT NULL',
+                                        )
+                                        .andWhere(
+                                            'action.actionContainerExitedAt IS NULL',
+                                        )
+                                        .andWhere(
+                                            `action.actionContainerStartedAt > NOW() - INTERVAL '1 hour' * (COALESCE(action.maxRuntimeHours, template.maxRuntime) + 1)`,
+                                        );
+                                }),
+                            );
+                    }),
+                )
+                .getCount();
+            if (running > 0) {
+                throw new ConflictException(
+                    running === 1
+                        ? '1 action is still running. Cancel it or wait until it finishes.'
+                        : `${running.toString()} actions are still running. Cancel them or wait until they finish.`,
+                );
+            }
+
+            // The triggers belong to the mission and can never fire again:
+            // they are deleted with it. Its actions stay as history and are
+            // hidden together with the mission.
+            await manager.softDelete(ActionTriggerEntity, {
+                mission: { uuid },
+            });
+            await manager.softRemove(mission);
+        });
     }
 
     async updateMetadata(
@@ -488,6 +569,10 @@ export class MissionService {
 
         if (mission.metadata === undefined)
             throw new Error('Metadata not loaded');
+
+        // check every value first, so a bad one doesn't leave the mission
+        // half updated
+        await this.metadataService.validateValues(metadata);
 
         await Promise.all(
             Object.entries(metadata).map(async ([metadataTypeUUID, value]) => {

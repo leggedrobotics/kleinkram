@@ -100,8 +100,10 @@
                 :is-loading="isLoading"
                 :sample-stride="sampleStride ?? 1"
                 :can-refine="canRefine ?? false"
+                :topic-message-count="topicMessageCount ?? 0"
                 @load-required="loadRequired"
                 @load-more="loadMore"
+                @load-window="loadWindow"
                 @pause-preview="emitPausePreview"
             />
         </div>
@@ -144,9 +146,16 @@ const properties = defineProps<{
     sampleStride?: number;
     /** Whether a sampled topic can be refined with more messages */
     canRefine?: boolean;
+    /** Messages of the topic in the recording, loaded or not */
+    topicMessageCount?: number;
 }>();
 
-const emit = defineEmits(['load-more', 'load-required', 'pause-preview']);
+const emit = defineEmits([
+    'load-more',
+    'load-required',
+    'pause-preview',
+    'load-window',
+]);
 
 const hasData = computed(
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -194,6 +203,15 @@ const loadRequired = (): void => {
 
 const loadMore = (): void => {
     emit('load-more');
+};
+
+const loadWindow = (
+    from: bigint,
+    until: bigint,
+    playhead: bigint,
+    onFailed: () => void,
+): void => {
+    emit('load-window', from, until, playhead, onFailed);
 };
 
 const emitPausePreview = (): void => {

@@ -40,7 +40,6 @@ const editMission = (): void => {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             mission: mission,
         },
-        persistent: true,
     });
 };
 </script>

@@ -69,7 +69,7 @@ describe('Expired group editors', () => {
                 expiredEditor,
                 'POST',
                 `/access-groups/${groupUuid}/users`,
-                { userUuid: target.uuid },
+                { userUuids: [target.uuid] },
             ),
         ).toBe(403);
         expect(

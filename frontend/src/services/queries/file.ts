@@ -6,7 +6,9 @@ import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
 import type { FoxgloveLinkResponseDto } from '@kleinkram/api-dto/types/file/foxglove-link-response.dto';
 import type { IsUploadingDto } from '@kleinkram/api-dto/types/file/is-uploading.dto';
 import type { ExistingFilenamesResponseDto } from '@kleinkram/api-dto/types/file/transfer-files.dto';
+import type { StorageInsightsDto } from '@kleinkram/api-dto/types/storage-insights.dto';
 import type { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
+import type { StorageUploadersDto } from '@kleinkram/api-dto/types/storage-uploaders.dto';
 import { FileState, FileType, HealthStatus } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
@@ -184,6 +186,22 @@ export const findOneByNameAndMission = async (
 export const getStorage = async (): Promise<StorageOverviewDto> => {
     const response: AxiosResponse<StorageOverviewDto> =
         await axios.get<StorageOverviewDto>('files/storage');
+    return response.data;
+};
+
+/** Stored data by month, project, file type and mission */
+export const getStorageInsights = async (): Promise<StorageInsightsDto> => {
+    const response: AxiosResponse<StorageInsightsDto> =
+        await axios.get<StorageInsightsDto>('files/storage/insights');
+    return response.data;
+};
+
+/** Stored data per user who uploaded it; admins only (403 otherwise) */
+export const getStorageUploaders = async (): Promise<StorageUploadersDto> => {
+    const response: AxiosResponse<StorageUploadersDto> =
+        await axios.get<StorageUploadersDto>(
+            'files/storage/insights/uploaders',
+        );
     return response.data;
 };
 

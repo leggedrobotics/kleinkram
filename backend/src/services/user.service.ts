@@ -5,16 +5,19 @@ import {
     userEntityToCurrentAPIUserDto,
     userEntityToDto,
 } from '@/serialization';
+import { ACTIVE_MEMBERSHIP } from '@/services/access-query.service';
 import {
     ApiKeysDto,
     CurrentAPIUserDto,
     PermissionsDto,
     UserDto,
+    UserSearchResultsDto,
     UsersDto,
 } from '@kleinkram/api-dto';
 import { SortOrder } from '@kleinkram/api-dto/types/pagination';
 import {
     ApiKeyEntity,
+    GroupMembershipEntity,
     MissionAccessViewEntity,
     ProjectAccessViewEntity,
     UserEntity,
@@ -26,8 +29,11 @@ import {
     UserRole,
 } from '@kleinkram/shared';
 import {
+    BadRequestException,
+    ConflictException,
     ForbiddenException,
     Injectable,
+    NotFoundException,
     OnModuleInit,
     UnauthorizedException,
 } from '@nestjs/common';
@@ -38,6 +44,18 @@ import {
     In,
     Repository,
 } from 'typeorm';
+
+/** Columns the API key list can be sorted by (the UI's sortable columns). */
+const API_KEY_SORT_FIELDS = [
+    'key_type',
+    'rights',
+    'createdAt',
+    'updatedAt',
+    'deletedAt',
+];
+
+/** Key of the advisory lock that serializes promotions and demotions. */
+const ROLE_CHANGE_LOCK = 4_242_001;
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -137,28 +155,67 @@ export class UserService implements OnModuleInit {
     }
 
     async promoteUser(usermail: string): Promise<UserDto> {
-        const user = await this.userRepository.findOneOrFail({
-            where: { email: usermail },
-        });
-        user.role = UserRole.ADMIN;
-        await this.userRepository.save(user);
-        return userEntityToDto(user);
+        return this.changeRole(usermail, UserRole.ADMIN);
     }
 
-    async demoteUser(usermail: string) {
-        const user = await this.userRepository.findOneOrFail({
-            where: { email: usermail },
-        });
-        user.role = UserRole.USER;
-        await this.userRepository.save(user);
-        return userEntityToDto(user);
+    /**
+     * Demotes an admin to a regular user. The last admin can't be demoted:
+     * without an admin, `claimAdmin` lets any signed-in user make themselves
+     * admin.
+     */
+    async demoteUser(usermail: string): Promise<UserDto> {
+        return this.changeRole(usermail, UserRole.USER);
     }
 
+    /**
+     * Role changes run one at a time (a transaction-scoped advisory lock),
+     * and the target's role is read inside the lock: otherwise a demotion
+     * that read a role before a concurrent promotion could still remove
+     * the last admin.
+     */
+    private async changeRole(
+        usermail: string,
+        role: UserRole,
+    ): Promise<UserDto> {
+        return this.userRepository.manager.transaction(async (manager) => {
+            await manager.query('SELECT pg_advisory_xact_lock($1)', [
+                ROLE_CHANGE_LOCK,
+            ]);
+            const user = await manager.findOne(UserEntity, {
+                where: { email: usermail },
+            });
+            if (!user) throw new NotFoundException('User not found');
+
+            if (user.role === UserRole.ADMIN && role !== UserRole.ADMIN) {
+                const admins = await manager.count(UserEntity, {
+                    where: { role: UserRole.ADMIN },
+                });
+                if (admins <= 1) {
+                    throw new ConflictException("Can't demote the last admin");
+                }
+            }
+
+            user.role = role;
+            await manager.save(user);
+            return userEntityToDto(user);
+        });
+    }
+
+    /**
+     * Searches users by name or email.
+     *
+     * The email of a found user is only returned on an exact email match or
+     * if the requester and the user are both active members of the same
+     * affiliation group (the email-domain groups). Everyone else gets a
+     * masked hint such as "d•••••@ethz.ch" in `emailHint` to tell users with
+     * the same name apart.
+     */
     async search(
+        requesterUuid: string,
         search: string,
         skip: number,
         take: number,
-    ): Promise<UsersDto> {
+    ): Promise<UserSearchResultsDto> {
         // Ensure the search string is not empty or null or less than 3 characters
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (search === null || search === '' || search.length < 3) {
@@ -184,21 +241,71 @@ export class UserService implements OnModuleInit {
             .take(take)
             .getManyAndCount();
 
-        const usersDto = users.map((u) => userEntityToDto(u, true));
-
-        // return the email only if it is an exact match
-        // otherwise set it to null
-        for (const user of usersDto) {
-            user.email =
-                user.email?.toLowerCase() === search.toLowerCase()
-                    ? user.email
-                    : null;
-        }
+        const sharedAffiliation = await this.usersSharingAffiliation(
+            requesterUuid,
+            users.map((u) => u.uuid),
+        );
 
         return {
-            users: usersDto,
+            users: users.map((user) => {
+                const email = user.email ?? null;
+                const visible =
+                    email !== null &&
+                    (email.toLowerCase() === search.toLowerCase() ||
+                        sharedAffiliation.has(user.uuid));
+                // serialized without the includeEmail group: the full
+                // address is only set below when the rule allows it
+                const dto = userEntityToDto(user);
+                return {
+                    uuid: dto.uuid,
+                    name: dto.name,
+                    avatarUrl: dto.avatarUrl,
+                    email: visible ? email : null,
+                    emailHint: visible ? email : maskEmail(email),
+                };
+            }),
             count,
         };
+    }
+
+    /**
+     * The users among `userUuids` that are active members of an affiliation
+     * group the requester is also an active member of.
+     */
+    private async usersSharingAffiliation(
+        requesterUuid: string,
+        userUuids: string[],
+    ): Promise<Set<string>> {
+        if (userUuids.length === 0) return new Set();
+        const memberships = this.userRepository.manager.getRepository(
+            GroupMembershipEntity,
+        );
+
+        const requesterGroups: { uuid: string }[] = await memberships
+            .createQueryBuilder('membership')
+            .innerJoin('membership.accessGroup', 'accessGroup')
+            .innerJoin('membership.user', 'member')
+            .select('accessGroup.uuid', 'uuid')
+            .where('member.uuid = :requesterUuid', { requesterUuid })
+            .andWhere('accessGroup.type = :type', {
+                type: AccessGroupType.AFFILIATION,
+            })
+            .andWhere(ACTIVE_MEMBERSHIP('membership'))
+            .getRawMany();
+        if (requesterGroups.length === 0) return new Set();
+
+        const sharing: { uuid: string }[] = await memberships
+            .createQueryBuilder('membership')
+            .innerJoin('membership.accessGroup', 'accessGroup')
+            .innerJoin('membership.user', 'member')
+            .select('DISTINCT member.uuid', 'uuid')
+            .where('accessGroup.uuid IN (:...groupUuids)', {
+                groupUuids: requesterGroups.map((group) => group.uuid),
+            })
+            .andWhere('member.uuid IN (:...userUuids)', { userUuids })
+            .andWhere(ACTIVE_MEMBERSHIP('membership'))
+            .getRawMany();
+        return new Set(sharing.map((row) => row.uuid));
     }
 
     /**
@@ -340,9 +447,17 @@ export class UserService implements OnModuleInit {
         sortBy?: string,
         sortOrder: SortOrder = SortOrder.DESC,
     ): Promise<ApiKeysDto> {
-        const order: Record<string, 'ASC' | 'DESC'> = {};
+        // only metadata columns: sorting by `apikey` would order the list by
+        // the secret keys
         const sortField = sortBy ?? 'createdAt';
-        order[sortField] = sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
+        if (!API_KEY_SORT_FIELDS.includes(sortField)) {
+            throw new BadRequestException(
+                `sortBy must be one of ${API_KEY_SORT_FIELDS.join(', ')}`,
+            );
+        }
+        const order: Record<string, 'ASC' | 'DESC'> = {
+            [sortField]: sortOrder === SortOrder.ASC ? 'ASC' : 'DESC',
+        };
 
         const [keys, count] = await this.apikeyRepository.findAndCount({
             withDeleted: true,
@@ -426,3 +541,14 @@ export class UserService implements OnModuleInit {
         return result;
     }
 }
+
+/**
+ * The first character of the local part and the domain of an email address,
+ * e.g. "d•••••@ethz.ch" for "david@ethz.ch".
+ */
+export const maskEmail = (email: string | null): string | null => {
+    if (email === null) return null;
+    const at = email.lastIndexOf('@');
+    if (at <= 0) return null;
+    return `${email.charAt(0)}•••••${email.slice(at)}`;
+};

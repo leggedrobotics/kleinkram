@@ -3,6 +3,7 @@ import { SessionService } from '@/services/session.service';
 import { UserService } from '@/services/user.service';
 import {
     ApiKeysDto,
+    ChangeUserRoleDto,
     CurrentAPIUserDto,
     NoQueryParametersDto,
     PaginatedQueryDto,
@@ -12,6 +13,7 @@ import {
     SortablePaginatedQueryDto,
     SuccessResponseDto,
     UserDto,
+    UserSearchResultsDto,
     UsersDto,
 } from '@kleinkram/api-dto';
 import {
@@ -80,8 +82,8 @@ export class UserController {
         description: 'Claimed admin',
         type: UserDto,
     })
-    async promoteUser(@Body() bd: { email: string }): Promise<UserDto> {
-        return this.userService.promoteUser(bd.email);
+    async promoteUser(@Body() body: ChangeUserRoleDto): Promise<UserDto> {
+        return this.userService.promoteUser(body.email);
     }
 
     @Post('demote')
@@ -90,15 +92,19 @@ export class UserController {
         description: 'Claimed admin',
         type: UserDto,
     })
-    async demoteUser(@Body() bd: { email: string }): Promise<UserDto> {
-        return this.userService.demoteUser(bd.email);
+    async demoteUser(@Body() body: ChangeUserRoleDto): Promise<UserDto> {
+        return this.userService.demoteUser(body.email);
     }
 
     @Get('search')
     @LoggedIn()
-    @OutputDto(UsersDto)
-    async search(@Query() query: PaginatedQueryDto): Promise<UsersDto> {
+    @OutputDto(UserSearchResultsDto)
+    async search(
+        @Query() query: PaginatedQueryDto,
+        @AddUser() authHeader: AuthHeader,
+    ): Promise<UserSearchResultsDto> {
         return this.userService.search(
+            authHeader.user.uuid,
             query.search ?? '',
             query.skip,
             query.take,

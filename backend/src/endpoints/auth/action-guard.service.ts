@@ -3,7 +3,7 @@ import { ApiKeyEntity } from '@kleinkram/backend-common';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { AccessGroupRights, UserRole } from '@kleinkram/shared';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
@@ -31,9 +31,6 @@ export class ActionGuardService {
             return false;
         }
 
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
         const action = await this.actionRepository.findOne({
             where: { uuid: actionUuid },
             relations: {
@@ -43,11 +40,16 @@ export class ActionGuardService {
             },
         });
 
-        if (!action) return false;
-        if (action.mission === undefined)
-            throw new Error('Action has no mission');
-        if (action.mission.project === undefined)
-            throw new Error('Action has no mission');
+        // admins pass for an unknown action as before, the handler answers
+        if (!action) return user.role === UserRole.ADMIN;
+        // the action's mission was deleted: the action is hidden with it, for
+        // every route (logs, script, ...) and administrators as well
+        if (!action.mission?.project) {
+            throw new NotFoundException('Action not found');
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
 
         const canAccessProject =
             await this.projectGuardService.canAccessProject(
@@ -85,8 +87,9 @@ export class ActionGuardService {
             return false;
         }
 
-        if (action.mission === undefined)
-            throw new Error('Apikey has no mission');
+        if (!action.mission) {
+            throw new NotFoundException('Action not found');
+        }
 
         return (
             apikey.mission.uuid === action.mission.uuid &&

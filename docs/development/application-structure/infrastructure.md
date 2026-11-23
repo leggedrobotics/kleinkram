@@ -12,7 +12,13 @@ SeaweedFS is a high-performance distributed storage system for blobs, objects, f
 
 - `data`: Stores all mission files.
     - Files are named using their UUID (matching the database entry).
-    - Metadata (filename, missionUuid, projectUuid) is stored as object tags.
+    - Metadata (filename, missionUuid, projectUuid) is stored as object tags. The tags are a copy of the database,
+      which stays the source of truth. They are written after a change is saved and a failure doesn't undo the
+      change, so they can drift. Every night at 2:00 the queue consumer compares the bucket with the database:
+      it rewrites tags that drifted, marks files whose object is missing as _Lost_ (unless implausibly many look
+      lost, which points at the storage instead) and counts objects without a database entry without deleting them.
+      Look for `Storage reconciliation` in the queue consumer logs. Admins can also rewrite all tags from the admin
+      settings.
 - `artifacts`: Stores Kleinkram action artifacts.
     - Files are named using the action UUID.
 - `dbdumps`: Stores PostgreSQL database dumps written by the deployment's backup job (see [Database Backups](#database-backups)).

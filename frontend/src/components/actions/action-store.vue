@@ -379,33 +379,20 @@ const emptyState = computed(() => {
 
 // --- Delete Handler ---
 // --- Delete Handler ---
-const executeDelete = async (template: ActionTemplateDto): Promise<void> => {
-    try {
-        await removeTemplate(template.uuid);
-        Notify.create({
-            message: 'Action template deleted or archived successfully',
-            color: 'positive',
-            icon: 'sym_o_delete',
-        });
-    } catch (error: unknown) {
-        const message =
-            error instanceof Error ? error.message : 'Unknown error occurred';
-        Notify.create({
-            message: `Failed to delete action: ${message}`,
-            color: 'negative',
-            icon: 'sym_o_error',
-        });
-    }
-};
-
 const confirmDelete = (template: ActionTemplateDto): void => {
     Dialog.create({
         component: DeleteActionTemplateDialog,
         componentProps: {
             template: template,
+            // the dialog deletes it once and shows a failure itself
+            action: () => removeTemplate(template.uuid),
         },
     }).onOk(() => {
-        void executeDelete(template);
+        Notify.create({
+            message: 'Action template deleted or archived successfully',
+            color: 'positive',
+            icon: 'sym_o_delete',
+        });
     });
 };
 </script>

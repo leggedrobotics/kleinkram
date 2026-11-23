@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import datetime
 import hashlib
 import logging
 import math
@@ -263,12 +264,23 @@ def b64_md5(file: Path, cancel_event: Optional[threading.Event] = None) -> str:
     return base64.b64encode(binary_digest).decode("utf-8")
 
 
+def _metadata_value_to_string(value: Any) -> str:
+    """\
+    YAML reads unquoted dates and timestamps (`recorded: 2024-05-13T10:30:00Z`)
+    as `date`/`datetime` objects, whose `str()` puts a space between date and
+    time; the server expects ISO 8601, so they are sent as `isoformat()`
+    """
+    if isinstance(value, (datetime.date, datetime.datetime)):
+        return value.isoformat()
+    return str(value)
+
+
 def load_metadata(path: Path) -> Dict[str, str]:
     if not path.exists():
         raise FileNotFoundError(f"metadata file not found: {path}")
     try:
         with path.open() as f:
-            return {str(k): str(v) for k, v in yaml.safe_load(f).items()}
+            return {str(k): _metadata_value_to_string(v) for k, v in yaml.safe_load(f).items()}
     except Exception as e:
         raise ValueError(f"could not parse metadata file: {e}")
 

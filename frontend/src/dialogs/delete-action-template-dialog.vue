@@ -1,59 +1,99 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title>
-            {{
-                isArchiving
-                    ? 'Archive Action Template'
-                    : 'Delete Action Template'
-            }}
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="running"
+        size="sm"
+        :submit-disabled="!confirmed || isBlocked || running"
+        @submit="confirm"
+    >
+        <template #title>{{ actionLabel }}</template>
+        <template v-if="isBlocked" #content>
+            <p class="q-mb-none">
+                Used by <b>{{ template.triggerCount }}</b>
+                {{ template.triggerCount === 1 ? 'trigger' : 'triggers' }}.
+                Delete or change
+                {{ template.triggerCount === 1 ? 'it' : 'them' }} first.
+            </p>
         </template>
-        <template #content>
-            <DeleteActionTemplate
-                v-if="template"
-                ref="deleteActionReference"
-                :template="template"
+        <template v-else #content>
+            <p v-if="isArchiving">
+                This template has
+                <b>{{ template.executionCount }}</b> executions, so it is
+                archived instead of deleted.
+            </p>
+            <label :for="inputId" class="confirm-label">
+                Type <b>{{ template.name }}</b> to confirm.{{
+                    isArchiving ? '' : " This can't be undone."
+                }}
+            </label>
+            <q-input
+                v-model="nameCheck"
+                no-error-icon
+                :for="inputId"
+                outlined
+                dense
+                autofocus
+                autocomplete="off"
             />
-            <q-skeleton v-else height="200px" />
         </template>
 
         <template #actions>
-            <q-btn
-                flat
-                :disable="deleteActionReference?.nameCheck !== template?.name"
-                :label="isArchiving ? 'Archive' : 'Delete'"
-                class="bg-button-danger"
-                @click="onConfirm"
-            />
+            <span class="disabled-reason">
+                <q-btn
+                    flat
+                    no-caps
+                    :disable="!confirmed || isBlocked"
+                    :label="actionLabel"
+                    class="bg-button-danger"
+                    :loading="running"
+                    @click="confirm"
+                />
+                <q-tooltip v-if="isBlocked">Used by a trigger</q-tooltip>
+                <q-tooltip v-else-if="!confirmed"
+                    >Type the name to confirm</q-tooltip
+                >
+            </span>
         </template>
     </base-dialog>
 </template>
 
 <script setup lang="ts">
+/**
+ * Runs the caller's `action` (delete or archive) on confirm and closes when
+ * it succeeds. A template a trigger still uses cannot be deleted.
+ */
 import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
-import DeleteActionTemplate from 'components/actions/delete-action-template.vue';
 import { useDialogPluginComponent } from 'quasar';
+import { useDialogAction } from 'src/composables/use-dialog-action';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { computed, ref } from 'vue';
+import { computed, ref, useId } from 'vue';
 
-const props = defineProps<{
+const { template, action } = defineProps<{
+    /** The request to run on confirm; the dialog closes when it succeeds */
+    action: () => Promise<unknown>;
     template: ActionTemplateDto;
 }>();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
-const deleteActionReference = ref<
-    InstanceType<typeof DeleteActionTemplate> | undefined
->(undefined);
+const { running, errorMessage, run } = useDialogAction(onDialogOK);
+const confirm = (): Promise<void> => run(action);
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-const isArchiving = computed(() => (props.template?.executionCount ?? 0) > 0);
-
-const onConfirm = async (): Promise<void> => {
-    if (!deleteActionReference.value) return;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (deleteActionReference.value) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-        await (deleteActionReference.value as any).executeAction();
-    }
-    onDialogOK();
-};
+const inputId = `delete-template-${useId()}`;
+const nameCheck = ref('');
+const confirmed = computed(() => nameCheck.value === template.name);
+const isArchiving = computed(() => template.executionCount > 0);
+// triggers keep running a template, so it can't go away while one uses it
+const isBlocked = computed(() => template.triggerCount > 0);
+const actionLabel = computed(() =>
+    isArchiving.value ? 'Archive Template' : 'Delete Template',
+);
 </script>
+
+<style scoped>
+.confirm-label {
+    display: block;
+    margin-bottom: 4px;
+    overflow-wrap: anywhere;
+}
+</style>

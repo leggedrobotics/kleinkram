@@ -1,101 +1,114 @@
 <template>
-    <BaseDialog ref="dialogRef">
-        <template #title> New Project</template>
+    <BaseDialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="creating"
+        fixed-height
+        size="lg"
+        :dirty="dirty"
+        :submit-disabled="creating"
+        @submit="onSubmit"
+    >
+        <template #title>New Project</template>
 
         <template #tabs>
             <q-tabs
                 v-model="tab"
                 dense
-                class="text-grey"
                 align="left"
-                active-color="primary"
+                active-color="button-primary"
+                indicator-color="button-primary"
             >
-                <q-tab
-                    name="details"
-                    label="Project Details*"
-                    style="color: #222"
-                />
+                <q-tab name="details" label="Details" />
                 <q-tab
                     name="metadata"
-                    label="Mission Metadata"
-                    style="color: #222"
+                    label="Required Metadata"
                     :disable="!formIsValid"
                 />
                 <q-tab
                     name="manage_access"
-                    label="Manage Access"
-                    style="color: #222"
+                    label="Access"
                     :disable="!formIsValid"
                 />
             </q-tabs>
         </template>
 
         <template #content>
-            <q-tab-panels v-model="tab">
-                <q-tab-panel name="details" style="min-height: 280px">
-                    <label for="projectName">Project Name *</label>
-                    <q-input
-                        ref="projectNameInput"
-                        v-model="newProjectName"
-                        name="projectName"
-                        outlined
-                        autofocus
-                        dense
-                        placeholder="Name...."
-                        style="padding-bottom: 30px"
-                        :error-message="errorMessagesProjectName"
-                        :error="isInErrorStateProjectName"
-                        :rules="[
-                            (val: string) =>
-                                getNameValidationError(val, 'Project name') ??
-                                true,
-                        ]"
-                        @update:model-value="verifyInput"
-                    />
+            <div class="dialog-tab-panels">
+                <div
+                    role="tabpanel"
+                    class="dialog-tab-panel"
+                    :class="{ 'dialog-tab-panel--active': tab === 'details' }"
+                    :inert="tab !== 'details'"
+                >
+                    <q-form ref="formReference" greedy @submit.prevent>
+                        <label :for="nameId">
+                            Name<span class="text-error">*</span>
+                        </label>
+                        <NameField
+                            :id="nameId"
+                            v-model="newProjectName"
+                            label="Project name"
+                            autofocus
+                            :server-error="serverNameError"
+                            @edit="onNameUpdate"
+                        />
 
-                    <label for="projectDescription"
-                        >Project Description *</label
-                    >
-                    <q-input
-                        v-model="newProjectDescription"
-                        name="projectDescription"
-                        type="textarea"
-                        outlined
-                        dense
-                        placeholder="Description...."
-                        aria-placeholder="Project Name"
-                        style="padding-bottom: 10px"
-                        :error-message="errorMessagesProjectDescr"
-                        :error="isInErrorStateProjectDescr"
-                        autofocus
-                        @update:model-value="verifyInput"
-                    />
-                </q-tab-panel>
+                        <label :for="descriptionId">
+                            Description<span class="text-error">*</span>
+                        </label>
+                        <q-input
+                            v-model="newProjectDescription"
+                            :for="descriptionId"
+                            name="projectDescription"
+                            type="textarea"
+                            outlined
+                            dense
+                            no-error-icon
+                            lazy-rules
+                            color="button-primary"
+                            :rules="[required('Project description')]"
+                        />
+                    </q-form>
+                </div>
 
-                <q-tab-panel name="metadata">
+                <div
+                    role="tabpanel"
+                    class="dialog-tab-panel"
+                    :class="{ 'dialog-tab-panel--active': tab === 'metadata' }"
+                    :inert="tab !== 'metadata'"
+                >
                     <ConfigureMetadata v-model:selected="selected" />
-                </q-tab-panel>
+                </div>
 
-                <q-tab-panel name="manage_access">
+                <div
+                    role="tabpanel"
+                    class="dialog-tab-panel"
+                    :class="{
+                        'dialog-tab-panel--active': tab === 'manage_access',
+                    }"
+                    :inert="tab !== 'manage_access'"
+                >
                     <access-rights-manager v-model="accessGroups" />
-                </q-tab-panel>
-            </q-tab-panels>
+                </div>
+            </div>
         </template>
-        <template v-if="tab === 'manage_access'" #actions>
+        <template #actions>
             <q-btn
+                v-if="tab === 'manage_access'"
                 flat
+                no-caps
                 label="Create Project"
                 class="bg-button-primary"
-                :disable="!formIsValid"
+                :loading="creating"
                 @click="submitNewProject"
             />
-        </template>
-        <template v-else #actions>
             <q-btn
+                v-else
                 flat
+                no-caps
                 label="Next"
                 class="bg-button-primary"
-                :disable="!formIsValid"
                 @click="nextTab"
             />
         </template>
@@ -107,36 +120,41 @@ import BaseDialog from 'src/dialogs/base-dialog.vue';
 
 import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
 import type { MetadataTypeDto } from '@kleinkram/api-dto/types/metadata/metadata.dto';
-import {
-    getNameValidationError,
-    isValidName,
-} from '@kleinkram/validation/frontend';
+import { getNameValidationError } from '@kleinkram/validation/frontend';
 import { useQueryClient } from '@tanstack/vue-query';
+import NameField from 'components/common/name-field.vue';
 import AccessRightsManager from 'components/configure-access-rights/access-rights-manager.vue';
 import ConfigureMetadata from 'components/configure-metadata.vue';
-import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
+import { QForm, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useProjectDefaultAccess } from 'src/hooks/query-hooks';
+import {
+    focusField,
+    getDialogErrorMessage,
+    getErrorMessage,
+    isNameError,
+} from 'src/services/error-handling';
+import { required } from 'src/services/form-rules';
 import { createProject } from 'src/services/mutations/project';
-import { Ref, ref, watch } from 'vue';
-
-const formIsValid = ref(false);
-const isInErrorStateProjectName = ref(false);
-const errorMessagesProjectName = ref<string>();
-const isInErrorStateProjectDescr = ref(false);
-const errorMessagesProjectDescr = ref<string>();
+import { computed, nextTick, Ref, ref, useId, watch } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const queryClient = useQueryClient();
+const $q = useQuasar();
 
-const projectNameInput = ref<QInput>();
+const nameId = `new-project-name-${useId()}`;
+const descriptionId = `new-project-description-${useId()}`;
+
 const newProjectName = ref('');
 const newProjectDescription = ref('');
-const invalidProjectNames = ref<string[]>([]);
+const formReference = ref<QForm>();
+// error returned by the server for a rejected name
+const serverNameError = ref('');
+const errorMessage = ref('');
+const creating = ref(false);
 
 const tab = ref('details');
 
 const selected: Ref<MetadataTypeDto[]> = ref([]);
-const $q = useQuasar();
 
 const { data: defaultRights } = useProjectDefaultAccess();
 
@@ -145,34 +163,38 @@ watch(defaultRights, () => {
     accessGroups.value = defaultRights.value?.data ?? [];
 });
 
-const verifyInput = () => {
-    formIsValid.value =
-        isValidName(newProjectName.value) &&
-        !!newProjectDescription.value &&
-        !invalidProjectNames.value.includes(newProjectName.value);
+// whether the other tabs can be opened; the fields show their own errors
+const formIsValid = computed(
+    () =>
+        !serverNameError.value &&
+        getNameValidationError(newProjectName.value) === undefined &&
+        !!newProjectDescription.value.trim(),
+);
 
-    // client side verification
-    if (
-        !newProjectName.value ||
-        invalidProjectNames.value.includes(newProjectName.value)
-    ) {
-        isInErrorStateProjectName.value = true;
-        errorMessagesProjectName.value = 'Project name is required';
-    } else {
-        isInErrorStateProjectName.value = false;
-        errorMessagesProjectName.value = '';
-    }
+const dirty = computed(
+    () =>
+        newProjectName.value !== '' ||
+        newProjectDescription.value !== '' ||
+        selected.value.length > 0 ||
+        JSON.stringify(accessGroups.value) !==
+            JSON.stringify(defaultRights.value?.data ?? []),
+);
 
-    if (newProjectDescription.value) {
-        isInErrorStateProjectDescr.value = false;
-        errorMessagesProjectDescr.value = '';
-    } else {
-        isInErrorStateProjectDescr.value = true;
-        errorMessagesProjectDescr.value = 'Project description is required';
-    }
+const onNameUpdate = (): void => {
+    serverNameError.value = '';
 };
 
-const nextTab = () => {
+/** Validates the details; shows them with the first invalid field focused */
+async function validateDetails(): Promise<boolean> {
+    if (formIsValid.value) return true;
+    tab.value = 'details';
+    await nextTick();
+    await formReference.value?.validate(true);
+    return false;
+}
+
+const nextTab = async (): Promise<void> => {
+    if (!(await validateDetails())) return;
     if (tab.value === 'details') {
         tab.value = 'metadata';
     } else if (tab.value === 'metadata') {
@@ -180,58 +202,58 @@ const nextTab = () => {
     }
 };
 
-const submitNewProject = async () => {
-    await createProject(
-        newProjectName.value,
-        newProjectDescription.value,
-        selected.value.map((metadataType) => metadataType.uuid),
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        accessGroups.value.map((r) => ({
-            accessGroupUUID: r.uuid,
-            rights: r.rights,
-        })) || [],
-        // @ts-ignore
-        defaultRights.value?.data
-            .filter((r) => !accessGroups.value.some((a) => a.uuid === r.uuid))
-            .map((r) => r.uuid),
-    )
-        .then(async () => {
-            await queryClient.invalidateQueries({ queryKey: ['projects'] });
-            await queryClient.invalidateQueries({ queryKey: ['permissions'] });
+/** Enter moves to the next tab, and creates the project on the last one */
+const onSubmit = (): void => {
+    if (tab.value === 'manage_access') {
+        void submitNewProject();
+    } else {
+        void nextTab();
+    }
+};
 
-            $q.notify({
-                message: 'Project created successfully',
-                color: 'positive',
-                position: 'bottom',
-                timeout: 2000,
-            });
-
-            onDialogOK();
-        })
-        .catch((error: unknown) => {
+const submitNewProject = async (): Promise<void> => {
+    if (creating.value || !(await validateDetails())) return;
+    creating.value = true;
+    errorMessage.value = '';
+    try {
+        await createProject(
+            newProjectName.value,
+            newProjectDescription.value,
+            selected.value.map((metadataType) => metadataType.uuid),
+            accessGroups.value.map((r) => ({
+                accessGroupUUID: r.uuid,
+                rights: r.rights,
+            })),
             // @ts-ignore
-            if (error.code === 'ERR_BAD_REQUEST') {
-                isInErrorStateProjectName.value = true;
-                // @ts-ignore
-                errorMessagesProjectName.value = (
-                    error as {
-                        response?: { data?: { message?: string } };
-                    }
-                ).response?.data.message;
-                invalidProjectNames.value.push(newProjectName.value);
-            }
-
-            isInErrorStateProjectName.value = true;
-            // @ts-ignore
-            errorMessagesProjectName.value = (
-                error as {
-                    response?: { data?: { message?: string } };
-                }
-            ).response?.data.message;
-
-            // abort the close of the dialog
-            dialogRef.value?.show();
+            defaultRights.value?.data
+                .filter(
+                    (r) => !accessGroups.value.some((a) => a.uuid === r.uuid),
+                )
+                .map((r) => r.uuid),
+        );
+    } catch (error: unknown) {
+        if (isNameError(error)) {
+            // a rejected (e.g. taken) name is shown on the name field
+            serverNameError.value = getErrorMessage(error);
             tab.value = 'details';
-        });
+            focusField(nameId);
+        } else {
+            errorMessage.value = getDialogErrorMessage(error);
+        }
+        return;
+    } finally {
+        creating.value = false;
+    }
+
+    $q.notify({
+        message: 'Project created successfully',
+        color: 'positive',
+        position: 'bottom',
+        timeout: 2000,
+    });
+    onDialogOK();
+
+    await queryClient.invalidateQueries({ queryKey: ['projects'] });
+    await queryClient.invalidateQueries({ queryKey: ['permissions'] });
 };
 </script>

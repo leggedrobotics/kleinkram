@@ -1,5 +1,10 @@
 export interface LogMessage {
     logTime: bigint;
+    /**
+     * Position of the message within its topic, counted from 0, when the
+     * reader knows it exactly.
+     */
+    index?: number | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any;
 }
@@ -26,6 +31,12 @@ export interface ReadOptions {
      * holds only one message of the topic (typical for images).
      */
     totalMessages?: number;
+    /**
+     * Read only the messages with `start <= logTime < end`, in time order,
+     * fetching only the chunks that overlap that range. Used to fill in every
+     * frame just ahead of the playhead while an image sequence plays.
+     */
+    window?: { start: bigint; end: bigint };
 }
 
 /**

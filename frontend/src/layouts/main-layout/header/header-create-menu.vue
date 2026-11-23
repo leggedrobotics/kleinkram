@@ -10,7 +10,7 @@
                             <q-icon name="sym_o_sell" />
                         </q-item-section>
                         <q-item-section>
-                            <q-item-label>Create Metadata</q-item-label>
+                            <q-item-label>Create Metadata Type</q-item-label>
                         </q-item-section>
                     </q-item>
                 </create-metadata-type-dialog-opener>

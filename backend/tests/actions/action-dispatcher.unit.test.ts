@@ -116,11 +116,19 @@ describe('ActionDispatcherService Unit Tests', () => {
             true,
         );
 
-        (actionRepo.create as jest.Mock).mockImplementation(
-            (d) => d as ActionEntity,
-        );
-        const saveSpy = (actionRepo.save as jest.Mock).mockImplementation((d) =>
+        // the action is saved in a transaction that first checks (and
+        // locks) the mission
+        const saveSpy = jest.fn((d: object) =>
             Promise.resolve({ ...d, uuid: 'action-uuid' } as ActionEntity),
+        );
+        const transactionManager = {
+            findOne: jest.fn().mockResolvedValue({ uuid: 'mission-uuid' }),
+            create: jest.fn((_entity: unknown, d: object) => d),
+            save: saveSpy,
+        } as unknown as EntityManager;
+        (actionRepo.manager.transaction as jest.Mock).mockImplementation(
+            (work: (manager: EntityManager) => Promise<unknown>) =>
+                work(transactionManager),
         );
 
         // Mock addActionQueue to return undefined (failure)
@@ -144,7 +152,7 @@ describe('ActionDispatcherService Unit Tests', () => {
         ).rejects.toThrow('No worker available');
 
         expect(transitionAction).toHaveBeenCalledWith(
-            actionRepo.manager,
+            transactionManager,
             'action-uuid',
             {
                 state: ActionState.PENDING,
@@ -208,6 +216,43 @@ describe('ActionDispatcherService Unit Tests', () => {
         expect(failure.message).toMatch(/Loki/);
 
         // the submission is rejected outright, no half-created run is left behind
+        expect(saveSpy).not.toHaveBeenCalled();
+    });
+
+    test('dispatch should not create an action if the mission was deleted meanwhile', async () => {
+        const mission = { uuid: 'mission-uuid' } as MissionEntity;
+        const creator = {
+            uuid: 'user-uuid',
+            role: UserRole.USER,
+        } as UserEntity;
+        (templateRepo.findOneOrFail as jest.Mock).mockResolvedValue({
+            uuid: 'template-uuid',
+            accessRights: 0,
+        });
+        (accessControlService.canAccessMission as jest.Mock).mockResolvedValue(
+            true,
+        );
+        // the mission is gone by the time the transaction locks it
+        const saveSpy = jest.fn();
+        const transactionManager = {
+            findOne: jest.fn().mockResolvedValue(null),
+            create: jest.fn(),
+            save: saveSpy,
+        } as unknown as EntityManager;
+        (actionRepo.manager.transaction as jest.Mock).mockImplementation(
+            (work: (manager: EntityManager) => Promise<unknown>) =>
+                work(transactionManager),
+        );
+
+        await expect(
+            service.dispatch(
+                'template-uuid',
+                mission,
+                creator,
+                {},
+                ActionTriggerSource.MANUAL,
+            ),
+        ).rejects.toThrow('Mission not found');
         expect(saveSpy).not.toHaveBeenCalled();
     });
 

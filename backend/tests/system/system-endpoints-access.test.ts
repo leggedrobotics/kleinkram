@@ -8,7 +8,11 @@ import { setupDatabaseHooks } from '../utils/test-helpers';
  * infrastructure. They are shown on the System page and may only be read by
  * users who may create projects (admins and members of an affiliation group).
  */
-const SYSTEM_ENDPOINTS = ['/files/storage', '/workers'];
+const SYSTEM_ENDPOINTS = [
+    '/files/storage',
+    '/files/storage/insights',
+    '/workers',
+];
 
 const get = async (path: string, user: UserEntity): Promise<Response> =>
     fetch(`${DEFAULT_URL}${path}`, {

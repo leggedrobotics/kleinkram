@@ -4,6 +4,7 @@ import { FileQueryService } from '@/services/file-query.service';
 import { FileStorageService } from '@/services/file-storage.service';
 import { MetadataService } from '@/services/metadata.service';
 import { MissionService } from '@/services/mission.service';
+import { StorageInsightsService } from '@/services/storage-insights.service';
 import { TopicService } from '@/services/topic.service';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
@@ -47,6 +48,7 @@ import { FileController } from './file.controller';
     providers: [
         FileQueryService,
         FileStorageService,
+        StorageInsightsService,
         FileLifecycleService,
         TopicService,
         MissionService,

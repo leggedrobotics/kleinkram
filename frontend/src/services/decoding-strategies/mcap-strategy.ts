@@ -2,6 +2,7 @@ import { parse as parseMessageDefer } from '@foxglove/rosmsg';
 import { MessageReader as Ros1Reader } from '@foxglove/rosmsg-serialization';
 import { MessageReader as CdrReader } from '@foxglove/rosmsg2-serialization';
 import {
+    CHUNK_HEADER_FIXED_LEN,
     chunkDataStart,
     coalesce,
     computeRecordingCoverage,
@@ -114,7 +115,20 @@ interface ParsedChunkMessage {
     logTime: bigint;
     publishTime: bigint;
     data: Uint8Array;
+    /** Position among the wanted channels' messages in this chunk. */
+    position?: number | undefined;
 }
+
+/** Length of a Message Index record before its entries. */
+const MESSAGE_INDEX_HEADER_LEN = 15;
+/** Length of one Message Index entry (log time and offset). */
+const MESSAGE_INDEX_ENTRY_LEN = 16;
+
+/** Chunk decompressors, keyed by the MCAP compression name. */
+const DECOMPRESS: Record<string, (data: Uint8Array) => Uint8Array> = {
+    zstd: (buffer) => fzstd.decompress(buffer),
+    lz4: (buffer) => lz4js.decompress(buffer),
+};
 
 export class McapStrategy extends DecodingStrategy {
     private reader: McapIndexedReader | null = null;
@@ -122,13 +136,14 @@ export class McapStrategy extends DecodingStrategy {
     private decoders = new Map<number, any>();
     private httpReader: UniversalHttpReader | null = null;
 
+    override readonly supportsWindow = true;
+
     async init(httpReader: UniversalHttpReader): Promise<void> {
         this.httpReader = httpReader;
         this.reader = await McapIndexedReader.Initialize({
             readable: httpReader,
             decompressHandlers: {
-                zstd: (buffer: Uint8Array) => fzstd.decompress(buffer),
-                lz4: (buffer: Uint8Array) => lz4js.decompress(buffer),
+                ...DECOMPRESS,
                 bz2: () => {
                     throw new Error('BZ2 not supported');
                 },
@@ -249,7 +264,10 @@ export class McapStrategy extends DecodingStrategy {
         if (!this.reader || !this.httpReader) return [];
         const keepEvery = Math.max(1, Math.floor(options.stride ?? 1));
 
-        if (options.progressive && startTime === undefined) {
+        if (
+            options.window ||
+            (options.progressive && startTime === undefined)
+        ) {
             return this.getMessagesProgressive(
                 topic,
                 keepEvery,
@@ -258,6 +276,7 @@ export class McapStrategy extends DecodingStrategy {
                 signal,
                 options.skip,
                 options.totalMessages,
+                options.window,
             );
         }
 
@@ -498,6 +517,7 @@ export class McapStrategy extends DecodingStrategy {
         signal?: AbortSignal,
         skip?: (logTime: bigint) => boolean,
         totalMessages?: number,
+        window?: { start: bigint; end: bigint },
     ): Promise<LogMessage[]> {
         if (!this.reader || !this.httpReader) return [];
         const reader = this.reader;
@@ -512,12 +532,17 @@ export class McapStrategy extends DecodingStrategy {
                 .filter((channel) => channel.topic === topic)
                 .map((channel) => channel.id),
         );
-        const chunks = reader.chunkIndexes.filter((chunk) =>
-            chunk.messageIndexOffsets
-                .keys()
-                .some((id: number) => channelIds.has(id)),
-        );
-        const order = coarseToFineOrder(chunks.length);
+        const chunks = this.topicChunks(channelIds);
+        const order = window
+            ? chunks
+                  .map((chunk, index) => ({ chunk, index }))
+                  .filter(
+                      ({ chunk }) =>
+                          chunk.messageEndTime >= window.start &&
+                          chunk.messageStartTime < window.end,
+                  )
+                  .map(({ index }) => index)
+            : coarseToFineOrder(chunks.length);
 
         // The chunk index does not store per-chunk message counts, so the
         // global position of a message is estimated from the average number
@@ -527,6 +552,12 @@ export class McapStrategy extends DecodingStrategy {
             totalMessages !== undefined && chunks.length > 0
                 ? Math.max(1, totalMessages / chunks.length)
                 : 1;
+        // Exact when the chunk index shows each chunk's message count, which
+        // also makes each message's position in the topic known.
+        const exactOffsets = this.chunkOffsets(chunks, channelIds);
+        const chunkOffsetOf = (chunkIndex: number): number =>
+            exactOffsets?.[chunkIndex] ??
+            Math.round(chunkIndex * averagePerChunk);
 
         // Adjacent chunks can overlap in time, so the same message may be
         // yielded twice. Log time, publish time and sequence number
@@ -559,11 +590,11 @@ export class McapStrategy extends DecodingStrategy {
                           chunk as unknown as McapChunkIndex,
                           channelIds,
                           {
-                              chunkOffset: Math.round(
-                                  chunkIndex * averagePerChunk,
-                              ),
+                              chunkOffset: chunkOffsetOf(chunkIndex),
                               keepEvery,
                           },
+                          window?.start,
+                          window?.end,
                       ),
         )) {
             if (signal?.aborted) break;
@@ -571,14 +602,20 @@ export class McapStrategy extends DecodingStrategy {
             const { chunkIndex, chunk } = visit;
 
             let seen = 0;
-            const chunkOffset = Math.round(chunkIndex * averagePerChunk);
+            const chunkOffset = chunkOffsetOf(chunkIndex);
 
             const source =
                 indexed ??
                 reader.readMessages({
                     topics: [topic],
-                    startTime: chunk.messageStartTime,
-                    endTime: chunk.messageEndTime,
+                    startTime:
+                        window && window.start > chunk.messageStartTime
+                            ? window.start
+                            : chunk.messageStartTime,
+                    endTime:
+                        window && window.end - 1n < chunk.messageEndTime
+                            ? window.end - 1n
+                            : chunk.messageEndTime,
                 });
 
             // The indexed reader already applied the stride from the index,
@@ -606,7 +643,16 @@ export class McapStrategy extends DecodingStrategy {
                             message.data,
                         )) ?? message.data;
                 }
-                const messageObject = { logTime: message.logTime, data };
+                const position =
+                    'position' in message ? message.position : undefined;
+                const messageObject = {
+                    logTime: message.logTime,
+                    index:
+                        exactOffsets && position !== undefined
+                            ? chunkOffset + position
+                            : undefined,
+                    data,
+                };
                 if (onMessage) onMessage(messageObject);
                 msgs.push(messageObject);
                 await budget.yieldIfNeeded();
@@ -629,6 +675,7 @@ export class McapStrategy extends DecodingStrategy {
         channelIds: Set<number>,
         sampling?: { chunkOffset: number; keepEvery: number },
         startTime?: bigint,
+        endTime?: bigint,
     ): Promise<ParsedChunkMessage[] | undefined> {
         // A failed range read must not take the topic down with it. Storage
         // answers a cancelled request with a 500, and a preview cancels
@@ -641,6 +688,7 @@ export class McapStrategy extends DecodingStrategy {
                 channelIds,
                 sampling,
                 startTime,
+                endTime,
             );
         } catch {
             return undefined;
@@ -652,10 +700,12 @@ export class McapStrategy extends DecodingStrategy {
         channelIds: Set<number>,
         sampling?: { chunkOffset: number; keepEvery: number },
         startTime?: bigint,
+        endTime?: bigint,
     ): Promise<ParsedChunkMessage[] | undefined> {
         const httpReader = this.httpReader;
         if (!httpReader) return undefined;
-        if (chunk.compression !== '') return undefined;
+        const compressed = chunk.compression !== '';
+        if (compressed && !(chunk.compression in DECOMPRESS)) return undefined;
         if (chunk.messageIndexOffsets.size === 0) return undefined;
 
         let indexStart: bigint | undefined;
@@ -678,36 +728,66 @@ export class McapStrategy extends DecodingStrategy {
         // straddling that boundary also holds the messages before it. Without
         // this the boundary chunk replays them, and an append has nowhere to
         // notice the duplicates.
-        let extents = planChunk(
-            chunkDataStart(Number(chunk.chunkStartOffset), chunk.compression),
+        // Offsets in the index are relative to the chunk's uncompressed
+        // data. Uncompressed, that maps onto the file; compressed, onto the
+        // decompressed records read below.
+        // Every message of the wanted channels, in time order, so that its
+        // position in the chunk -- and so in the topic -- is known before the
+        // time range narrows them down.
+        const ordered = planChunk(
+            compressed
+                ? 0
+                : chunkDataStart(
+                      Number(chunk.chunkStartOffset),
+                      chunk.compression,
+                  ),
             Number(chunk.uncompressedSize),
             indexes,
             channelIds,
-            startTime,
+        ).toSorted((a, b) =>
+            a.logTime === b.logTime ? 0 : a.logTime < b.logTime ? -1 : 1,
         );
-        if (extents.length === 0) return [];
+        const positionOf = new Map(
+            ordered.map((extent, position) => [extent.start, position]),
+        );
 
         // Sample before fetching, not after. A preview showing every 18th
         // message only needs every 18th record, and deciding that from the
         // index costs nothing -- fetching all of them and discarding the rest
         // costs eighteen times the bytes and requests.
-        if (sampling && sampling.keepEvery > 1) {
-            const { chunkOffset, keepEvery } = sampling;
-            extents = extents
-                .toSorted((a, b) =>
-                    a.logTime === b.logTime
-                        ? 0
-                        : a.logTime < b.logTime
-                          ? -1
-                          : 1,
-                )
-                .filter(
-                    (_extent, index) => (chunkOffset + index) % keepEvery === 0,
-                );
-            if (extents.length === 0) return [];
-        }
+        const chunkOffset = sampling?.chunkOffset ?? 0;
+        const keepEvery = sampling?.keepEvery ?? 1;
+        const extents = ordered.filter(
+            (extent, position) =>
+                (startTime === undefined || extent.logTime >= startTime) &&
+                (endTime === undefined || extent.logTime < endTime) &&
+                (chunkOffset + position) % keepEvery === 0,
+        );
+        if (extents.length === 0) return [];
 
         const out: ParsedChunkMessage[] = [];
+
+        // A compressed chunk cannot be read in pieces, so it is fetched whole
+        // -- exactly once, by its own offset. Asking the indexed reader for
+        // the chunk's time range instead also loads every neighbour that
+        // overlaps it in time, which on a recording interleaving two topics
+        // doubled what a preview downloaded. The index read above already
+        // decided that the chunk holds a sample, so no chunk is fetched for
+        // nothing.
+        if (compressed) {
+            const records = await this.readChunkRecords(chunk);
+            if (!records) return undefined;
+            for (const extent of extents) {
+                const parsed = parseMessageRecord(records, extent.start);
+                if (!parsed) return undefined; // bail to the safe path
+                out.push({ ...parsed, position: positionOf.get(extent.start) });
+            }
+            out.sort((a, b) =>
+                a.logTime === b.logTime ? 0 : a.logTime < b.logTime ? -1 : 1,
+            );
+            return out;
+        }
+
         const gap =
             sampling && sampling.keepEvery > 1
                 ? SAMPLED_COALESCE_GAP
@@ -731,7 +811,7 @@ export class McapStrategy extends DecodingStrategy {
                     extent.start - range.start,
                 );
                 if (!parsed) return undefined; // bail to the safe path
-                out.push(parsed);
+                out.push({ ...parsed, position: positionOf.get(extent.start) });
             }
         }
 
@@ -739,6 +819,130 @@ export class McapStrategy extends DecodingStrategy {
             a.logTime === b.logTime ? 0 : a.logTime < b.logTime ? -1 : 1,
         );
         return out;
+    }
+
+    /** Chunks holding messages of the given channels, in file order. */
+    private topicChunks(channelIds: Set<number>): McapChunkIndex[] {
+        if (!this.reader) return [];
+        // The core ChunkIndex carries every field this needs; McapChunkIndex
+        // is the local mirror of that shape.
+        return (this.reader.chunkIndexes as unknown as McapChunkIndex[]).filter(
+            (chunk) =>
+                chunk.messageIndexOffsets
+                    .keys()
+                    .some((id: number) => channelIds.has(id)),
+        );
+    }
+
+    /**
+     * Messages of `channelIds` before each chunk, and their total as the last
+     * entry, read from the chunk index alone; undefined when it does not tell.
+     *
+     * A channel's Message Index record holds one fixed-size entry per message,
+     * and the records follow one another after their chunk, so the distance to
+     * the next record (or to the end of the chunk's index section) gives the
+     * count without reading anything.
+     */
+    private chunkOffsets(
+        chunks: McapChunkIndex[],
+        channelIds: Set<number>,
+    ): number[] | undefined {
+        const offsets: number[] = [];
+        let cumulative = 0;
+        for (const chunk of chunks) {
+            offsets.push(cumulative);
+            const end =
+                chunk.chunkStartOffset +
+                chunk.chunkLength +
+                chunk.messageIndexLength;
+            const starts = [...chunk.messageIndexOffsets.entries()].toSorted(
+                (a, b) => (a[1] === b[1] ? 0 : a[1] < b[1] ? -1 : 1),
+            );
+            for (const [position, [channelId, start]] of starts.entries()) {
+                if (!channelIds.has(channelId)) continue;
+                const next = starts[position + 1]?.[1] ?? end;
+                const entries =
+                    (Number(next - start) - MESSAGE_INDEX_HEADER_LEN) /
+                    MESSAGE_INDEX_ENTRY_LEN;
+                if (!Number.isInteger(entries) || entries < 0) return undefined;
+                cumulative += entries;
+            }
+        }
+        offsets.push(cumulative);
+        return offsets;
+    }
+
+    override sampleCost(topic: string, stride: number): number | undefined {
+        const reader = this.reader;
+        if (!reader) return undefined;
+        const channelIds = new Set<number>();
+        for (const [id, channel] of reader.channelsById) {
+            if (channel.topic === topic) channelIds.add(id);
+        }
+        const chunks = this.topicChunks(channelIds);
+        if (chunks.length === 0) return 0;
+        // Uncompressed chunks address each message, so a sample costs only
+        // its own bytes; the caller's per-message estimate is right there.
+        if (chunks.some((chunk) => chunk.compression === '')) return undefined;
+
+        // The same positions the progressive read samples on: exact from the
+        // chunk index, or messages spread evenly over the chunks
+        const exactOffsets = this.chunkOffsets(chunks, channelIds);
+        let total = exactOffsets?.at(-1) ?? 0;
+        if (!exactOffsets) {
+            for (const id of channelIds) {
+                total += Number(
+                    reader.statistics?.channelMessageCounts.get(id) ?? 0,
+                );
+            }
+        }
+        if (total === 0) return undefined;
+        const keepEvery = Math.max(1, Math.floor(stride));
+        const perChunk = Math.max(1, total / chunks.length);
+        let bytes = 0;
+        for (const [index, chunk] of chunks.entries()) {
+            const first = exactOffsets?.[index] ?? Math.round(index * perChunk);
+            const next =
+                exactOffsets?.[index + 1] ?? Math.round((index + 1) * perChunk);
+            const firstSample = Math.ceil(first / keepEvery) * keepEvery;
+            if (firstSample < next) bytes += Number(chunk.chunkLength);
+        }
+        return bytes;
+    }
+
+    /**
+     * Fetch one Chunk record and return its decompressed records, or
+     * undefined when it is not a chunk this can decompress.
+     */
+    private async readChunkRecords(
+        chunk: McapChunkIndex,
+    ): Promise<Uint8Array | undefined> {
+        const httpReader = this.httpReader;
+        const decompress = DECOMPRESS[chunk.compression];
+        if (!httpReader || !decompress) return undefined;
+
+        const record = await httpReader.readExact(
+            chunk.chunkStartOffset,
+            chunk.chunkLength,
+        );
+        // The records follow the fixed header fields and the compression
+        // name, whose length the chunk index already gives.
+        const recordsStart =
+            CHUNK_HEADER_FIXED_LEN +
+            new TextEncoder().encode(chunk.compression).length;
+        if (record.length < recordsStart) return undefined;
+        const view = new DataView(
+            record.buffer,
+            record.byteOffset,
+            record.byteLength,
+        );
+        const recordsSize = Number(view.getBigUint64(recordsStart - 8, true));
+        if (recordsStart + recordsSize > record.length) return undefined;
+        const data = decompress(
+            record.subarray(recordsStart, recordsStart + recordsSize),
+        );
+        if (data.length !== Number(chunk.uncompressedSize)) return undefined;
+        return data;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -2,10 +2,25 @@ import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import { CategoriesDto } from '@kleinkram/api-dto';
 import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
-import logger from '../logger';
+import {
+    FindOptionsWhere,
+    ILike,
+    In,
+    QueryFailedError,
+    Repository,
+} from 'typeorm';
+
+const categoryNameTaken = (name: string): ConflictException =>
+    new ConflictException(
+        `A category named "${name}" already exists in this project`,
+    );
 
 @Injectable()
 export class CategoryService {
@@ -39,22 +54,48 @@ export class CategoryService {
         };
     }
 
+    /**
+     * Creates a category in the given project.
+     *
+     * Category names are unique per project (soft-deleted categories don't
+     * count, see the `unique_category_name_per_project` index). A taken name is
+     * reported as 409 Conflict: the check up front gives the common case a
+     * clear message, the unique violation catches two requests racing for the
+     * same name.
+     */
     async create(
         name: string,
         projectUUID: string,
         user: AuthHeader,
         description = '',
     ) {
+        const exists = await this.categoryRepository.exists({
+            where: { name, project: { uuid: projectUUID } },
+        });
+        if (exists) throw categoryNameTaken(name);
+
         const category = this.categoryRepository.create({
             name,
             description,
             project: { uuid: projectUUID },
             creator: user.user,
         });
-        const saved = await this.categoryRepository.save(category);
-        return this.categoryRepository.findOneOrFail({
-            where: { uuid: saved.uuid },
-        });
+
+        try {
+            const saved = await this.categoryRepository.save(category);
+            return await this.categoryRepository.findOneOrFail({
+                where: { uuid: saved.uuid },
+            });
+        } catch (error) {
+            if (
+                error instanceof QueryFailedError &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                error.driverError?.code === '23505'
+            ) {
+                throw categoryNameTaken(name);
+            }
+            throw error;
+        }
     }
 
     /**
@@ -82,44 +123,74 @@ export class CategoryService {
         return this.categoryRepository.save(category);
     }
 
+    /**
+     * Adds categories to files of a mission.
+     *
+     * The files must be in the mission and the categories must belong to
+     * the mission's project: a category of another project would show up on
+     * files where it can't be selected or managed.
+     */
     async addManyCategories(
         missionUUID: string,
         files: string[],
         categories: string[],
     ) {
-        // Step 1: Validate that the files belong to the mission in one query
-        const validFileIds = await this.fileEntityRepository
-            .createQueryBuilder('file')
-            .select('file.uuid')
-            .innerJoin('file.mission', 'mission')
-            .where('mission.uuid = :missionUUID', { missionUUID })
-            .andWhere('file.uuid IN (:...files)', { files })
-            .getMany();
-
-        const validFileUUIDs = validFileIds.map((file) => file.uuid);
-
-        if (validFileUUIDs.length !== files.length) {
-            throw new Error('Some files do not belong to the given mission.');
+        const fileUUIDs = [...new Set(files)];
+        const categoryUUIDs = [...new Set(categories)];
+        if (fileUUIDs.length === 0) {
+            throw new BadRequestException('Select at least one file');
         }
-        logger.debug('validFileUUIDs', validFileUUIDs);
+        if (categoryUUIDs.length === 0) {
+            throw new BadRequestException('Select at least one category');
+        }
 
-        const insertValues = validFileUUIDs.flatMap((fileUUID) =>
-            categories.map((categoryUUID) => ({
+        const filesInMission = await this.fileEntityRepository.find({
+            where: { uuid: In(fileUUIDs), mission: { uuid: missionUUID } },
+            relations: { mission: { project: true } },
+            select: {
+                uuid: true,
+                mission: { uuid: true, project: { uuid: true } },
+            },
+        });
+        if (filesInMission.length !== fileUUIDs.length) {
+            throw new BadRequestException(
+                "Some files don't belong to this mission",
+            );
+        }
+        const projectUUID = filesInMission[0]?.mission?.project?.uuid;
+
+        const existingCategories = await this.categoryRepository.find({
+            where: { uuid: In(categoryUUIDs) },
+            relations: { project: true },
+            select: { uuid: true, project: { uuid: true } },
+        });
+        if (existingCategories.length !== categoryUUIDs.length) {
+            throw new NotFoundException('Category not found');
+        }
+        if (
+            existingCategories.some(
+                (category) => category.project?.uuid !== projectUUID,
+            )
+        ) {
+            throw new BadRequestException(
+                "Categories must belong to the mission's project",
+            );
+        }
+
+        const insertValues = fileUUIDs.flatMap((fileUUID) =>
+            categoryUUIDs.map((categoryUUID) => ({
                 fileEntityUuid: fileUUID,
                 categoryUuid: categoryUUID,
             })),
         );
-        logger.debug('insertValues', insertValues);
 
-        if (insertValues.length > 0) {
-            await this.fileEntityRepository.manager
-                .createQueryBuilder()
-                .insert()
-                .into('file_entity_categories_category') // The join table for file and category
-                .values(insertValues)
-                .orIgnore()
-                .execute();
-        }
+        await this.fileEntityRepository.manager
+            .createQueryBuilder()
+            .insert()
+            .into('file_entity_categories_category') // The join table for file and category
+            .values(insertValues)
+            .orIgnore()
+            .execute();
 
         return { success: true };
     }

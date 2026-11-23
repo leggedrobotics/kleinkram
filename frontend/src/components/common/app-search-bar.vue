@@ -2,6 +2,7 @@
     <q-input
         ref="inputRef"
         v-model="model"
+        type="search"
         :debounce="debounce"
         :placeholder="placeholder"
         dense

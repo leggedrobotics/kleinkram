@@ -1,6 +1,6 @@
 {
     "name": "@kleinkram/validation",
-    "version": "0.66.1",
+    "version": "0.66.2",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "license": "MIT",
@@ -27,7 +27,7 @@
         "class-validator": "^0.15.1"
     },
     "devDependencies": {
-        "@nestjs/common": "^12.5.0",
+        "@nestjs/common": "^12.6.0",
         "typescript": "^5.9.3"
     }
 }

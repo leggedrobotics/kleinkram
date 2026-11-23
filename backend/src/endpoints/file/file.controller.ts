@@ -3,6 +3,7 @@ import { FileLifecycleService } from '@/services/file-lifecycle.service';
 import { FileQueryService } from '@/services/file-query.service';
 import { FileStorageService } from '@/services/file-storage.service';
 import { QueueService } from '@/services/queue.service';
+import { StorageInsightsService } from '@/services/storage-insights.service';
 import {
     QueryBoolean,
     QueryDate,
@@ -41,7 +42,9 @@ import {
     RecalculateHashesResponseDto,
     ReextractTopicsResponseDto,
     StopJobResponseDto,
+    StorageInsightsDto,
     StorageOverviewDto,
+    StorageUploadersDto,
     TemporaryAccessRequestDto,
     TemporaryFileAccessesDto,
     TransferFilesDto,
@@ -59,6 +62,7 @@ import {
     Controller,
     Delete,
     Get,
+    NotFoundException,
     Patch,
     Post,
     Put,
@@ -95,6 +99,7 @@ export class FileController {
     constructor(
         private readonly fileQueryService: FileQueryService,
         private readonly fileStorageService: FileStorageService,
+        private readonly storageInsightsService: StorageInsightsService,
         private readonly fileLifecycleService: FileLifecycleService,
         private readonly queueService: QueueService,
         private readonly foxgloveService: FoxgloveService,
@@ -267,6 +272,7 @@ export class FileController {
         @QueryString('filename', 'Filename searched for') name: string,
     ): Promise<FileDto> {
         const file = await this.fileQueryService.findOneByName(uuid, name);
+        if (!file) throw new NotFoundException('File not found');
         return plainToInstance(FileDto, file, {
             excludeExtraneousValues: true,
         });
@@ -313,6 +319,34 @@ export class FileController {
     @CanCreate()
     async getStorage(): Promise<StorageOverviewDto> {
         return this.fileStorageService.getStorage();
+    }
+
+    @Get('storage/insights')
+    @ApiOkResponse({
+        description:
+            'Stored data by month, project, file type and mission, from the recorded file sizes',
+        type: StorageInsightsDto,
+    })
+    // only users who may create projects (admins and members of an
+    // affiliation group) see it, each limited to what they can read
+    @CanCreate()
+    async getStorageInsights(
+        @AddUser() auth: AuthHeader,
+    ): Promise<StorageInsightsDto> {
+        // non-admins: only the projects and missions they can read
+        return this.storageInsightsService.getInsights(auth.user);
+    }
+
+    @Get('storage/insights/uploaders')
+    @ApiOkResponse({
+        description:
+            'Stored data per user who uploaded it (names only, no email addresses)',
+        type: StorageUploadersDto,
+    })
+    // who stores how much is personal data: admins only
+    @AdminOnly()
+    async getStorageUploaders(): Promise<StorageUploadersDto> {
+        return this.storageInsightsService.getUploaders();
     }
 
     @Get('isUploading')

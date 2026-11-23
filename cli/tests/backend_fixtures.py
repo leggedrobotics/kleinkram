@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from secrets import token_hex
 
+import httpx
 import pytest
 
 from kleinkram import create_mission
@@ -16,6 +17,10 @@ from kleinkram import get_template
 from kleinkram import list_missions
 from kleinkram import list_projects
 from kleinkram import upload
+from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.query import ExecutionQuery
+from kleinkram.api.routes import get_executions
+from kleinkram.core import cancel_execution
 
 # we expect the mission files to be in this folder that is not commited to the repo
 DATA_PATH = Path(__file__).parent / "data"
@@ -32,6 +37,38 @@ PROJECT_DESCRIPTION = "This is a test project"
 
 WAIT_BEFORE_DELETION = 5
 
+# a mission can't be deleted while one of its actions still runs
+UNFINISHED_EXECUTION_STATES = {"PENDING", "STARTING", "PROCESSING", "STOPPING"}
+DELETION_TIMEOUT = 120
+
+
+def _delete_project_after_its_executions(project_id) -> None:
+    """\
+    cancels the executions the tests left running, then deletes the project;
+    the deletion is refused (409) until the workers have stopped their
+    containers, so it is retried for a while
+    """
+    client = AuthenticatedClient()
+    for execution in get_executions(client, ExecutionQuery(project_uuid=project_id)):
+        if execution.state in UNFINISHED_EXECUTION_STATES:
+            try:
+                cancel_execution(client=client, execution_id=execution.uuid)
+            except httpx.HTTPError:
+                pass  # finished meanwhile
+
+    deadline = time.monotonic() + DELETION_TIMEOUT
+    while True:
+        try:
+            delete_project(project_id)
+            return
+        except httpx.HTTPStatusError as error:
+            if error.response.status_code != 409:
+                raise
+            if time.monotonic() > deadline:
+                left = [f"{e.uuid} {e.state}" for e in get_executions(client, ExecutionQuery(project_uuid=project_id))]
+                raise AssertionError(f"project still blocked: {error.response.text}; executions: {left}") from error
+            time.sleep(WAIT_BEFORE_DELETION)
+
 
 @pytest.fixture(scope="session")
 def project():
@@ -43,7 +80,7 @@ def project():
     yield project
 
     time.sleep(WAIT_BEFORE_DELETION)
-    delete_project(project.id)
+    _delete_project_after_its_executions(project.id)
 
 
 @pytest.fixture

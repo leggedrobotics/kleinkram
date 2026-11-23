@@ -148,8 +148,10 @@
                 :previews="preview.topicPreviews"
                 :loading-state="preview.topicLoadingState"
                 :topic-errors="preview.topicErrors"
+                :sample-cost="preview.sampleCost"
                 @load-preview="preview.fetchTopicMessages"
                 @pause-preview="preview.cancelTopic"
+                @load-window="preview.fetchTopicWindow"
                 @resume-preview="handleResumePreview"
             />
 

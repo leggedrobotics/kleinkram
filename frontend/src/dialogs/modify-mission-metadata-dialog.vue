@@ -1,34 +1,50 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title> Modify Metadata</template>
+    <base-dialog
+        ref="dialogRef"
+        v-model:error="errorMessage"
+        :busy="isPending"
+        :dirty="dirty"
+        :submit-disabled="isPending"
+        @submit="saveMetadata"
+    >
+        <template #title>Edit Metadata</template>
         <template #content>
-            <select-mission-metadata
-                v-if="mission?.project?.uuid"
-                :project-uuid="mission.project.uuid"
-                :metadata-values="metadataValues"
-                @update:metadata-values="updateMetadataValues"
-            />
+            <q-form ref="formReference" greedy @submit.prevent>
+                <select-mission-metadata
+                    v-if="mission?.project?.uuid"
+                    v-model:server-errors="serverErrors"
+                    :project-uuid="mission.project.uuid"
+                    :metadata-values="metadataValues"
+                    @update:metadata-values="updateMetadataValues"
+                />
+            </q-form>
         </template>
         <template #actions>
             <q-btn
+                flat
+                no-caps
                 class="bg-button-primary"
-                label="Save"
-                :disable="metadataValues === undefined"
+                label="Save Metadata"
+                :loading="isPending"
                 @click="saveMetadata"
             />
         </template>
     </base-dialog>
 </template>
+
 <script setup lang="ts">
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { DataType } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import SelectMissionMetadata from 'components/select-mission-metadata.vue';
-import { Notify, useDialogPluginComponent } from 'quasar';
+import { Notify, QForm, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { getErrorMessage } from 'src/services/error-handling';
+import {
+    getDialogErrorMessage,
+    getFieldErrors,
+} from 'src/services/error-handling';
 import { updateMissionMetadata } from 'src/services/mutations/mission';
-import { ref, Ref, watch } from 'vue';
+import { computed, ref, Ref, watch } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -39,6 +55,14 @@ const properties = defineProps<{
 const queryClient = useQueryClient();
 
 const metadataValues: Ref<Record<string, string>> = ref({});
+const initialValues = ref('');
+const errorMessage = ref('');
+// errors the server reported per metadata type uuid
+const serverErrors = ref<Record<string, string>>({});
+const formReference = ref<QForm>();
+const dirty = computed(
+    () => JSON.stringify(metadataValues.value) !== initialValues.value,
+);
 watch(
     () => properties.mission,
     (newMission) => {
@@ -59,12 +83,13 @@ watch(
                             : '';
                 }
             }
+            initialValues.value = JSON.stringify(metadataValues.value);
         }
     },
     { immediate: true },
 );
 
-const { mutate: mutateMissionMetadata } = useMutation({
+const { mutate: mutateMissionMetadata, isPending } = useMutation({
     mutationFn: () => {
         return updateMissionMetadata(
             properties.mission?.uuid ?? '',
@@ -86,15 +111,20 @@ const { mutate: mutateMissionMetadata } = useMutation({
         onDialogOK();
     },
     onError: (error: unknown) => {
-        Notify.create({
-            message: `Error updating metadata: ${getErrorMessage(error)}`,
-            color: 'negative',
-            position: 'bottom',
-        });
+        const fieldErrors = getFieldErrors(error);
+        if (fieldErrors) {
+            // shown on the metadata fields they belong to
+            serverErrors.value = fieldErrors;
+            return;
+        }
+        errorMessage.value = getDialogErrorMessage(error);
     },
 });
 
-const saveMetadata = (): void => {
+const saveMetadata = async (): Promise<void> => {
+    if (isPending.value) return;
+    if (!(await formReference.value?.validate(true))) return;
+    errorMessage.value = '';
     mutateMissionMetadata();
 };
 

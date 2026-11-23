@@ -12,6 +12,11 @@ The valid operations that can be performed on an access group are:
 | remove project | Remove a project from the Access Group | <Delete/>                                                                                                           |
 | delete         | Delete the Access Group                | <CanEdit/>                                                                                                          |
 
+You can add several users, or add the group to several projects, in one step. Kleinkram then adds all of them or none:
+if one user is already a member, or you lack the rights on one of the projects, nothing changes and the dialog shows
+the reason, so you can correct the selection and try again. One step takes at most 100 users or projects; the
+dialog stops at 100, so add those first and then the rest.
+
 ## Group Types
 
 There are four types of access groups:
@@ -24,6 +29,9 @@ There are four types of access groups:
 | **Public**      | Kleinkram, once               | Every user, implicitly; granting it access makes a project public | No; can only be granted <Read/> |
 
 See [Base Concepts](./base-concepts.md#access-groups) for how affiliation groups, primary groups and public projects work.
+
+When you search for users to add, you see a user's full email address only if you are both active members of the same
+affiliation group, or if you typed their exact address. Otherwise you see a masked hint such as `d•••••@ethz.ch`.
 
 ## Membership Expiry
 
