@@ -191,7 +191,7 @@ To slice where a topic actually has data, start from its own span:
 ```python
 lidar = next(t for t in info.topics if t.name == "/lidar")
 if lidar.first_seen is not None:   # None when the chunks carry no message index
-    start_time, end_time = lidar.first_seen, lidar.last_seen
+    start_time, end_time = lidar.first_seen, lidar.last_seen + 1   # end_time is exclusive
 ```
 
 ## When to slice and when not to
