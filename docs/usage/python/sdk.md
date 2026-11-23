@@ -320,6 +320,7 @@ kleinkram.update_trigger(
     config=FileConfig(patterns=("*.mcap",), event=(FileTriggerEvent.UPLOAD,)),
 )
 kleinkram.delete_trigger(trigger_id)
+```
 
 ### Reporting from Inside an Action
 
