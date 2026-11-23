@@ -205,6 +205,14 @@ def test_plan_create_checks_required_metadata(server, files):
         kleinkram.core.plan_upload(client=MagicMock(), query=QUERY, file_paths=files, create=True, metadata={})
 
 
+def test_plan_create_can_ignore_missing_metadata(server, files):
+    server.get_mission.side_effect = MissionNotFound("nope")
+    plan = kleinkram.core.plan_upload(
+        client=MagicMock(), query=QUERY, file_paths=files, create=True, metadata={}, ignore_missing_metadata=True
+    )
+    assert plan.creates_mission
+
+
 def test_plan_create_checks_mission_name(server, files, monkeypatch):
     server.get_mission.side_effect = MissionNotFound("nope")
     monkeypatch.setattr(kleinkram.core, "_mission_name_is_available", lambda *_: False)

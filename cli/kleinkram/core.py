@@ -404,6 +404,7 @@ def plan_upload(
     create: bool = False,
     fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
+    ignore_missing_metadata: bool = False,
 ) -> UploadPlan:
     """\
     what `upload` with the same arguments would do, without changing anything
@@ -423,7 +424,8 @@ def plan_upload(
         project = kleinkram.api.routes.get_project(client, query=query.project_query, exact_match=True)
         mission_name = check_mission_query_is_creatable(query)
         _validate_mission_name(client, project.id, mission_name)
-        _check_required_metadata(project.required_metadata_types, metadata or {})
+        if not ignore_missing_metadata:
+            _check_required_metadata(project.required_metadata_types, metadata or {})
         _get_metadata_map(client, metadata or {})
         return UploadPlan(
             project_name=project.name,
@@ -1002,7 +1004,8 @@ def create_mission(
         metadata = {}
 
     _validate_mission_name(client, project_id, mission_name)
-    _check_required_metadata(required_metadata_types, metadata)
+    if not ignore_missing_metadata:
+        _check_required_metadata(required_metadata_types, metadata)
 
     metadata_map = _get_metadata_map(client, metadata)
     mission_id = kleinkram.api.routes._create_mission(
