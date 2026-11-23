@@ -58,7 +58,8 @@ MIN_CHUNKS_FOR_RATE = 5
 # Chunks a topic is absent from are joined into one covered span when the hole
 # between them is at most this many typical chunk lengths...
 _MERGE_CHUNKS = 2
-# ...or this many of the topic's own message periods...
+# ...or this many of the topic's message periods, taken over the whole
+# recording...
 _MERGE_PERIODS = 3
 # ...or this many seconds. Chunks overlap or leave small holes between them all
 # the time; neither is a dropout.
@@ -342,6 +343,11 @@ def _topics(channels, schemas, statistics, chunk_indexes) -> List[McapTopic]:
             for key in {keys[c] for c in chunk_index.message_index_offsets if c in keys}:
                 chunks[key].append(span)
     typical_chunk = _median([c.message_end_time - c.message_start_time for c in chunk_indexes])
+    duration = (
+        max(c.message_end_time for c in chunk_indexes) - min(c.message_start_time for c in chunk_indexes)
+        if chunk_indexes
+        else 0
+    )
 
     topics: List[McapTopic] = []
     for key, count in sorted(counts.items()):
@@ -364,7 +370,7 @@ def _topics(channels, schemas, statistics, chunk_indexes) -> List[McapTopic]:
                 first_seen=first_seen,
                 last_seen=last_seen,
                 chunk_count=len(spans),
-                coverage=_merge_spans(spans, _merge_tolerance(typical_chunk, frequency)),
+                coverage=_merge_spans(spans, _merge_tolerance(typical_chunk, duration, count)),
             )
         )
     return topics
@@ -387,10 +393,16 @@ def _median(values: List[int]) -> int:
     return sorted(values)[len(values) // 2]
 
 
-def _merge_tolerance(typical_chunk: int, frequency: Optional[float]) -> int:
-    # A slow topic is absent from most chunks without anything being wrong, so
-    # the hole it may leave scales with its own period.
-    period = int(1e9 / frequency) if frequency else 0
+def _merge_tolerance(typical_chunk: int, duration: int, count: Optional[int]) -> int:
+    """The hole two chunks of a topic may leave and still count as one span.
+
+    The same rule as `computeRecordingCoverage` in
+    packages/shared/src/common-utils/recording-insights.ts, which the backend
+    stores and the file page draws, so all three agree. A slow topic is absent
+    from most chunks without anything being wrong, so the hole scales with its
+    period; like there, the period is taken over the whole recording.
+    """
+    period = duration // count if count is not None and count > 1 else 0
     return max(_MERGE_CHUNKS * typical_chunk, _MERGE_PERIODS * period, _MERGE_MIN_NS)
 
 
