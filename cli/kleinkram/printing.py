@@ -32,6 +32,7 @@ from rich.text import Text
 import kleinkram
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.mcap_summary import McapInfo
+from kleinkram.api.mcap_summary import McapTopic
 from kleinkram.config import get_config
 from kleinkram.config import get_shared_state
 from kleinkram.core import FileVerificationStatus
@@ -304,29 +305,66 @@ def mcap_info_table(info: McapInfo, *, name: str) -> Table:
     return table
 
 
-def _format_frequency(frequency: Optional[float]) -> str:
-    if frequency is None:
-        return ""
-    return f"{frequency:.1f}" if frequency >= 10 else f"{frequency:.2f}"
+COVERAGE_CELLS = 20
+
+
+def _format_frequency(topic: McapTopic) -> str:
+    if topic.frequency is not None:
+        return f"{topic.frequency:.1f}" if topic.frequency >= 10 else f"{topic.frequency:.2f}"
+    # Known to have no rate: a one-shot topic, or a single message.
+    if topic.message_count is not None and topic.chunk_count:
+        return "—"
+    return ""
+
+
+def _format_offset(seconds: float) -> str:
+    minutes, secs = divmod(round(seconds), 60)
+    hours, minutes = divmod(minutes, 60)
+    return f"{hours}:{minutes:02d}:{secs:02d}" if hours else f"{minutes}:{secs:02d}"
+
+
+def coverage_strip(coverage: List[Tuple[int, int]], start: int, end: int, cells: int = COVERAGE_CELLS) -> str:
+    """`cells` characters across [start, end]: full where the topic has data."""
+    width = (end - start) / cells
+    strip = []
+    for cell in range(cells):
+        cell_start = start + cell * width
+        cell_end = start + (cell + 1) * width
+        # Cells are half open, except the last, which holds the final message.
+        last = cell == cells - 1
+        hit = any(hi >= cell_start and (lo < cell_end or last) for lo, hi in coverage)
+        strip.append("█" if hit else "░")
+    return "".join(strip)
 
 
 def mcap_topics_table(info: McapInfo) -> Table:
+    # Unknown when any chunk lacks a message index; then no topic has coverage.
+    span: Optional[Tuple[int, int]] = None
+    if info.start_time is not None and info.end_time is not None and info.end_time > info.start_time:
+        if any(topic.coverage is not None for topic in info.topics):
+            span = (info.start_time, info.end_time)
+
     table = Table(title="topics", expand=True)
     table.add_column("topic", overflow="fold")
     table.add_column("type", overflow="fold")
     table.add_column("encoding")
     table.add_column("messages", justify="right")
-    table.add_column("Hz", justify="right")
+    table.add_column("mean Hz", justify="right")
+    if span is not None:
+        table.add_column(f"coverage  0:00 ─── {_format_offset((span[1] - span[0]) / 1e9)}", no_wrap=True)
 
     max_table_size = get_shared_state().max_table_size
     for topic in info.topics[:max_table_size]:
-        table.add_row(
+        row = [
             topic.name,
             topic.message_type,
             topic.message_encoding,
             f"{topic.message_count:,}" if topic.message_count is not None else "",
-            _format_frequency(topic.frequency),
-        )
+            _format_frequency(topic),
+        ]
+        if span is not None:
+            row.append(coverage_strip(topic.coverage, *span) if topic.coverage is not None else "")
+        table.add_row(*row)
 
     if len(info.topics) > max_table_size:
         _add_placeholder_row(table, skipped=len(info.topics) - max_table_size)
@@ -381,7 +419,7 @@ def print_mcap_info(info: McapInfo, *, file: File, schemas: bool, pprint: bool) 
             "name": file.name,
             **asdict(info),
             "duration": info.duration,
-            "per_message_access": info.per_message_access,
+            "per_message_access": info._per_message_access,
         }
         print(json.dumps(payload, default=kleinkram_json_default))
         return

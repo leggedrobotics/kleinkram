@@ -4,6 +4,7 @@ from kleinkram._version import __version__
 from kleinkram.api.file_transfer import DownloadResult
 from kleinkram.api.file_transfer import UploadResult
 from kleinkram.api.mcap_summary import McapInfo
+from kleinkram.errors import McapSummaryUnavailable
 from kleinkram.wrappers import copy_files
 from kleinkram.wrappers import create_mission
 from kleinkram.wrappers import create_project
@@ -94,4 +95,5 @@ __all__ = [
     "UploadResult",
     "DownloadResult",
     "McapInfo",
+    "McapSummaryUnavailable",
 ]

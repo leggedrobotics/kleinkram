@@ -36,6 +36,7 @@
             flat
             bordered
             :pagination="{ rowsPerPage: 15 }"
+            :sort-method="sortTopics"
         >
             <template #header-cell-coverage="props">
                 <q-th :props="props">
@@ -46,25 +47,40 @@
                         class="q-ml-xs cursor-help"
                     >
                         <q-tooltip max-width="320px">
-                            Where in the recording the topic has data, read from
-                            the file's chunk index. The resolution is one chunk;
-                            hatched stretches are pauses of the whole recording.
+                            Where the topic has data, in 20 slices of the
+                            recording. Hatched: the recorder paused.
                         </q-tooltip>
                     </q-icon>
                     <div
-                        v-if="coverage"
+                        v-if="stats"
                         class="row justify-between text-caption text-grey-7 coverage-axis"
                     >
-                        <span>{{ clockTime(coverage.startTime, 0) }}</span>
+                        <span>{{ clockTime(stats.startTime, 0) }}</span>
                         <span>
                             {{
                                 clockTime(
-                                    coverage.startTime,
-                                    coverage.durationSeconds,
+                                    stats.startTime,
+                                    stats.durationSeconds,
                                 )
                             }}
                         </span>
                     </div>
+                </q-th>
+            </template>
+
+            <template #header-cell-freq="props">
+                <q-th :props="props">
+                    mean Hz
+                    <q-icon
+                        name="sym_o_info"
+                        size="14px"
+                        class="q-ml-xs cursor-help"
+                    >
+                        <q-tooltip max-width="320px">
+                            Messages ÷ time from first to last seen. — for
+                            one-shot topics.
+                        </q-tooltip>
+                    </q-icon>
                 </q-th>
             </template>
 
@@ -111,8 +127,11 @@
 
                         <template v-else-if="col.name === 'coverage'">
                             <TopicCoverageStrip
-                                v-if="coverage?.topics[props.row.name]"
-                                :coverage="coverage"
+                                v-if="
+                                    stats?.topics[props.row.name]?.covered
+                                        .length
+                                "
+                                :stats="stats"
                                 :topic="props.row.name"
                             />
                         </template>
@@ -200,6 +219,7 @@
 </template>
 
 <script setup lang="ts">
+import type { FileTopicStats } from '@kleinkram/shared';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import type { QTableColumn } from 'quasar';
 import { useQuasar } from 'quasar';
@@ -233,6 +253,8 @@ const properties = defineProps<{
     isLoading: boolean;
     /** What the file's index says about the recording; MCAP only for now. */
     insights?: RecordingInsights | null;
+    /** Span, rate and coverage per topic, stored or read live. */
+    stats?: FileTopicStats | undefined;
     /**
      * Bytes a sampled read of a topic downloads at a given stride, when the
      * file format makes that differ from the messages' own size.
@@ -259,7 +281,15 @@ const filteredTopics = computed(() => {
     );
 });
 
-const coverage = computed(() => properties.insights?.coverage);
+const stats = computed(() => properties.stats);
+
+const meanHzOf = (row: TopicRow): number | undefined =>
+    stats.value?.topics[row.name]?.meanHz;
+
+const formatHz = (hz: number | undefined): string => {
+    if (hz === undefined) return '—';
+    return hz >= 10 ? hz.toFixed(1) : hz.toPrecision(2);
+};
 
 type ExpandedView = 'preview' | 'definition';
 const EXPANDED_VIEWS: { label: string; value: ExpandedView }[] = [
@@ -324,14 +354,50 @@ const allColumns: QTableColumn[] = [
     },
     {
         name: 'freq',
-        label: 'Freq (Hz)',
-        field: 'frequency',
-        format: (v: number): string => (v ? v.toFixed(1) : '-'),
+        label: 'mean Hz',
+        field: (row: TopicRow) => meanHzOf(row),
+        format: (hz: number | undefined): string => formatHz(hz),
+        sortable: true,
         align: 'right',
         classes: 'kk-num',
         headerClasses: 'kk-num',
     },
 ];
+
+const valueOf = (column: QTableColumn, row: TopicRow): unknown =>
+    typeof column.field === 'function'
+        ? column.field(row)
+        : (row as unknown as Record<string, unknown>)[column.field];
+
+const compareValues = (a: unknown, b: unknown): number => {
+    if (typeof a === 'string' && typeof b === 'string') {
+        return a.localeCompare(b);
+    }
+    return Number(a) - Number(b);
+};
+
+/**
+ * Sorts like QTable, except that rows without a value (a topic without a
+ * rate) stay at the bottom in both directions. QTable's own sort puts them
+ * first when ascending and reverses every comparison when descending.
+ */
+const sortTopics = (
+    rows: readonly TopicRow[],
+    sortBy: string,
+    descending: boolean,
+): readonly TopicRow[] => {
+    const column = allColumns.find((each) => each.name === sortBy);
+    if (!column) return rows;
+    const direction = descending ? -1 : 1;
+    return rows.toSorted((rowA, rowB) => {
+        const a = valueOf(column, rowA);
+        const b = valueOf(column, rowB);
+        const aMissing = a === undefined || a === null;
+        const bMissing = b === undefined || b === null;
+        if (aMissing || bMissing) return Number(aMissing) - Number(bMissing);
+        return compareValues(a, b) * direction;
+    });
+};
 
 /**
  * Phones only have room for the topic and the message count; the datatype
@@ -346,7 +412,7 @@ const HIDDEN_COLUMNS_ON_PHONES = new Set(['type', 'freq']);
 const columns = computed<QTableColumn[]>(() =>
     allColumns.filter((column) => {
         if (column.name === 'coverage') {
-            return coverage.value !== undefined && $q.screen.gt.sm;
+            return stats.value !== undefined && $q.screen.gt.sm;
         }
         return !($q.screen.xs && HIDDEN_COLUMNS_ON_PHONES.has(column.name));
     }),

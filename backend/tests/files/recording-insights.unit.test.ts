@@ -1,10 +1,12 @@
 import {
     computeRecordingCoverage,
+    computeTopicStats,
     findPauses,
     mergeSpans,
     RecordingChannel,
     RecordingChunk,
     summarizeStorage,
+    topicFrequency,
 } from '@kleinkram/shared';
 
 const SECOND = 1_000_000_000n;
@@ -60,6 +62,9 @@ describe('computeRecordingCoverage', () => {
         expect(coverage?.topics['/imu']).toEqual({
             covered: [{ start: 0, end: 100 }],
             gaps: [],
+            chunkCount: 100,
+            firstSeen: ORIGIN,
+            lastSeen: ORIGIN + 100n * SECOND,
         });
     });
 
@@ -77,6 +82,9 @@ describe('computeRecordingCoverage', () => {
                 { start: 61, end: 100 },
             ],
             gaps: [{ start: 40, end: 61 }],
+            chunkCount: 79,
+            firstSeen: ORIGIN,
+            lastSeen: ORIGIN + 100n * SECOND,
         });
         expect(coverage?.topics['/imu']?.gaps).toEqual([]);
     });
@@ -116,6 +124,9 @@ describe('computeRecordingCoverage', () => {
         expect(coverage?.topics['/tf_static']).toEqual({
             covered: [{ start: 0, end: 1 }],
             gaps: [],
+            chunkCount: 1,
+            firstSeen: ORIGIN,
+            lastSeen: ORIGIN + SECOND,
         });
     });
 
@@ -133,6 +144,9 @@ describe('computeRecordingCoverage', () => {
         expect(coverage?.topics['/tf_static']).toEqual({
             covered: [{ start: 0, end: 2 }],
             gaps: [],
+            chunkCount: 2,
+            firstSeen: ORIGIN,
+            lastSeen: ORIGIN + 2n * SECOND,
         });
     });
 
@@ -220,6 +234,146 @@ describe('computeRecordingCoverage', () => {
 
         expect(coverage?.durationSeconds).toBe(100);
         expect(coverage?.topics).toEqual({});
+    });
+});
+
+/** A topic seen in `chunkCount` chunks over its first `seconds` seconds. */
+const span = (
+    chunkCount: number,
+    seconds: number,
+): { chunkCount: number; firstSeen: bigint; lastSeen: bigint } => ({
+    chunkCount,
+    firstSeen: ORIGIN,
+    lastSeen: ORIGIN + BigInt(seconds) * SECOND,
+});
+
+describe('topicFrequency', () => {
+    /** A file with enough chunks to tell one-shot topics from streams. */
+    const LONG_FILE = 100;
+
+    test('divides by the span the topic publishes in', () => {
+        // 600 messages over 60 s of a 600 s recording is 10 Hz, not 1 Hz.
+        expect(topicFrequency(600, span(60, 60), LONG_FILE)).toBe(10);
+    });
+
+    test('a one-shot topic has no rate', () => {
+        expect(topicFrequency(7, span(4, 2), LONG_FILE)).toBeUndefined();
+        expect(topicFrequency(1, span(1, 1), LONG_FILE)).toBeUndefined();
+    });
+
+    test('a topic in exactly five chunks is a stream', () => {
+        expect(topicFrequency(50, span(5, 5), LONG_FILE)).toBe(10);
+    });
+
+    test('a file with fewer than five chunks keeps the rate of its streams', () => {
+        // A short recording: 300 IMU messages in the 3 chunks of a 3 s file.
+        expect(topicFrequency(300, span(3, 3), 3)).toBe(100);
+        expect(topicFrequency(20, span(1, 2), 1)).toBe(10);
+    });
+
+    test('a single message has no rate, however short the file', () => {
+        expect(topicFrequency(1, span(1, 1), 3)).toBeUndefined();
+    });
+
+    test('a topic without a span has no rate', () => {
+        expect(topicFrequency(50, span(5, 0), LONG_FILE)).toBeUndefined();
+        expect(topicFrequency(50, span(1, 0), 1)).toBeUndefined();
+    });
+
+    test('is unknown without a message count', () => {
+        expect(
+            topicFrequency(undefined, span(60, 60), LONG_FILE),
+        ).toBeUndefined();
+    });
+});
+
+describe('computeTopicStats', () => {
+    test('stores where each topic has data, in milliseconds', () => {
+        // /lidar starts 30 s late and stops 10 s early in a 100 s recording.
+        const stats = computeTopicStats(
+            recording(100, (second) =>
+                second >= 30 && second < 90 ? [IMU, LIDAR] : [IMU],
+            ),
+            [
+                { id: IMU, topic: '/imu', messageCount: 40_000 },
+                { id: LIDAR, topic: '/lidar', messageCount: 600 },
+            ],
+        );
+
+        expect(stats.get('/lidar')).toEqual({
+            firstSeen: new Date(Number((ORIGIN + 30n * SECOND) / 1_000_000n)),
+            lastSeen: new Date(Number((ORIGIN + 90n * SECOND) / 1_000_000n)),
+            chunkCount: 60,
+            coverage: [[30_000, 90_000]],
+            frequency: 10,
+        });
+        expect(stats.get('/imu')?.frequency).toBe(400);
+    });
+
+    test('a latched topic is stored without a rate', () => {
+        const stats = computeTopicStats(
+            recording(100, (second) =>
+                second === 0 ? [IMU, TF_STATIC] : [IMU],
+            ),
+            channels,
+        );
+
+        expect(stats.get('/tf_static')).toMatchObject({
+            chunkCount: 1,
+            coverage: [[0, 1000]],
+        });
+        expect(stats.get('/tf_static')?.frequency).toBeUndefined();
+    });
+
+    test('rounds sub-millisecond chunk bounds', () => {
+        const stats = computeTopicStats(
+            [
+                chunk(0, 1, [IMU]),
+                {
+                    ...chunk(1, 2, [IMU]),
+                    endTime: ORIGIN + 2n * SECOND + 400_000n,
+                },
+            ],
+            channels,
+        );
+
+        expect(stats.get('/imu')?.coverage).toEqual([[0, 2000]]);
+    });
+
+    test('knows nothing when some chunks have no message index', () => {
+        const chunks = recording(10, () => [IMU]).map((each, second) =>
+            second === 5 ? { ...each, hasMessageIndex: false } : each,
+        );
+
+        expect(computeTopicStats(chunks, channels).size).toBe(0);
+    });
+
+    test('keeps the stats of a recording without duration', () => {
+        // A single message: one chunk that starts and ends at the same time.
+        const stats = computeTopicStats([chunk(5, 5, [IMU])], channels);
+        const at = new Date(Number((ORIGIN + 5n * SECOND) / 1_000_000n));
+
+        expect([...stats.keys()]).toEqual(['/imu']);
+        expect(stats.get('/imu')).toEqual({
+            firstSeen: at,
+            lastSeen: at,
+            chunkCount: 1,
+            coverage: [[0, 0]],
+            frequency: undefined,
+        });
+    });
+
+    test('knows nothing about an unindexed recording without duration', () => {
+        expect(
+            computeTopicStats(
+                [chunk(5, 5, [], { hasMessageIndex: false })],
+                channels,
+            ).size,
+        ).toBe(0);
+    });
+
+    test('knows nothing without chunks', () => {
+        expect(computeTopicStats([], channels).size).toBe(0);
     });
 });
 

@@ -82,6 +82,9 @@ Redis is an in-memory key-value store used primarily for managing the job queue.
 
 - **Queue Management**: The API pushes tasks to the queue.
 - **Processing**: The Queue Processor service consumes tasks from the Redis queue.
+- **Logins**: started OAuth logins (`state`, PKCE verifier, for 10 minutes, see
+  [How a Login is Bound to the Browser](../access-control/base-concepts.md#how-a-login-is-bound-to-the-browser)) and
+  CLI device logins.
 
 ### Loki (Logging)
 

@@ -9,6 +9,7 @@ conversion to the internal representation
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from typing import Collection
@@ -669,10 +670,23 @@ def create_trigger(
 def update_file(
     file_id: IdLike,
     *,
+    new_name: Optional[str] = None,
+    date: Optional[datetime] = None,
     client: Optional[AuthenticatedClient] = None,
 ) -> None:
+    """\
+    rename a file or change its recording date
+
+    fields that are not passed keep their current value. To move files to
+    another mission, use `move_files`.
+    """
     client = client or AuthenticatedClient()
-    kleinkram.core.update_file(client=client, file_id=parse_uuid_like(file_id))
+    kleinkram.core.update_file(
+        client=client,
+        file_id=parse_uuid_like(file_id),
+        new_name=new_name,
+        date=date,
+    )
 
 
 def update_mission(

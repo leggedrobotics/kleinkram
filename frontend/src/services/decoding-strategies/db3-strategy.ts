@@ -27,7 +27,13 @@ export class Db3Strategy extends DecodingStrategy {
         // sql.js requires the whole file in memory
         const data = await httpReader.read(0n, BigInt(httpReader.sizeBytes));
 
-        const SQL = await initSqlJs({ locateFile: () => sqlWasmUrl });
+        const SQL = await initSqlJs({
+            // sql.js default; required by @types/sql.js >= 1.16
+            useOldExtensionFunctions: true,
+            // The WebAssembly of the installed sql.js; another version's
+            // does not match its glue code.
+            locateFile: () => sqlWasmUrl,
+        });
 
         this.db = new SQL.Database(data);
 
