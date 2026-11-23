@@ -40,15 +40,17 @@ export interface ReadOptions {
 }
 
 /**
- * Hands the thread back to the browser for one task.
+ * Hands the thread back to the event loop for one task.
  *
  * `await`ing a plain value only queues a microtask, and microtasks are
- * drained before the browser gets to paint or to handle input. A decode
- * loop built from those never releases the main thread. A `MessageChannel`
- * message is a real task, and unlike `setTimeout(0)` it is not clamped to
- * 4ms once the loop nests, so yielding stays cheap.
+ * drained before anything else runs. A decode loop built from those never
+ * releases its thread: on the main thread the page cannot paint, and in the
+ * preview worker the cancel message for the very read it is running waits
+ * until the read is done. A `MessageChannel` message is a real task, and
+ * unlike `setTimeout(0)` it is not clamped to 4ms once the loop nests, so
+ * yielding stays cheap.
  */
-const yieldToBrowser = (): Promise<void> => {
+const yieldToEventLoop = (): Promise<void> => {
     const scheduling = (
         globalThis as {
             scheduler?: { yield?: () => Promise<void> };
@@ -66,23 +68,89 @@ const yieldToBrowser = (): Promise<void> => {
     });
 };
 
-/** How long a decode loop may hold the main thread between two yields. */
+/** How long a decode loop may hold its thread between two yields. */
 const BUDGET_MS = 8;
 
 /**
- * Time budget for a decode loop running on the main thread. Call
- * `yieldIfNeeded()` once per decoded message: it is a clock read in the
- * common case and only gives up the thread once the budget is spent, so
- * the page keeps painting and responding while a topic loads.
+ * Time budget for a decode loop. Call `yieldIfNeeded()` once per decoded
+ * message: it is a clock read in the common case and only gives up the
+ * thread once the budget is spent, so cancellations and batch flushes get
+ * through while a topic loads.
  */
-export class MainThreadBudget {
+export class YieldBudget {
     private deadline = performance.now() + BUDGET_MS;
 
     async yieldIfNeeded(): Promise<void> {
         if (performance.now() < this.deadline) return;
-        await yieldToBrowser();
+        await yieldToEventLoop();
         this.deadline = performance.now() + BUDGET_MS;
     }
+}
+
+/**
+ * Where a read puts its messages: handed to `onMessage` as they are decoded,
+ * or -- without a callback -- collected and returned at the end.
+ *
+ * Not both. The preview streams every message to the UI, and keeping a
+ * second reference in the reader would hold each decoded message, and the
+ * whole decompressed chunk its byte arrays point into, until the read ends.
+ */
+export class MessageSink {
+    readonly collected: LogMessage[] = [];
+    private count = 0;
+
+    constructor(private readonly onMessage?: (message: LogMessage) => void) {}
+
+    get length(): number {
+        return this.count;
+    }
+
+    push(message: LogMessage): void {
+        this.count++;
+        if (this.onMessage) this.onMessage(message);
+        else this.collected.push(message);
+    }
+}
+
+/**
+ * What a sampled read of one topic downloads, per chunk it may touch:
+ * chunk `i` holds the topic's messages `first[i]` up to (excluding)
+ * `next[i]`, by their position in the whole topic, and costs `bytes[i]`.
+ *
+ * Built once from the file's index, so the main thread can price any stride
+ * without asking the worker.
+ */
+export interface SampleCostModel {
+    first: Float64Array;
+    next: Float64Array;
+    bytes: Float64Array;
+}
+
+/**
+ * Bytes a read keeping every `stride`-th message downloads: the chunks that
+ * hold at least one kept message, each in full.
+ */
+export function sampleCostOf(model: SampleCostModel, stride: number): number {
+    const keepEvery = Math.max(1, Math.floor(stride));
+    let total = 0;
+    for (let index = 0; index < model.bytes.length; index++) {
+        const first = model.first[index] ?? 0;
+        const next = model.next[index] ?? 0;
+        const firstSample = Math.ceil(first / keepEvery) * keepEvery;
+        if (firstSample < next) total += model.bytes[index] ?? 0;
+    }
+    return total;
+}
+
+/** Builds a `SampleCostModel` from its chunks. */
+export function sampleCostModel(
+    chunks: { first: number; next: number; bytes: number }[],
+): SampleCostModel {
+    return {
+        first: Float64Array.from(chunks, (chunk) => chunk.first),
+        next: Float64Array.from(chunks, (chunk) => chunk.next),
+        bytes: Float64Array.from(chunks, (chunk) => chunk.bytes),
+    };
 }
 
 /**

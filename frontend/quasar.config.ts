@@ -6,6 +6,7 @@ import { defineConfig } from '#q-app';
 import path from 'node:path';
 import type { Plugin } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { foxgloveWasm } from './vite-plugins/foxglove-wasm';
 
 const appDirectory = import.meta.dirname;
 
@@ -52,6 +53,12 @@ const wellKnownPlugin = (): Plugin => {
         },
     };
 };
+
+const polyfills = (): Plugin[] =>
+    nodePolyfills({
+        globals: { global: true, Buffer: true, process: true },
+        protocolImports: true,
+    }) as Plugin[];
 
 export default defineConfig((/* ctx */) => {
     return {
@@ -192,8 +199,18 @@ export default defineConfig((/* ctx */) => {
                     '@foxglove/rosmsg-serialization', // ROS 1
                     '@foxglove/rosmsg2-serialization', // ROS 2 (CDR)
                     '@mcap/core',
-                    'fzstd',
+                    '@foxglove/rosbag',
+                    'sql.js',
                 );
+
+                // The file preview decodes in a module worker
+                // (src/services/preview-worker), which code-splits and
+                // needs the same plugins as the app.
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                viteConfig.worker = {
+                    format: 'es',
+                    plugins: () => [foxgloveWasm(), ...polyfills()],
+                };
 
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 viteConfig.optimizeDeps.exclude =
@@ -228,13 +245,7 @@ export default defineConfig((/* ctx */) => {
             // not match app-vite v3's `[pluginFactory, options]` tuple form
             // (that one is typed as `(options?) => Plugin`), so instantiate it
             // here and spread the resulting plugins.
-            vitePlugins: [
-                wellKnownPlugin(),
-                ...nodePolyfills({
-                    globals: { global: true, Buffer: true, process: true },
-                    protocolImports: true,
-                }),
-            ],
+            vitePlugins: [wellKnownPlugin(), foxgloveWasm(), ...polyfills()],
         },
 
         // Full list of options: https://quasar.dev/quasar-cli-vite/quasar-config-file#devserver

@@ -15,8 +15,7 @@ import {
     UniversalHttpReader,
 } from '@kleinkram/shared';
 import { McapByteReader, McapIndexedReader, parseRecord } from '@mcap/core';
-import * as fzstd from 'fzstd';
-import lz4js from 'lz4js';
+import { decompressorFor, DECOMPRESSORS } from './decompress';
 import { mapInOrder } from './fetch-pool';
 import { DecodingStrategy } from './index';
 import type {
@@ -27,8 +26,11 @@ import type {
 import {
     coarseToFineOrder,
     LogMessage,
-    MainThreadBudget,
+    MessageSink,
     ReadOptions,
+    SampleCostModel,
+    sampleCostModel,
+    YieldBudget,
 } from './utilities';
 
 /** Identity of a message record, used to drop duplicates from overlapping chunks */
@@ -124,11 +126,14 @@ const MESSAGE_INDEX_HEADER_LEN = 15;
 /** Length of one Message Index entry (log time and offset). */
 const MESSAGE_INDEX_ENTRY_LEN = 16;
 
-/** Chunk decompressors, keyed by the MCAP compression name. */
-const DECOMPRESS: Record<string, (data: Uint8Array) => Uint8Array> = {
-    zstd: (buffer) => fzstd.decompress(buffer),
-    lz4: (buffer) => lz4js.decompress(buffer),
-};
+/** Chunk decompressors for `@mcap/core`, which passes the size as bigint. */
+const DECOMPRESS_HANDLERS = Object.fromEntries(
+    Object.entries(DECOMPRESSORS).map(([name, decompress]) => [
+        name,
+        (buffer: Uint8Array, size: bigint): Uint8Array =>
+            decompress(buffer, Number(size)),
+    ]),
+);
 
 export class McapStrategy extends DecodingStrategy {
     private reader: McapIndexedReader | null = null;
@@ -142,12 +147,7 @@ export class McapStrategy extends DecodingStrategy {
         this.httpReader = httpReader;
         this.reader = await McapIndexedReader.Initialize({
             readable: httpReader,
-            decompressHandlers: {
-                ...DECOMPRESS,
-                bz2: () => {
-                    throw new Error('BZ2 not supported');
-                },
-            },
+            decompressHandlers: DECOMPRESS_HANDLERS,
         });
     }
 
@@ -280,8 +280,8 @@ export class McapStrategy extends DecodingStrategy {
             );
         }
 
-        const msgs: LogMessage[] = [];
-        const budget = new MainThreadBudget();
+        const msgs = new MessageSink(onMessage);
+        const budget = new YieldBudget();
         let seen = 0;
 
         // Chunks hold every topic interleaved, so reading one low-rate topic
@@ -351,11 +351,10 @@ export class McapStrategy extends DecodingStrategy {
                     message.data;
             }
             const messageObject = { logTime: message.logTime, data };
-            if (onMessage) onMessage(messageObject);
             msgs.push(messageObject);
             await budget.yieldIfNeeded();
         }
-        return msgs;
+        return msgs.collected;
     }
 
     /**
@@ -443,7 +442,7 @@ export class McapStrategy extends DecodingStrategy {
         // the planning took -- hundreds of round trips -- even though the
         // first chunk's messages were ready almost immediately. Chunks are in
         // file order, so emitting as they arrive is also the right order.
-        const msgs: LogMessage[] = [];
+        const msgs = new MessageSink(onMessage);
         let seen = 0;
 
         // A chunk read through the ordinary reader is bounded by time rather
@@ -502,12 +501,11 @@ export class McapStrategy extends DecodingStrategy {
                 }
 
                 const messageObject = { logTime: message.logTime, data };
-                if (onMessage) onMessage(messageObject);
                 msgs.push(messageObject);
             }
         }
 
-        return msgs;
+        return msgs.collected;
     }
     private async getMessagesProgressive(
         topic: string,
@@ -524,8 +522,8 @@ export class McapStrategy extends DecodingStrategy {
         // Sampling positions are estimated for MCAP, so allow a little
         // headroom before stopping hard at the requested count.
         const hardLimit = Math.ceil(limit * 1.1) + 1;
-        const msgs: LogMessage[] = [];
-        const budget = new MainThreadBudget();
+        const msgs = new MessageSink(onMessage);
+        const budget = new YieldBudget();
 
         const channelIds = new Set(
             [...reader.channelsById.values()]
@@ -653,12 +651,11 @@ export class McapStrategy extends DecodingStrategy {
                             : undefined,
                     data,
                 };
-                if (onMessage) onMessage(messageObject);
                 msgs.push(messageObject);
                 await budget.yieldIfNeeded();
             }
         }
-        return msgs;
+        return msgs.collected;
     }
 
     /**
@@ -705,7 +702,7 @@ export class McapStrategy extends DecodingStrategy {
         const httpReader = this.httpReader;
         if (!httpReader) return undefined;
         const compressed = chunk.compression !== '';
-        if (compressed && !(chunk.compression in DECOMPRESS)) return undefined;
+        if (compressed && !decompressorFor(chunk.compression)) return undefined;
         if (chunk.messageIndexOffsets.size === 0) return undefined;
 
         let indexStart: bigint | undefined;
@@ -872,18 +869,32 @@ export class McapStrategy extends DecodingStrategy {
         return offsets;
     }
 
-    override sampleCost(topic: string, stride: number): number | undefined {
+    override sampleCostModels(): Record<string, SampleCostModel | null> {
         const reader = this.reader;
-        if (!reader) return undefined;
-        const channelIds = new Set<number>();
+        if (!reader) return {};
+        const channelsByTopic = new Map<string, Set<number>>();
         for (const [id, channel] of reader.channelsById) {
-            if (channel.topic === topic) channelIds.add(id);
+            const ids = channelsByTopic.get(channel.topic) ?? new Set();
+            ids.add(id);
+            channelsByTopic.set(channel.topic, ids);
         }
+        const models: Record<string, SampleCostModel | null> = {};
+        for (const [topic, channelIds] of channelsByTopic) {
+            models[topic] = this.sampleCostModelOf(channelIds);
+        }
+        return models;
+    }
+
+    /**
+     * Null when a sample costs only its own bytes: uncompressed chunks
+     * address each message, so the caller's per-message estimate is right.
+     */
+    private sampleCostModelOf(channelIds: Set<number>): SampleCostModel | null {
+        const reader = this.reader;
+        if (!reader) return null;
         const chunks = this.topicChunks(channelIds);
-        if (chunks.length === 0) return 0;
-        // Uncompressed chunks address each message, so a sample costs only
-        // its own bytes; the caller's per-message estimate is right there.
-        if (chunks.some((chunk) => chunk.compression === '')) return undefined;
+        if (chunks.length === 0) return sampleCostModel([]);
+        if (chunks.some((chunk) => chunk.compression === '')) return null;
 
         // The same positions the progressive read samples on: exact from the
         // chunk index, or messages spread evenly over the chunks
@@ -896,18 +907,17 @@ export class McapStrategy extends DecodingStrategy {
                 );
             }
         }
-        if (total === 0) return undefined;
-        const keepEvery = Math.max(1, Math.floor(stride));
+        if (total === 0) return null;
         const perChunk = Math.max(1, total / chunks.length);
-        let bytes = 0;
-        for (const [index, chunk] of chunks.entries()) {
-            const first = exactOffsets?.[index] ?? Math.round(index * perChunk);
-            const next =
-                exactOffsets?.[index + 1] ?? Math.round((index + 1) * perChunk);
-            const firstSample = Math.ceil(first / keepEvery) * keepEvery;
-            if (firstSample < next) bytes += Number(chunk.chunkLength);
-        }
-        return bytes;
+        return sampleCostModel(
+            chunks.map((chunk, index) => ({
+                first: exactOffsets?.[index] ?? Math.round(index * perChunk),
+                next:
+                    exactOffsets?.[index + 1] ??
+                    Math.round((index + 1) * perChunk),
+                bytes: Number(chunk.chunkLength),
+            })),
+        );
     }
 
     /**
@@ -918,7 +928,7 @@ export class McapStrategy extends DecodingStrategy {
         chunk: McapChunkIndex,
     ): Promise<Uint8Array | undefined> {
         const httpReader = this.httpReader;
-        const decompress = DECOMPRESS[chunk.compression];
+        const decompress = decompressorFor(chunk.compression);
         if (!httpReader || !decompress) return undefined;
 
         const record = await httpReader.readExact(
@@ -940,6 +950,7 @@ export class McapStrategy extends DecodingStrategy {
         if (recordsStart + recordsSize > record.length) return undefined;
         const data = decompress(
             record.subarray(recordsStart, recordsStart + recordsSize),
+            Number(chunk.uncompressedSize),
         );
         if (data.length !== Number(chunk.uncompressedSize)) return undefined;
         return data;

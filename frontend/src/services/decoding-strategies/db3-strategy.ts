@@ -2,15 +2,18 @@ import { parse as parseMessageDefer } from '@foxglove/rosmsg';
 import { MessageReader as Ros1Reader } from '@foxglove/rosmsg-serialization';
 import { MessageReader as CdrReader } from '@foxglove/rosmsg2-serialization';
 import { UniversalHttpReader } from '@kleinkram/shared';
-import * as fzstd from 'fzstd';
-import lz4js from 'lz4js';
 import initSqlJs, { Database } from 'sql.js';
+// The WebAssembly that matches the installed sql.js. A copy from a CDN
+// pinned to another version fails to instantiate against this glue.
+import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
+import { decompressFrame } from './decompress';
 import { DecodingStrategy } from './index';
 import {
     LogMessage,
-    MainThreadBudget,
+    MessageSink,
     ReadOptions,
     STANDARD_ROS2_DEFINITIONS,
+    YieldBudget,
 } from './utilities';
 
 export class Db3Strategy extends DecodingStrategy {
@@ -27,8 +30,9 @@ export class Db3Strategy extends DecodingStrategy {
         const SQL = await initSqlJs({
             // sql.js default; required by @types/sql.js >= 1.16
             useOldExtensionFunctions: true,
-            locateFile: () =>
-                'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.wasm',
+            // The WebAssembly of the installed sql.js; another version's
+            // does not match its glue code.
+            locateFile: () => sqlWasmUrl,
         });
 
         this.db = new SQL.Database(data);
@@ -131,8 +135,8 @@ export class Db3Strategy extends DecodingStrategy {
         query += ` ORDER BY timestamp ASC LIMIT ${limit * keepEvery}`;
 
         const stmt = this.db.prepare(query);
-        const msgs: LogMessage[] = [];
-        const budget = new MainThreadBudget();
+        const msgs = new MessageSink(onMessage);
+        const budget = new YieldBudget();
         let seen = 0;
 
         while (stmt.step()) {
@@ -150,10 +154,8 @@ export class Db3Strategy extends DecodingStrategy {
             if (compressionCol && row.compression) {
                 const compression = row.compression as string;
                 try {
-                    if (compression === 'zstd') {
-                        data = fzstd.decompress(data);
-                    } else if (compression === 'lz4') {
-                        data = lz4js.decompress(data);
+                    if (compression === 'zstd' || compression === 'lz4') {
+                        data = decompressFrame(compression, data);
                     }
                 } catch (error) {
                     console.warn(
@@ -170,12 +172,11 @@ export class Db3Strategy extends DecodingStrategy {
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const messageObject = { logTime: timestamp, index, data: decoded };
-            if (onMessage) onMessage(messageObject);
             msgs.push(messageObject);
             await budget.yieldIfNeeded();
         }
         stmt.free();
-        return msgs;
+        return msgs.collected;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
