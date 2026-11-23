@@ -1,41 +1,177 @@
 export const PREVIEW_WIDTH = 600;
+export const PREVIEW_HEIGHT = 400;
+
+/** Frames wider than this ratio are fitted to the height and scroll. */
+export const ULTRA_WIDE_RATIO = 2.5;
+
+/**
+ * Size a frame is drawn at: scaled down to fit the preview, never up.
+ * Ultra-wide frames (panoramas) only fit the height.
+ */
+export function previewSize(
+    width: number,
+    height: number,
+): { width: number; height: number } {
+    if (width <= 0 || height <= 0) return { width, height };
+    const fit =
+        width / height > ULTRA_WIDE_RATIO
+            ? PREVIEW_HEIGHT / height
+            : Math.min(PREVIEW_WIDTH / width, PREVIEW_HEIGHT / height);
+    const scale = Math.min(1, fit);
+    return {
+        width: Math.round(width * scale),
+        height: Math.round(height * scale),
+    };
+}
+
+/** Callbacks of one draw request. */
+export interface DrawCallbacks {
+    /** The frame is on the canvas. */
+    onRender?: () => void;
+    onError?: (error: Error) => void;
+    /**
+     * Whether this request is still the one to show. A decode that finishes
+     * after a newer frame was requested is dropped instead of drawn, so a
+     * slow frame never overwrites a later one.
+     */
+    isCurrent?: () => boolean;
+    /** The request was dropped because a newer one replaced it. */
+    onStale?: () => void;
+}
+
+/**
+ * Decodes the compressed frames of one image stream, off the main thread and
+ * a few frames ahead.
+ *
+ * `createImageBitmap` decodes in the background, where an `<img>` decodes on
+ * the main thread the moment it is drawn -- for a 1920x1280 JPEG that is a
+ * dropped frame or two per frame shown. Once the first frame's size is known,
+ * the next ones are decoded straight at preview size, which is also what
+ * keeps the decoded frames held ahead small.
+ */
+export class FrameDecoder {
+    private readonly cache = new Map<Uint8Array, Promise<ImageBitmap>>();
+    /** Width the frames of this stream are decoded at, once known. */
+    private resizeWidth: number | undefined;
+
+    constructor(private readonly capacity = 8) {}
+
+    static get supported(): boolean {
+        return typeof createImageBitmap === 'function';
+    }
+
+    decode(bytes: Uint8Array): Promise<ImageBitmap> {
+        const cached = this.cache.get(bytes);
+        if (cached) {
+            // Refresh its place in the LRU order
+            this.cache.delete(bytes);
+            this.cache.set(bytes, cached);
+            return cached;
+        }
+
+        const options: ImageBitmapOptions | undefined =
+            this.resizeWidth === undefined
+                ? undefined
+                : { resizeWidth: this.resizeWidth, resizeQuality: 'medium' };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const blob = new Blob([bytes as any]);
+        const promise = createImageBitmap(blob, options).then((bitmap) => {
+            if (this.resizeWidth === undefined) {
+                const size = previewSize(bitmap.width, bitmap.height);
+                if (size.width < bitmap.width) this.resizeWidth = size.width;
+            }
+            return bitmap;
+        });
+        promise.catch(() => {
+            this.cache.delete(bytes);
+        });
+
+        this.cache.set(bytes, promise);
+        // Evicted bitmaps are left to the garbage collector rather than
+        // closed: one may still be on its way to the canvas.
+        while (this.cache.size > this.capacity) {
+            const oldest = this.cache.keys().next().value;
+            if (oldest === undefined) break;
+            this.cache.delete(oldest);
+        }
+        return promise;
+    }
+
+    /** Start decoding frames that are about to be shown. */
+    prefetch(frames: Uint8Array[]): void {
+        for (const bytes of frames.slice(0, this.capacity - 1)) {
+            if (!this.cache.has(bytes)) {
+                this.decode(bytes).catch(() => {
+                    // Reported when the frame is actually drawn
+                });
+            }
+        }
+    }
+}
+
+const decodeFailed = (): Error =>
+    new Error(
+        'The browser could not decode this compressed image (unsupported or corrupt format)',
+    );
 
 export function renderCompressed(
     context: CanvasRenderingContext2D,
     bytes: Uint8Array,
     canvas: HTMLCanvasElement,
-    onRender?: () => void,
-    onError?: (error: Error) => void,
+    callbacks: DrawCallbacks = {},
+    decoder?: FrameDecoder,
 ): void {
+    const { onRender, onError, isCurrent, onStale } = callbacks;
+
+    const drawFrame = (
+        image: CanvasImageSource,
+        width: number,
+        height: number,
+    ): void => {
+        if (isCurrent && !isCurrent()) {
+            onStale?.();
+            return;
+        }
+        const size = previewSize(width, height);
+        if (canvas.width !== size.width || canvas.height !== size.height) {
+            canvas.width = size.width;
+            canvas.height = size.height;
+        }
+        context.drawImage(image, 0, 0, size.width, size.height);
+        onRender?.();
+    };
+
+    if (decoder && FrameDecoder.supported) {
+        void (async (): Promise<void> => {
+            let bitmap: ImageBitmap;
+            try {
+                bitmap = await decoder.decode(bytes);
+            } catch {
+                if (isCurrent && !isCurrent()) onStale?.();
+                else onError?.(decodeFailed());
+                return;
+            }
+            drawFrame(bitmap, bitmap.width, bitmap.height);
+        })();
+        return;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const blob = new Blob([bytes as any]);
     const url = URL.createObjectURL(blob);
     const img = new Image();
 
     img.addEventListener('load', () => {
-        const scale = img.width > PREVIEW_WIDTH ? PREVIEW_WIDTH / img.width : 1;
-        const targetW = Math.floor(img.width * scale);
-        const targetH = Math.floor(img.height * scale);
-
-        if (canvas.width !== targetW || canvas.height !== targetH) {
-            canvas.width = targetW;
-            canvas.height = targetH;
-        }
-
-        context.drawImage(img, 0, 0, targetW, targetH);
         URL.revokeObjectURL(url);
-        onRender?.();
+        drawFrame(img, img.width, img.height);
     });
 
     // eslint-disable-next-line unicorn/prefer-add-event-listener
     img.onerror = (): void => {
         URL.revokeObjectURL(url);
         console.error('Failed to decode compressed image blob');
-        onError?.(
-            new Error(
-                'The browser could not decode this compressed image (unsupported or corrupt format)',
-            ),
-        );
+        if (isCurrent && !isCurrent()) onStale?.();
+        else onError?.(decodeFailed());
     };
 
     img.src = url;

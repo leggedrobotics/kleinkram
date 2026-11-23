@@ -141,6 +141,9 @@ export class Db3Strategy extends DecodingStrategy {
             if (seen++ % keepEvery !== 0) continue;
             const row = stmt.getAsObject();
             const timestamp = BigInt(row.timestamp_str as string);
+            // Rows come in time order from the topic's start, so the count
+            // is the position unless the read started part-way
+            const index = startTime === undefined ? seen - 1 : undefined;
             let data = row.data as Uint8Array;
 
             // Handle decompression
@@ -166,7 +169,7 @@ export class Db3Strategy extends DecodingStrategy {
                 data;
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const messageObject = { logTime: timestamp, data: decoded };
+            const messageObject = { logTime: timestamp, index, data: decoded };
             if (onMessage) onMessage(messageObject);
             msgs.push(messageObject);
             await budget.yieldIfNeeded();
