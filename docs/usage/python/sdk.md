@@ -229,7 +229,18 @@ kleinkram.update_project(project_id="...", description="Updated Description")
 
 # Update a mission's metadata
 kleinkram.update_mission(mission_id="...", metadata={"status": "completed"})
+
+# Rename a file
+kleinkram.update_file(file_id="...", new_name="run_2.bag")
+
+# Change a file's recording date
+from datetime import datetime, timezone
+kleinkram.update_file(file_id="...", date=datetime(2025, 6, 1, 8, 30, tzinfo=timezone.utc))
 ```
+
+`update_file` only changes the arguments you pass; everything else stays as it is. It does not re-process the file:
+the stored content and the extracted topics stay unchanged. To move files to another mission, use `move_files` (see
+below).
 
 ### Moving and Copying Files
 
