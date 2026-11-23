@@ -159,7 +159,7 @@
                                         loadingState[props.row.name] || false,
                                     )
                                 "
-                                :sample-stride="getSmartLoad(props.row).stride"
+                                :sample-stride="sampleStrideOf(props.row)"
                                 :can-refine="canRefineImage(props.row)"
                                 :messages="previews[props.row.name] || []"
                                 :is-loading="
@@ -409,6 +409,13 @@ const IMAGE_BYTE_BUDGET = 400 * 1024 * 1024;
 /** Refinement level per image topic: each level halves the stride. */
 const imageRefinement = ref<Record<string, number>>({});
 
+/**
+ * Stride of the frames actually requested per image topic. The plan is
+ * recomputed as the frame size becomes known, so it can differ from what
+ * was loaded; the viewer and the refinement go by what was loaded.
+ */
+const loadedImageStride = ref<Record<string, number>>({});
+
 const PLOT_TYPES = new Set<PreviewType>([
     PreviewType.TWIST,
     PreviewType.TEMPERATURE,
@@ -530,10 +537,14 @@ const getImageLoad = (row: TopicRow): LoadPlan => {
 /** Whether an image topic can still be refined with a smaller stride. */
 const canRefineImage = (row: TopicRow): boolean => {
     const level = imageRefinement.value[row.name] ?? 0;
-    return (
-        imageStrideForLevel(row, level + 1) < imageStrideForLevel(row, level)
-    );
+    const loaded =
+        loadedImageStride.value[row.name] ?? imageStrideForLevel(row, level);
+    return imageStrideForLevel(row, level + 1) < loaded;
 };
+
+/** Every n-th message the viewer holds (1 = all of them). */
+const sampleStrideOf = (row: TopicRow): number =>
+    loadedImageStride.value[row.name] ?? getSmartLoad(row).stride;
 
 const getSmartLoad = (row: TopicRow): LoadPlan => {
     const type = detectPreviewType(row.type);
@@ -658,6 +669,9 @@ const loadData = (
 
 const loadSmart = (row: TopicRow): void => {
     const plan = getSmartLoad(row);
+    if (detectPreviewType(row.type) === PreviewType.IMAGE) {
+        loadedImageStride.value[row.name] = plan.stride;
+    }
     // Plot viewers show the whole recording: load it coarse-to-fine so the
     // full time range is visible early and refines as data streams in. Logs
     // opt out of that and stream in reading order instead.
@@ -682,6 +696,7 @@ const loadMore = (topicName: string): void => {
         imageRefinement.value[row.name] =
             (imageRefinement.value[row.name] ?? 0) + 1;
         const plan = getImageLoad(row);
+        loadedImageStride.value[row.name] = plan.stride;
         emit('load-preview', row.name, {
             limit: plan.limit,
             append: false,
