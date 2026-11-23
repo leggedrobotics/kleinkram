@@ -77,11 +77,11 @@ export interface RecordingStorage {
 /** A chunk this many times longer than the median counts as a pause. */
 const PAUSE_FACTOR = 4;
 /** Shorter stretches are never reported, whatever the chunks look like. */
-const MIN_NOTABLE_SECONDS = 2;
+export const MIN_NOTABLE_SECONDS = 2;
 /** Too few chunks to tell an unusual one from a usual one. */
 const MIN_CHUNKS_FOR_PAUSES = 8;
 /** Message periods a topic may stay silent before that counts as a gap. */
-const SILENT_PERIODS = 3;
+export const SILENT_PERIODS = 3;
 /**
  * Chunks a topic has to appear in to count as a stream rather than a one-shot
  * topic. Only a stream has gaps and a frequency.
@@ -139,7 +139,10 @@ export function mergeSpans(spans: TimeSpan[], tolerance: number): TimeSpan[] {
 }
 
 /** The stretches of `[0, duration]` that `covered` leaves out. */
-function uncovered(covered: TimeSpan[], duration: number): TimeSpan[] {
+export function uncoveredSpans(
+    covered: TimeSpan[],
+    duration: number,
+): TimeSpan[] {
     const holes: TimeSpan[] = [];
     let cursor = 0;
     for (const span of covered) {
@@ -289,7 +292,7 @@ export function computeRecordingCoverage(
         topics[topic] = {
             covered,
             gaps: isStream
-                ? uncovered(covered, durationSeconds).filter(
+                ? uncoveredSpans(covered, durationSeconds).filter(
                       (hole) => hole.end - hole.start > tolerance,
                   )
                 : [],
