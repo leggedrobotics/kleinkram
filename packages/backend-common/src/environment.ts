@@ -121,13 +121,6 @@ export default {
     },
 
     /**
-     * @returns glob describing where typeorm entities are found
-     * @example dist/entities/*.entities.js
-     */
-    get ENTITIES(): string {
-        return asString('ENTITIES');
-    },
-    /**
      * @returns backend port for lambda functions
      */
     get SERVER_PORT(): number {
@@ -155,14 +148,6 @@ export default {
 
     get S3_ENDPOINT_INTERNAL(): string | undefined {
         return asOptionalString('S3_ENDPOINT_INTERNAL');
-    },
-
-    get S3_USER(): string {
-        return asString('S3_USER');
-    },
-
-    get S3_PASSWORD(): string {
-        return asString('S3_PASSWORD');
     },
 
     get GOOGLE_CLIENT_ID(): string | undefined {

@@ -36,7 +36,6 @@ services:
             DEVBUILD: 'false'
             REDIS_HOST: redis
             DB_HOST: postgres
-            DATA_SOURCE_NAME: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_DATABASE}?sslmode=disable
 
         depends_on:
             - postgres
@@ -133,7 +132,6 @@ services:
             - .env
         environment:
             DB_HOST: postgres
-            DATA_SOURCE_NAME: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_DATABASE}?sslmode=disable
             REDIS_HOST: redis
             REDIS_PORT: 6379
         networks:
