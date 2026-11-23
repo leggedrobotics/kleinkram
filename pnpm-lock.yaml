@@ -466,6 +466,15 @@ importers:
       '@foxglove/rosmsg2-serialization':
         specifier: ^3.1.2
         version: 3.1.2
+      '@foxglove/wasm-bz2':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@foxglove/wasm-lz4':
+        specifier: ^1.0.2
+        version: 1.0.2
+      '@foxglove/wasm-zstd':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@kleinkram/api-dto':
         specifier: workspace:*
         version: link:../packages/api-dto
@@ -484,9 +493,6 @@ importers:
       '@tanstack/vue-query':
         specifier: ^5.107.1
         version: 5.107.1(vue@3.5.45(typescript@6.0.3))
-      '@types/lz4js':
-        specifier: ^0.2.2
-        version: 0.2.2
       axios:
         specifier: ^1.21.1
         version: 1.21.1
@@ -505,18 +511,12 @@ importers:
       echarts:
         specifier: ^6.1.0
         version: 6.1.0
-      fzstd:
-        specifier: ^0.1.1
-        version: 0.1.1
       js-yaml:
         specifier: ^5.5.0
         version: 5.5.0
       jwt-decode:
         specifier: ^4.0.0
         version: 4.0.0
-      lz4js:
-        specifier: ^0.2.0
-        version: 0.2.0
       markdown-it:
         specifier: ^15.0.3
         version: 15.0.3
@@ -3538,9 +3538,6 @@ packages:
   '@types/luxon@3.7.6':
     resolution: {integrity: sha512-6KSjliQAXK8ZLgFQO4B7iE4Rpf/B3rItzCFuXezBY/XIAGxOdLd7vRNK9/StRPwiS/yJsVbB7HKpW46B8tcEuQ==}
 
-  '@types/lz4js@0.2.2':
-    resolution: {integrity: sha512-pqXfoJ2AwllcLTf1Nia0+HT1KHj8z4wWo3bBP6vn7Aen5ySywBqrh/u1TyBwWxuKDS+mPzVHkPbHivqZEfk6pA==}
-
   '@types/markdown-it@14.2.0':
     resolution: {integrity: sha512-NoQ2yGlLWj4wpxMs+TYmRKk3thDrQ97agr7sFqfLsAlvoS8SNQuTrlObhFqG9iugdTtgOE9jpJ6FNM4ZGsa5xQ==}
 
@@ -5641,9 +5638,6 @@ packages:
     resolution: {integrity: sha512-939eZS4gJ3htTHAldmyyuzlrD58P03fHG49v2JfFXbV6OhvZKRC9j2yAtdHw/zrp2zXHuv05zMIy40F0ge7spA==}
     engines: {node: '>=18'}
 
-  fzstd@0.1.1:
-    resolution: {integrity: sha512-dkuVSOKKwh3eas5VkJy1AW1vFpet8TA/fGmVA5krThl8YcOVE/8ZIoEA1+U1vEn5ckxxhLirSdY837azmbaNHA==}
-
   gaxios@8.3.3:
     resolution: {integrity: sha512-zqPbbtW5bAOZ8BRjS7bxj5VG7PBY5PwKRxpku9NplLqAPmYMoXExL1KOdaK5fHvwRETu3bPplLEsFGDdUUlrpw==}
     engines: {node: '>=22'}
@@ -6554,9 +6548,6 @@ packages:
   luxon@3.7.2:
     resolution: {integrity: sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==}
     engines: {node: '>=12'}
-
-  lz4js@0.2.0:
-    resolution: {integrity: sha512-gY2Ia9Lm7Ep8qMiuGRhvUq0Q7qUereeldZPP1PMEJxPtEWHJLqw9pgX68oHajBH0nzJK4MaZEA/YNV3jT8u8Bg==}
 
   magic-string-ast@1.0.3:
     resolution: {integrity: sha512-CvkkH1i81zl7mmb94DsRiFeG9V2fR2JeuK8yDgS8oiZSFa++wWLEgZ5ufEOyLHbvSbD1gTRKv9NdX69Rnvr9JA==}
@@ -11663,8 +11654,6 @@ snapshots:
 
   '@types/luxon@3.7.6': {}
 
-  '@types/lz4js@0.2.2': {}
-
   '@types/markdown-it@14.2.0':
     dependencies:
       '@types/linkify-it': 5.0.0
@@ -13997,8 +13986,6 @@ snapshots:
 
   function-timeout@1.0.2: {}
 
-  fzstd@0.1.1: {}
-
   gaxios@8.3.3:
     dependencies:
       extend: 3.0.2
@@ -15144,8 +15131,6 @@ snapshots:
       yallist: 3.1.1
 
   luxon@3.7.2: {}
-
-  lz4js@0.2.0: {}
 
   magic-string-ast@1.0.3:
     dependencies:

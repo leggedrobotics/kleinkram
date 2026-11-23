@@ -1,14 +1,23 @@
-import { UniversalHttpReader } from '@kleinkram/shared';
-import { markRaw, reactive, Ref, ref, shallowRef } from 'vue';
-import { DecodingStrategy } from '../services/decoding-strategies';
-import { Db3Strategy } from '../services/decoding-strategies/db3-strategy';
-import { McapStrategy } from '../services/decoding-strategies/mcap-strategy';
+import {
+    getCurrentScope,
+    markRaw,
+    onScopeDispose,
+    reactive,
+    Ref,
+    ref,
+    shallowRef,
+} from 'vue';
 import type {
     RecordingInsights,
     RecordingMetadata,
 } from '../services/decoding-strategies/recording-insights';
-import { RosbagStrategy } from '../services/decoding-strategies/rosbag-strategy';
-import type { ReadOptions } from '../services/decoding-strategies/utilities';
+import {
+    type LogMessage,
+    type SampleCostModel,
+    sampleCostOf,
+} from '../services/decoding-strategies/utilities';
+import { PreviewClient } from '../services/preview-worker/client';
+import type { WireReadOptions } from '../services/preview-worker/protocol';
 import { formatPayload } from './rosmsg-utilities.ts';
 
 export interface FetchOptions {
@@ -212,7 +221,19 @@ export function useRosmsgPreview(): {
 
     const topicErrors = reactive<Record<string, string | null>>({});
 
-    const strategy = shallowRef<DecodingStrategy | null>(null);
+    // Reading, decompressing and decoding the file all happen in a worker;
+    // this thread only receives decoded messages. Started on the first file.
+    let client: PreviewClient | undefined;
+    const getClient = (): PreviewClient => (client ??= new PreviewClient());
+    if (getCurrentScope()) {
+        onScopeDispose(() => {
+            client?.dispose();
+            client = undefined;
+        });
+    }
+    /** Counts `init` calls, so a slow one cannot replace a newer file. */
+    let generation = 0;
+    let costModels: Record<string, SampleCostModel | null> = {};
     const dbSchema = ref<string | null>(null);
     // Holds bigints and large maps that nothing mutates, so it is not made
     // deeply reactive.
@@ -221,13 +242,19 @@ export function useRosmsgPreview(): {
     const windowControllers = new Map<string, AbortController>();
     const sampleCosts = new Map<string, number | undefined>();
 
+    // Priced here from the model the worker sent when the file opened, so
+    // the topic table can search strides synchronously.
     function sampleCost(topicName: string, stride: number): number | undefined {
-        if (!strategy.value) return undefined;
+        if (!isReaderReady.value) return undefined;
+        const model = costModels[topicName];
+        if (!model) return undefined;
         const key = `${topicName}\u0000${String(stride)}`;
-        if (!sampleCosts.has(key)) {
-            sampleCosts.set(key, strategy.value.sampleCost(topicName, stride));
+        let cost = sampleCosts.get(key);
+        if (cost === undefined) {
+            cost = sampleCostOf(model, stride);
+            sampleCosts.set(key, cost);
         }
-        return sampleCosts.get(key);
+        return cost;
     }
 
     function cancelTopic(topicName: string): void {
@@ -242,13 +269,15 @@ export function useRosmsgPreview(): {
     }
 
     function reset(): void {
+        // Whatever file is still opening is not wanted any more
+        generation++;
         // Readiness belongs to the file that was loaded, so it has to clear
         // too: callers use it to decide whether a preview still needs loading.
         isReaderReady.value = false;
         readerError.value = null;
         dbSchema.value = null;
         insights.value = null;
-        strategy.value = null;
+        costModels = {};
         for (const controller of [
             ...abortControllers.values(),
             ...windowControllers.values(),
@@ -276,30 +305,19 @@ export function useRosmsgPreview(): {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         for (const k of Object.keys(topicErrors)) delete topicErrors[k];
 
+        const current = ++generation;
         try {
-            const httpReader = new UniversalHttpReader(url);
-            await httpReader.init();
-
-            let impl: DecodingStrategy;
-            if (type === 'mcap') impl = new McapStrategy();
-            else if (type === 'db3') {
-                impl = new Db3Strategy();
-                await impl.init(httpReader);
-                dbSchema.value = impl.getSchema();
-            } else impl = new RosbagStrategy();
-
-            if (type !== 'db3') {
-                await impl.init(httpReader);
-            }
-
-            strategy.value = impl;
-            insights.value = impl.getInsights();
+            const opened = await getClient().open({ url, kind: type });
+            if (current !== generation) return;
+            if (type === 'db3') dbSchema.value = opened.schema;
+            costModels = opened.sampleCostModels;
+            insights.value = opened.insights;
             isReaderReady.value = true;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
+        } catch (error: unknown) {
+            if (current !== generation) return;
             console.error('Preview init failed:', error);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            readerError.value = error.message;
+            readerError.value =
+                error instanceof Error ? error.message : String(error);
         }
     }
 
@@ -311,7 +329,7 @@ export function useRosmsgPreview(): {
         topicName: string,
         options?: FetchOptions,
     ): Promise<void> {
-        if (!strategy.value) return;
+        if (!client || !isReaderReady.value) return;
 
         // Cancel any existing request for this topic
         cancelTopic(topicName);
@@ -327,7 +345,7 @@ export function useRosmsgPreview(): {
         const stride = options?.stride ?? 1;
         const progressive = options?.progressive ?? false;
         const merge = options?.merge ?? false;
-        const readOptions: ReadOptions = { stride, progressive };
+        const readOptions: WireReadOptions = { stride, progressive };
         if (options?.totalMessages !== undefined) {
             readOptions.totalMessages = options.totalMessages;
         }
@@ -350,14 +368,12 @@ export function useRosmsgPreview(): {
         }
 
         // When merging, do not decode messages that are already loaded
-        const loadedTimes = merge
-            ? new Set<bigint>(
-                  (topicPreviews[topicName] ?? []).map(
-                      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
-                      (message) => message.logTime,
-                  ),
-              )
-            : undefined;
+        if (merge) {
+            readOptions.skipTimes = BigInt64Array.from(
+                (topicPreviews[topicName] ?? []) as TimedMessage[],
+                (message) => message.logTime,
+            );
+        }
 
         const batcher = createMessageBatcher(
             (batch) => {
@@ -372,24 +388,25 @@ export function useRosmsgPreview(): {
         );
 
         try {
-            // We ignore the return value (full array) because we populate
-            // the reactive array via the callback for immediate UI feedback.
-            await strategy.value.getMessages(
-                topicName,
-                limit,
-                (message) => {
+            // Messages arrive in batches and populate the reactive array as
+            // they come, for immediate UI feedback.
+            await client.read(
+                startTime === undefined
+                    ? { topic: topicName, limit, options: readOptions }
+                    : {
+                          topic: topicName,
+                          limit,
+                          startTime,
+                          options: readOptions,
+                      },
+                (messages) => {
                     if (controller.signal.aborted) return;
                     // Use markRaw to prevent deep reactivity overhead
-                    batcher.add(markRaw(message));
+                    for (const message of messages) {
+                        batcher.add(markRaw(message));
+                    }
                 },
                 controller.signal,
-                startTime,
-                loadedTimes
-                    ? {
-                          ...readOptions,
-                          skip: (logTime): boolean => loadedTimes.has(logTime),
-                      }
-                    : readOptions,
             );
         } catch (error: unknown) {
             if (controller.signal.aborted) return; // Ignore abort errors
@@ -418,7 +435,7 @@ export function useRosmsgPreview(): {
         until: bigint,
         playhead: bigint,
     ): Promise<void> {
-        if (!strategy.value) return;
+        if (!client || !isReaderReady.value) return;
         windowControllers.get(topicName)?.abort();
         const controller = new AbortController();
         windowControllers.set(topicName, controller);
@@ -433,7 +450,6 @@ export function useRosmsgPreview(): {
                 (message.logTime >= keepFrom && message.logTime < until),
         );
         if (kept.length !== current.length) topicPreviews[topicName] = kept;
-        const loadedTimes = new Set(kept.map((message) => message.logTime));
 
         const batcher = createMessageBatcher(
             (batch) => {
@@ -448,19 +464,25 @@ export function useRosmsgPreview(): {
         );
 
         try {
-            await strategy.value.getMessages(
-                topicName,
-                Number.MAX_SAFE_INTEGER,
-                (message) => {
+            await client.read(
+                {
+                    topic: topicName,
+                    limit: Number.MAX_SAFE_INTEGER,
+                    options: {
+                        window: { start: from, end: until },
+                        skipTimes: BigInt64Array.from(
+                            kept,
+                            (message) => message.logTime,
+                        ),
+                    },
+                },
+                (messages: LogMessage[]) => {
                     if (controller.signal.aborted) return;
-                    batcher.add(markRaw({ ...message, dense: true }));
+                    for (const message of messages) {
+                        batcher.add(markRaw({ ...message, dense: true }));
+                    }
                 },
                 controller.signal,
-                undefined,
-                {
-                    window: { start: from, end: until },
-                    skip: (logTime): boolean => loadedTimes.has(logTime),
-                },
             );
         } catch (error: unknown) {
             // The sample stays usable, playback just shows fewer frames
@@ -486,9 +508,9 @@ export function useRosmsgPreview(): {
         dbSchema,
         insights,
         readAttachment: (index: number): Promise<Uint8Array | undefined> =>
-            strategy.value?.readAttachment(index) ?? Promise.resolve(undefined),
+            client?.readAttachment(index) ?? Promise.resolve(undefined),
         readMetadata: (): Promise<RecordingMetadata[]> =>
-            strategy.value?.readMetadata() ?? Promise.resolve([]),
+            client?.readMetadata() ?? Promise.resolve([]),
         init,
         fetchTopicMessages,
         formatPayload,

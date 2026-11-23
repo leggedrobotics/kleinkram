@@ -2,20 +2,23 @@ import { Bag } from '@foxglove/rosbag';
 import { parse as parseMessageDefinition } from '@foxglove/rosmsg';
 import { MessageReader } from '@foxglove/rosmsg-serialization';
 import { UniversalHttpReader } from '@kleinkram/shared';
-import * as fzstd from 'fzstd';
-import lz4js from 'lz4js';
+import { DECOMPRESSORS } from './decompress';
 import { mapInOrder } from './fetch-pool';
 import { DecodingStrategy } from './index';
 import {
     coarseToFineOrder,
     LogMessage,
-    MainThreadBudget,
+    MessageSink,
     ReadOptions,
+    SampleCostModel,
+    sampleCostModel,
+    YieldBudget,
 } from './utilities';
 
+/** ROS 1 bags compress chunks with bz2 or lz4. */
 const decompress = {
-    zstd: (buffer: Uint8Array): Uint8Array => fzstd.decompress(buffer),
-    lz4: (buffer: Uint8Array): Uint8Array => lz4js.decompress(buffer),
+    bz2: DECOMPRESSORS.bz2,
+    lz4: DECOMPRESSORS.lz4,
 };
 
 /**
@@ -137,17 +140,34 @@ export class RosbagStrategy extends DecodingStrategy {
         );
     }
 
-    override sampleCost(topic: string, stride: number): number | undefined {
-        if (!this.bag) return undefined;
-        const keepEvery = Math.max(1, Math.floor(stride));
-        let bytes = 0;
-        for (const { index } of this.selectChunks(
-            this.connectionIdsOf(topic),
-            keepEvery,
-        )) {
-            bytes += Number(this.chunkByteLength(index));
+    override sampleCostModels(): Record<string, SampleCostModel> {
+        const bag = this.bag;
+        if (!bag) return {};
+        const models: Record<string, SampleCostModel> = {};
+        const topics = new Set(
+            [...bag.connections.values()].map((connection) => connection.topic),
+        );
+        for (const topic of topics) {
+            // Every chunk holding the topic, as a stride of 1 selects them.
+            models[topic] = sampleCostModel(
+                this.selectChunks(this.connectionIdsOf(topic), 1).map(
+                    ({ chunk, index, offset }) => {
+                        let count = 0;
+                        for (const c of chunk.connections) {
+                            if (bag.connections.get(c.conn)?.topic === topic) {
+                                count += c.count;
+                            }
+                        }
+                        return {
+                            first: offset,
+                            next: offset + count,
+                            bytes: Number(this.chunkByteLength(index)),
+                        };
+                    },
+                ),
+            );
         }
-        return bytes;
+        return models;
     }
 
     /**
@@ -168,8 +188,8 @@ export class RosbagStrategy extends DecodingStrategy {
         if (!this.bag || !this.httpReader) return [];
         const bag = this.bag;
         const hardLimit = Math.ceil(limit * 1.1) + 1;
-        const msgs: LogMessage[] = [];
-        const budget = new MainThreadBudget();
+        const msgs = new MessageSink(onMessage);
+        const budget = new YieldBudget();
 
         const connections = [...bag.connections.values()].filter(
             (connection) => connection.topic === topic,
@@ -236,12 +256,11 @@ export class RosbagStrategy extends DecodingStrategy {
                         ? reader.readMessage(record.data)
                         : record.data,
                 };
-                if (onMessage) onMessage(messageObject);
                 msgs.push(messageObject);
                 await budget.yieldIfNeeded();
             }
         }
-        return msgs;
+        return msgs.collected;
     }
 
     async getMessages(
@@ -270,8 +289,8 @@ export class RosbagStrategy extends DecodingStrategy {
             );
         }
 
-        const msgs: LogMessage[] = [];
-        const budget = new MainThreadBudget();
+        const msgs = new MessageSink(onMessage);
+        const budget = new YieldBudget();
         let seen = 0;
 
         let start: { sec: number; nsec: number } | undefined;
@@ -309,10 +328,9 @@ export class RosbagStrategy extends DecodingStrategy {
                 logTime: toNano(result.timestamp),
                 data: result.message,
             };
-            if (onMessage) onMessage(messageObject);
             msgs.push(messageObject);
             await budget.yieldIfNeeded();
         }
-        return msgs;
+        return msgs.collected;
     }
 }
