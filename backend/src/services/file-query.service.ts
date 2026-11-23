@@ -960,7 +960,7 @@ export class FileQueryService {
                 `(metadataType.uuid = :${uuidParameter} AND metadata.${column} = :${valueParameter})`,
             );
             metadataParameters[uuidParameter] = uuid;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
             metadataParameters[valueParameter] = processedValue;
 
             validMetadataCount++;
