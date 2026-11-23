@@ -121,6 +121,21 @@ export default {
     },
 
     /**
+     * Whether the queue consumer runs the hourly backfill of per-topic
+     * statistics (first and last seen, coverage, frequency) for files ingested
+     * before they were stored. Off unless set to `true`, so it can be rolled
+     * out one deployment at a time.
+     *
+     * @returns whether the topic stats backfill cron is enabled
+     */
+    get TOPIC_STATS_BACKFILL(): boolean {
+        if (asOptionalString('TOPIC_STATS_BACKFILL') === undefined) {
+            return false;
+        }
+        return asBoolean('TOPIC_STATS_BACKFILL');
+    },
+
+    /**
      * @returns glob describing where typeorm entities are found
      * @example dist/entities/*.entities.js
      */

@@ -6,7 +6,7 @@ import {
     chunkDataStart,
     coalesce,
     computeRecordingCoverage,
-    liveTopicStats,
+    liveFileTopicStats,
     parseMessageIndexes,
     parseMessageRecord,
     planChunk,
@@ -205,7 +205,7 @@ export class McapStrategy extends DecodingStrategy {
             library: reader.header.library,
             storage: summarizeStorage(chunks),
             coverage,
-            topicStats: liveTopicStats(coverage, chunks, channels),
+            topicStats: liveFileTopicStats(coverage, chunks, channels),
             schemasByTopic,
             attachments: reader.attachmentIndexes.map((attachment) => ({
                 name: attachment.name,

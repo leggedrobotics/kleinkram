@@ -5,6 +5,16 @@
 
 body {
     overflow-y: scroll;
+
+    /*
+     * Fixed-width (tabular) digits everywhere. Inter's default figures are
+     * proportional: a "1" is narrower than an "8", so a value that ticks
+     * (playback time, frame counter, upload progress, timestamps) changes
+     * width on every update and pushes its neighbours around, and numbers
+     * stacked in a column do not line up. Inter ships the `tnum` feature,
+     * so this costs nothing but a slightly looser "1" in prose.
+     */
+    font-variant-numeric: tabular-nums;
 }
 
 // Phones: clip horizontal overflow on the viewport rather than on
@@ -286,17 +296,6 @@ label {
 
 .q-table .q-checkbox__inner {
     font-size: 32px;
-}
-
-/*
- * Numeric table cells. Right alignment only pays off if the digits are also
- * fixed-width: with the default proportional figures a "1" is narrower than an
- * "8", so the decimal points drift from row to row and the column reads ragged
- * even though its right edge is flush.
- */
-.kk-num {
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: 'tnum' 1;
 }
 
 .q-table .selected {

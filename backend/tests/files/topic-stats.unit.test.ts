@@ -1,11 +1,10 @@
 import {
     computeRecordingCoverage,
-    liveTopicStats,
-    meanRate,
+    liveFileTopicStats,
     rebaseSpans,
     RecordingChannel,
     RecordingChunk,
-    storedTopicStats,
+    storedFileTopicStats,
 } from '@kleinkram/shared';
 
 const SECOND = 1_000_000_000n;
@@ -45,7 +44,7 @@ const channels: RecordingChannel[] = [
 ];
 
 const live = (chunks: RecordingChunk[]) =>
-    liveTopicStats(
+    liveFileTopicStats(
         computeRecordingCoverage(chunks, channels),
         chunks,
         channels,
@@ -55,19 +54,7 @@ const live = (chunks: RecordingChunk[]) =>
 const at = (seconds: number): string =>
     new Date(START.getTime() + seconds * 1000).toISOString();
 
-describe('meanRate', () => {
-    test('should divide the count by the topic span, not the recording', () => {
-        expect(meanRate(200, 20, 80, 100)).toBe(10);
-    });
-
-    test('should have no rate for topics seen in fewer than 5 chunks', () => {
-        expect(meanRate(3, 4, 0, 4)).toBeUndefined();
-        expect(meanRate(undefined, 20, 0, 10)).toBeUndefined();
-        expect(meanRate(10, 5, 3, 3)).toBeUndefined();
-    });
-});
-
-describe('liveTopicStats', () => {
+describe('liveFileTopicStats', () => {
     test('should rate a late topic over its own span', () => {
         // /lidar only runs for the last 20 of 100 seconds.
         const stats = live(
@@ -101,11 +88,11 @@ describe('liveTopicStats', () => {
     });
 
     test('should be undefined without coverage', () => {
-        expect(liveTopicStats(undefined, [], channels)).toBeUndefined();
+        expect(liveFileTopicStats(undefined, [], channels)).toBeUndefined();
     });
 });
 
-describe('storedTopicStats', () => {
+describe('storedFileTopicStats', () => {
     const file = {
         recordingStartDate: START,
         durationSeconds: 100,
@@ -114,15 +101,15 @@ describe('storedTopicStats', () => {
 
     test('should wait until the file has been indexed for topic stats', () => {
         expect(
-            storedTopicStats({ ...file, topicStatsVersion: 0 }, []),
+            storedFileTopicStats({ ...file, topicStatsVersion: 0 }, []),
         ).toBeUndefined();
         expect(
-            storedTopicStats({ ...file, recordingStartDate: null }, []),
+            storedFileTopicStats({ ...file, recordingStartDate: null }, []),
         ).toBeUndefined();
     });
 
     test('should place stored spans on the recording time axis', () => {
-        const stats = storedTopicStats(file, [
+        const stats = storedFileTopicStats(file, [
             {
                 name: '/lidar',
                 frequency: 10,
@@ -147,7 +134,7 @@ describe('storedTopicStats', () => {
     });
 
     test('should report a dropout in the middle and nothing for one-shot topics', () => {
-        const stats = storedTopicStats(file, [
+        const stats = storedFileTopicStats(file, [
             {
                 name: '/imu',
                 frequency: 100,
@@ -161,7 +148,7 @@ describe('storedTopicStats', () => {
             },
             {
                 name: '/tf_static',
-                frequency: 0,
+                frequency: null,
                 firstSeen: at(0),
                 lastSeen: at(1),
                 chunkCount: 1,
@@ -176,8 +163,34 @@ describe('storedTopicStats', () => {
         });
     });
 
+    test('should show the stored rate as is, also for a file with few chunks', () => {
+        // In a file of fewer than 5 chunks the backend cannot tell a one-shot
+        // topic from a stream, so it stores a rate for a topic in 2 chunks.
+        const stats = storedFileTopicStats({ ...file, durationSeconds: 2 }, [
+            {
+                name: '/imu',
+                frequency: 100,
+                firstSeen: at(0),
+                lastSeen: at(2),
+                chunkCount: 2,
+                coverage: [[0, 2000]],
+            },
+            {
+                name: '/tf_static',
+                frequency: null,
+                firstSeen: at(0),
+                lastSeen: at(1),
+                chunkCount: 1,
+                coverage: [[0, 1000]],
+            },
+        ]);
+
+        expect(stats?.topics['/imu']?.meanHz).toBe(100);
+        expect(stats?.topics['/tf_static']?.meanHz).toBeUndefined();
+    });
+
     test('should leave out topics whose stats could not be read', () => {
-        const stats = storedTopicStats(file, [
+        const stats = storedFileTopicStats(file, [
             {
                 name: '/unindexed',
                 frequency: 0,

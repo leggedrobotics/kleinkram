@@ -10,13 +10,14 @@
  */
 import {
     mergeSpans,
-    MIN_CHUNKS_FOR_GAPS,
+    MIN_CHUNKS_FOR_STREAM,
     MIN_NOTABLE_SECONDS,
     RecordingChannel,
     RecordingChunk,
     RecordingCoverage,
     SILENT_PERIODS,
     TimeSpan,
+    topicFrequency,
     uncoveredSpans,
 } from './recording-insights';
 
@@ -27,9 +28,9 @@ export interface TopicStats {
     /** Chunks the topic appears in; undefined when unknown. */
     chunkCount: number | undefined;
     /**
-     * Messages divided by the topic's own span, `lastSeen − firstSeen`.
-     * Undefined for topics seen in fewer than {@link MIN_CHUNKS_FOR_GAPS}
-     * chunks: a latched or one-shot topic has no meaningful rate.
+     * Messages divided by the topic's own span, `lastSeen − firstSeen`, by
+     * the rules of {@link topicFrequency}. Undefined when the topic has no
+     * rate, a latched or one-shot topic for instance.
      */
     meanHz: number | undefined;
     /** Where the topic has data; empty when unknown. */
@@ -48,19 +49,6 @@ export interface FileTopicStats {
     topics: Record<string, TopicStats>;
 }
 
-/** Count ÷ span, for topics seen in enough chunks to have a rate at all. */
-export function meanRate(
-    count: number | undefined,
-    chunkCount: number | undefined,
-    firstSeen: number,
-    lastSeen: number,
-): number | undefined {
-    if (count === undefined || chunkCount === undefined) return undefined;
-    if (chunkCount < MIN_CHUNKS_FOR_GAPS) return undefined;
-    const span = lastSeen - firstSeen;
-    return span > 0 && count > 0 ? count / span : undefined;
-}
-
 /**
  * Topic statistics from the summary the file page reads anyway.
  *
@@ -68,7 +56,7 @@ export function meanRate(
  * chunks; its spans and gaps are kept as they are. Returns undefined when
  * coverage is unknown.
  */
-export function liveTopicStats(
+export function liveFileTopicStats(
     coverage: RecordingCoverage | undefined,
     chunks: RecordingChunk[],
     channels: RecordingChannel[],
@@ -77,11 +65,9 @@ export function liveTopicStats(
     const origin = coverage.startTime;
     const seconds = (time: bigint): number => Number(time - origin) / 1e9;
 
-    const topicOf = new Map(
-        channels.map((channel) => [channel.id, channel.topic]),
-    );
     const counts = new Map<string, number | undefined>();
     for (const channel of channels) {
+        // Several publishers of one topic record on a channel each.
         const known = counts.get(channel.topic);
         counts.set(
             channel.topic,
@@ -91,41 +77,17 @@ export function liveTopicStats(
         );
     }
 
-    const seen = new Map<string, { first: number; last: number; n: number }>();
-    for (const chunk of chunks) {
-        const topics = new Set<string>();
-        for (const id of chunk.channelIds) {
-            const topic = topicOf.get(id);
-            if (topic !== undefined) topics.add(topic);
-        }
-        const start = seconds(chunk.startTime);
-        const end = seconds(chunk.endTime);
-        for (const topic of topics) {
-            const entry = seen.get(topic);
-            if (entry) {
-                entry.first = Math.min(entry.first, start);
-                entry.last = Math.max(entry.last, end);
-                entry.n++;
-            } else {
-                seen.set(topic, { first: start, last: end, n: 1 });
-            }
-        }
-    }
-
     const topics: Record<string, TopicStats> = {};
     // Topics are only listed when every chunk has a message index.
     for (const [topic, topicCoverage] of Object.entries(coverage.topics)) {
-        const entry = seen.get(topic);
-        if (!entry) continue;
         topics[topic] = {
-            firstSeen: entry.first,
-            lastSeen: entry.last,
-            chunkCount: entry.n,
-            meanHz: meanRate(
+            firstSeen: seconds(topicCoverage.firstSeen),
+            lastSeen: seconds(topicCoverage.lastSeen),
+            chunkCount: topicCoverage.chunkCount,
+            meanHz: topicFrequency(
                 counts.get(topic),
-                entry.n,
-                entry.first,
-                entry.last,
+                topicCoverage,
+                chunks.length,
             ),
             covered: topicCoverage.covered,
             gaps: topicCoverage.gaps,
@@ -176,7 +138,8 @@ function storedGaps(
     chunkCount: number | undefined,
     meanHz: number | undefined,
 ): TimeSpan[] {
-    if (chunkCount === undefined || chunkCount < MIN_CHUNKS_FOR_GAPS) return [];
+    if (chunkCount === undefined || chunkCount < MIN_CHUNKS_FOR_STREAM)
+        return [];
     if (covered.length === 0) return [];
     const period = meanHz === undefined ? 0 : 1 / meanHz;
     const tolerance = Math.max(SILENT_PERIODS * period, MIN_NOTABLE_SECONDS);
@@ -194,7 +157,7 @@ function storedGaps(
  * every span is relative to. A topic whose statistics could not be read
  * (a chunk without a message index, say) is left out.
  */
-export function storedTopicStats(
+export function storedFileTopicStats(
     file: StoredFile,
     topics: StoredTopic[],
     pauses: TimeSpan[] = [],
@@ -214,12 +177,13 @@ export function storedTopicStats(
         durationSeconds = Math.max(durationSeconds, lastSeen);
 
         const chunkCount = topic.chunkCount ?? undefined;
-        const frequency = topic.frequency ?? 0;
+        // The backend applies the one-shot rule and stores null for a topic
+        // without a rate.
         const meanHz =
-            chunkCount !== undefined &&
-            chunkCount >= MIN_CHUNKS_FOR_GAPS &&
-            frequency > 0
-                ? frequency
+            topic.frequency !== null &&
+            topic.frequency !== undefined &&
+            topic.frequency > 0
+                ? topic.frequency
                 : undefined;
         const covered = (topic.coverage ?? [])
             .map(([start, end]) => ({ start: start / 1000, end: end / 1000 }))

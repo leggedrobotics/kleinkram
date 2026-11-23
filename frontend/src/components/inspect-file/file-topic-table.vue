@@ -78,7 +78,7 @@
                     >
                         <q-tooltip max-width="320px">
                             Messages ÷ time from first to last seen. — for
-                            topics in fewer than 5 chunks.
+                            one-shot topics.
                         </q-tooltip>
                     </q-icon>
                 </q-th>

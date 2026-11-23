@@ -60,6 +60,16 @@ export class FileEntity extends BaseEntity {
     @Column({ type: 'timestamp', nullable: true })
     recordingTimesCheckedAt?: Date | null;
 
+    /**
+     * Version of the per-topic statistics (first and last seen, chunk count,
+     * coverage, frequency) this file's topics were computed with. 0 means
+     * never. The topic stats backfill recomputes every file below the current
+     * version, see `TOPIC_STATS_VERSION`. A file whose index could not be read
+     * still gets the version, with the statistics left null.
+     */
+    @Column({ type: 'int', default: 0 })
+    topicStatsVersion!: number;
+
     @OneToMany(() => TopicEntity, (topic: TopicEntity) => topic.file)
     topics?: TopicEntity[];
 

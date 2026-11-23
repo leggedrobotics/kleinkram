@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import tempfile
+from datetime import datetime
+from datetime import timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -639,6 +641,40 @@ def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, metadata: 
         raise MissionNotFound(f"Mission not found: {mission_id}")
     if resp.status_code == 403:
         raise AccessDenied(f"cannot update mission: {mission_id}")
+
+    resp.raise_for_status()
+
+
+def _update_file(
+    client: AuthenticatedClient,
+    file_id: UUID,
+    *,
+    filename: str,
+    date: datetime,
+) -> None:
+    """\
+    replaces the file's name and date
+
+    the API requires both `filename` and `date` on every call, so callers have
+    to pass the current values for the fields they do not want to change (see
+    `kleinkram.core.update_file`, which merges partial updates)
+    """
+    if date.tzinfo is None:
+        # a naive datetime would be read in the server's local time zone
+        date = date.replace(tzinfo=timezone.utc)
+
+    body: Dict[str, Any] = {
+        "uuid": str(file_id),
+        "filename": filename,
+        "date": date.isoformat(),
+    }
+
+    resp = client.put(FILE_BY_ID_ENDPOINT.format(file_id), json=body)
+
+    if resp.status_code == 404:
+        raise kleinkram.errors.FileNotFound(f"File not found: {file_id}")
+    if resp.status_code == 403:
+        raise AccessDenied(f"cannot update file: {file_id}")
 
     resp.raise_for_status()
 

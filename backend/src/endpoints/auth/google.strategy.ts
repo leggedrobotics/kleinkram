@@ -1,4 +1,8 @@
 import { AuthService } from '@/services/auth.service';
+import {
+    loginStateOptions,
+    OAuthLoginStateService,
+} from '@/services/oauth-login-state.service';
 import { AuthFlowException } from '@/types/auth-flow-exception';
 import env from '@kleinkram/backend-common/environment';
 import { Providers } from '@kleinkram/shared';
@@ -10,8 +14,15 @@ import logger from '../../logger';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
-    constructor(private authService: AuthService) {
+    constructor(
+        private authService: AuthService,
+        oauthLoginState: OAuthLoginStateService,
+    ) {
         super({
+            // binds the login to this browser (state + PKCE), see
+            // OAuthLoginStateService
+            pkce: true,
+            store: oauthLoginState.store,
             clientID: env.GOOGLE_CLIENT_ID ?? 'dummy',
             clientSecret: env.GOOGLE_CLIENT_SECRET ?? 'dummy',
             callbackURL: `${env.BACKEND_URL}/auth/google/callback`,
@@ -22,7 +33,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     authenticate(request: e.Request, options?: any) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        options.state = request.query.state;
+        options.state = loginStateOptions(request);
         super.authenticate(request, options);
     }
 

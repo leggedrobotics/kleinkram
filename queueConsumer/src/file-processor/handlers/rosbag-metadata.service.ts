@@ -16,6 +16,7 @@ import {
     toNanoseconds,
     toRecordingTimes,
 } from './time';
+import { bagTopicStats, TopicStatsByName } from './topic-stats';
 
 /**
  * Interface compatible with @foxglove/rosbag BagReader
@@ -141,6 +142,22 @@ export class RosBagMetadataService extends AbstractMetadataService {
     }
 
     /**
+     * Reads the per-topic statistics of a stored ROS bag from the chunk info
+     * records of its index, without touching the messages.
+     */
+    async probeTopicStatsFromUrl(
+        presignedUrl: string,
+    ): Promise<TopicStatsByName> {
+        const httpReader = new UniversalHttpReader(presignedUrl);
+        await httpReader.init();
+
+        const bag = new Bag(new HttpBagReader(httpReader));
+        await bag.open();
+
+        return bagTopicStats(bag);
+    }
+
+    /**
      * Shared logic for processing the bag structure
      */
     private async processBag(
@@ -194,6 +211,7 @@ export class RosBagMetadataService extends AbstractMetadataService {
         await this.finishExtraction(
             targetEntity,
             rawTopics,
+            bagTopicStats(bag),
             bagReader.size(),
             toRecordingTimes(startNs, endNs),
             method,

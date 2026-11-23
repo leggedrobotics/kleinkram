@@ -66,8 +66,9 @@ These states are typically only relevant for administrators or debugging purpose
 The file page of a `.mcap` or `.bag` lists its topics. Next to the message count it shows:
 
 - **mean Hz**: the message count divided by the time between the first and the last chunk that holds the topic. A
-  topic that starts late or stops early gets its real rate, not one averaged over the whole recording. Topics seen in
-  fewer than 5 chunks, such as `/tf_static`, have no meaningful rate and show `—`.
+  topic that starts late or stops early gets its real rate, not one averaged over the whole recording. One-shot topics
+  such as `/tf_static` (seen in fewer than 5 chunks of a file with at least 5) and single messages have no rate and
+  show `—`.
 - **Coverage**: 20 slices of the recording, filled where the topic has data. Hover the strip for the first and last time
   the topic was seen. A topic that stays silent for much longer than its own rate gets a warning under the strip;
   hatched slices mark a pause of the whole recording.

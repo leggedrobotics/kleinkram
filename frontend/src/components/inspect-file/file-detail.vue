@@ -238,7 +238,7 @@ import {
     FileState,
     FileType,
     rebaseSpans,
-    storedTopicStats,
+    storedFileTopicStats,
 } from '@kleinkram/shared';
 import { copyToClipboard, Notify } from 'quasar';
 import { useRosmsgPreview } from 'src/composables/use-rosmsg-preview';
@@ -287,7 +287,7 @@ const topicStats = computed<FileTopicStats | undefined>(() => {
     const current = file.value;
     if (!current) return;
     const live = insights.value?.topicStats;
-    const stored = storedTopicStats(current, current.topics);
+    const stored = storedFileTopicStats(current, current.topics);
     if (!stored) return live;
     if (!live) return stored;
     return {
