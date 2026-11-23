@@ -1,5 +1,10 @@
 export interface LogMessage {
     logTime: bigint;
+    /**
+     * Position of the message within its topic, counted from 0, when the
+     * reader knows it exactly.
+     */
+    index?: number | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any;
 }

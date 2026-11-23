@@ -128,10 +128,13 @@
 
                 <q-space />
 
-                <div class="text-caption text-grey-6 q-mr-sm gt-xs">
-                    Frame {{ currentIndex + 1 }} / {{ messages.length }}
-                    <template v-if="sampleStride > 1">
-                        · every {{ sampleStride }}th
+                <div
+                    v-if="frameNumber !== undefined"
+                    class="frame-number text-caption text-grey-6 q-mr-sm gt-xs"
+                >
+                    Frame {{ formatCount(frameNumber) }}
+                    <template v-if="topicMessageCount > 0">
+                        / {{ formatCount(topicMessageCount) }}
                     </template>
                 </div>
 
@@ -208,8 +211,15 @@ const properties = withDefaults(
         sampleStride?: number;
         /** Whether more frames can still be loaded in the background */
         canRefine?: boolean;
+        /** Messages of the topic in the recording, loaded or not */
+        topicMessageCount?: number;
     }>(),
-    { isLoading: false, sampleStride: 1, canRefine: false },
+    {
+        isLoading: false,
+        sampleStride: 1,
+        canRefine: false,
+        topicMessageCount: 0,
+    },
 );
 
 const emit = defineEmits(['load-more', 'pause-preview', 'load-window']);
@@ -255,6 +265,19 @@ const currentIndex = computed(() => {
 const currentMessage = computed(() => properties.messages[currentIndex.value]);
 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
 const currentData = computed(() => currentMessage.value?.data);
+
+/**
+ * Number of the shown frame in the recording, from 1. It stays the same
+ * whether the frame came from the sample or from full-rate playback, and is
+ * hidden when the reader could not place the frame exactly.
+ */
+const frameNumber = computed<number | undefined>(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const index = currentMessage.value?.index;
+    return typeof index === 'number' ? index + 1 : undefined;
+});
+
+const formatCount = (value: number): string => value.toLocaleString('en-US');
 
 const playedFraction = computed(() =>
     duration.value > 0 ? Math.min(1, playhead.value / duration.value) : 0,
@@ -718,6 +741,10 @@ const magicBytes = computed(() => {
     border-radius: 50%;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
     pointer-events: none;
+}
+
+.frame-number {
+    font-variant-numeric: tabular-nums;
 }
 
 .time-display {

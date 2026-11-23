@@ -152,6 +152,7 @@
                                 v-show="viewOf(props.row.name) === 'preview'"
                                 :topic-name="props.row.name"
                                 :message-type="props.row.type"
+                                :topic-message-count="props.row.nrMessages"
                                 :total-count="
                                     expectedCount(
                                         props.row,

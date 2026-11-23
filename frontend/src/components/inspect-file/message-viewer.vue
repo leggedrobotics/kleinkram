@@ -100,6 +100,7 @@
                 :is-loading="isLoading"
                 :sample-stride="sampleStride ?? 1"
                 :can-refine="canRefine ?? false"
+                :topic-message-count="topicMessageCount ?? 0"
                 @load-required="loadRequired"
                 @load-more="loadMore"
                 @load-window="loadWindow"
@@ -145,6 +146,8 @@ const properties = defineProps<{
     sampleStride?: number;
     /** Whether a sampled topic can be refined with more messages */
     canRefine?: boolean;
+    /** Messages of the topic in the recording, loaded or not */
+    topicMessageCount?: number;
 }>();
 
 const emit = defineEmits([
