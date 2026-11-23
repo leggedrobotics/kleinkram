@@ -120,7 +120,6 @@ const percent = (bytes: number): string => {
 
 .bar-list__value {
     font-size: 13px;
-    font-variant-numeric: tabular-nums;
     text-align: right;
     white-space: nowrap;
 }

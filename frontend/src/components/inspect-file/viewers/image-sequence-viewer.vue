@@ -120,10 +120,12 @@
                 </q-btn>
 
                 <div class="time-display text-caption q-ml-sm">
-                    {{ formatDuration(playhead) }}
-                    <span class="text-grey-6">
-                        / {{ formatDuration(duration) }}
-                    </span>
+                    <span
+                        class="fixed-slot"
+                        :style="{ minWidth: slotWidth(durationLabel) }"
+                        >{{ formatDuration(playhead) }}</span
+                    >
+                    <span class="text-grey-6"> / {{ durationLabel }}</span>
                 </div>
 
                 <q-space />
@@ -132,9 +134,14 @@
                     v-if="frameNumber !== undefined"
                     class="frame-number text-caption text-grey-6 q-mr-sm gt-xs"
                 >
-                    Frame {{ formatCount(frameNumber) }}
+                    Frame
+                    <span
+                        class="fixed-slot"
+                        :style="{ minWidth: slotWidth(frameCountLabel) }"
+                        >{{ formatCount(frameNumber) }}</span
+                    >
                     <template v-if="topicMessageCount > 0">
-                        / {{ formatCount(topicMessageCount) }}
+                        / {{ frameCountLabel }}
                     </template>
                 </div>
 
@@ -172,11 +179,9 @@
         </div>
 
         <!-- Metadata Footer -->
-        <div
-            class="row justify-between q-px-md q-py-xs text-caption text-grey-6"
-        >
+        <div class="metadata-footer q-px-md q-py-xs text-caption text-grey-6">
             <div>{{ formatWallTime(currentMessage?.logTime) }}</div>
-            <div>
+            <div class="text-center">
                 {{
                     currentMessage?.data?.encoding ||
                     currentMessage?.data?.format ||
@@ -192,7 +197,7 @@
                     Magic bytes: {{ magicBytes }}
                 </q-tooltip>
             </div>
-            <div v-if="frameSize">{{ frameSize }}</div>
+            <div class="text-right">{{ frameSize }}</div>
         </div>
     </div>
 </template>
@@ -278,6 +283,21 @@ const frameNumber = computed<number | undefined>(() => {
 });
 
 const formatCount = (value: number): string => value.toLocaleString('en-US');
+
+const durationLabel = computed(() => formatDuration(duration.value));
+const frameCountLabel = computed(() =>
+    properties.topicMessageCount > 0
+        ? formatCount(properties.topicMessageCount)
+        : '',
+);
+
+/**
+ * Width of a slot that holds a ticking value, sized for the longest value it
+ * will show. With tabular figures every digit is 1ch wide, so the playhead
+ * keeps its width when it grows from "9:59.9" to "10:00.0" and the text next
+ * to it stays put.
+ */
+const slotWidth = (longest: string): string => `${String(longest.length)}ch`;
 
 const playedFraction = computed(() =>
     duration.value > 0 ? Math.min(1, playhead.value / duration.value) : 0,
@@ -743,13 +763,28 @@ const magicBytes = computed(() => {
     pointer-events: none;
 }
 
-.frame-number {
-    font-variant-numeric: tabular-nums;
+.time-display {
+    white-space: nowrap;
+    color: #424242;
 }
 
-.time-display {
-    font-variant-numeric: tabular-nums;
-    min-width: 110px;
-    color: #424242;
+.frame-number {
+    white-space: nowrap;
+}
+
+/* Ticking values grow to the left, so the label before them never moves */
+.fixed-slot {
+    display: inline-block;
+    text-align: right;
+}
+
+/*
+ * Three equal outer columns keep the encoding centred while the timestamp and
+ * the frame size change width from frame to frame.
+ */
+.metadata-footer {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
 }
 </style>
