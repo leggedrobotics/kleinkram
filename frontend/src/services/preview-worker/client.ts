@@ -233,10 +233,14 @@ export class PreviewClient {
     dispose(): void {
         this.disposed = true;
         this.failAll(new Error('The preview was closed'));
+        // A worker that is up is `this.worker`; one still starting is
+        // terminated once it is, and a fallback's port is closed. `Worker`
+        // is not referenced here: the fallback exists because it may be
+        // missing.
         this.worker?.terminate();
         void this.endpoint.then((endpoint) => {
             if (endpoint instanceof MessagePort) endpoint.close();
-            if (endpoint instanceof Worker) endpoint.terminate();
+            else this.worker?.terminate();
         });
     }
 }
