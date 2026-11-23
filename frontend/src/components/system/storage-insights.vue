@@ -409,7 +409,6 @@ const missionItems = computed<StorageBarItem[]>(() =>
 .storage__tile-value {
     margin: 4px 0 2px;
     font-size: 24px;
-    font-variant-numeric: tabular-nums;
     font-weight: 600;
     line-height: 1.25;
 }
