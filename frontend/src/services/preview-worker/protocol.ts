@@ -60,6 +60,8 @@ export interface PreviewCalls {
         params: Record<string, never>;
         result: RecordingMetadata[];
     };
+    /** Drop the open file and stop its reads, freeing its memory. */
+    close: { params: Record<string, never>; result: undefined };
 }
 
 export type CallName = keyof PreviewCalls;

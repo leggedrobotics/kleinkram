@@ -282,6 +282,9 @@ export function useRosmsgPreview(): {
         insights.value = null;
         costModels = {};
         supportsWindow = false;
+        // The worker would otherwise keep the old file's index and caches
+        // until the next file opens, or forever if none does.
+        client?.close();
         for (const controller of [
             ...abortControllers.values(),
             ...windowControllers.values(),

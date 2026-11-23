@@ -54,15 +54,21 @@ export function servePreview(endpoint: Endpoint): void {
         endpoint.postMessage(response, transfer);
     };
 
+    /** Forget the current file: stop its reads and drop its caches. */
+    function close(): void {
+        for (const controller of reads.values()) controller.abort();
+        reads.clear();
+        strategy = undefined;
+        generation++;
+    }
+
     async function open({
         url,
         kind,
     }: PreviewCalls['open']['params']): Promise<OpenedFile> {
         // A new file: nothing of the previous one is wanted any more.
-        for (const controller of reads.values()) controller.abort();
-        reads.clear();
-        strategy = undefined;
-        const current = ++generation;
+        close();
+        const current = generation;
 
         const reader = new UniversalHttpReader(url);
         await Promise.all([reader.init(), decompressors]);
@@ -128,8 +134,10 @@ export function servePreview(endpoint: Endpoint): void {
                 request.startTime,
                 options,
             );
-            flush();
         } finally {
+            // Also after an error: what was decoded before it still shows,
+            // as it did when every message reached the page at once.
+            flush();
             if (timer !== undefined) clearTimeout(timer);
             reads.delete(id);
         }
@@ -160,6 +168,10 @@ export function servePreview(endpoint: Endpoint): void {
                     value: detachForTransfer(bytes, transfer),
                     transfer,
                 };
+            }
+            case 'close': {
+                close();
+                return { value: undefined, transfer: [] };
             }
             case 'readMetadata': {
                 return {

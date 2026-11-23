@@ -138,6 +138,11 @@ export class PreviewClient {
         }
     }
 
+    /** Read through a call, so the check after an `await` is not narrowed away. */
+    private isDisposed(): boolean {
+        return this.disposed;
+    }
+
     private failAll(error: Error): void {
         for (const call of this.pending.values()) call.reject(error);
         this.pending.clear();
@@ -156,6 +161,9 @@ export class PreviewClient {
         const { signal, onBatch, transfer = [] } = options;
         if (signal?.aborted) throw abortError();
         const endpoint = await this.endpoint;
+        // Closed while the worker was starting: `dispose` has already failed
+        // what was pending, and nothing would answer this call any more.
+        if (this.isDisposed()) throw new Error('The preview was closed');
         if (signal?.aborted) throw abortError();
 
         const id = this.nextId++;
@@ -212,6 +220,14 @@ export class PreviewClient {
 
     readMetadata(): Promise<PreviewCalls['readMetadata']['result']> {
         return this.send('readMetadata', {});
+    }
+
+    /** Let the worker drop the open file; it stays up for the next one. */
+    close(): void {
+        if (this.disposed) return;
+        this.send('close', {}).catch((error: unknown) => {
+            console.warn('Could not close the previewed file', error);
+        });
     }
 
     dispose(): void {
