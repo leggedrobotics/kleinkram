@@ -2,6 +2,7 @@ import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity'
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { RECORDING_TIMES_BACKFILL_JOB } from '@kleinkram/backend-common/services/recording-times-backfill';
+import { TOPIC_STATS_BACKFILL_JOB } from '@kleinkram/backend-common/services/topic-stats-backfill';
 import { FileLocation, FileState, QueueState } from '@kleinkram/shared';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Inject, Injectable } from '@nestjs/common';
@@ -13,6 +14,7 @@ import { FileIngestionService } from './file-ingestion.service';
 import { RecordingTimesBackfillService } from './recording-times-backfill.service';
 import { GoogleDriveStrategy } from './strategies/google-drive.strategy';
 import { S3Strategy } from './strategies/s3.strategy';
+import { TopicStatsBackfillService } from './topic-stats-backfill.service';
 
 import { createHash } from 'node:crypto';
 
@@ -31,6 +33,7 @@ export class FileQueueProcessorProvider {
         private readonly s3Strategy: S3Strategy,
         @InjectQueue('file-queue') private fileQueue: Queue,
         private readonly recordingTimesBackfillService: RecordingTimesBackfillService,
+        private readonly topicStatsBackfillService: TopicStatsBackfillService,
     ) {}
 
     @Process({ name: 'processDriveFile', concurrency: 1 })
@@ -143,6 +146,15 @@ export class FileQueueProcessorProvider {
         await this.recordingTimesBackfillService.backfillFile(
             job.data.fileUuid,
         );
+    }
+
+    /**
+     * Computes the per-topic statistics of an already ingested file.
+     * Scheduled by the topic stats backfill.
+     */
+    @Process({ name: TOPIC_STATS_BACKFILL_JOB, concurrency: 2 })
+    async backfillTopicStats(job: Job<{ fileUuid: string }>): Promise<void> {
+        await this.topicStatsBackfillService.backfillFile(job.data.fileUuid);
     }
 
     private calculateHash(stream: NodeJS.ReadableStream): Promise<string> {

@@ -2,12 +2,14 @@ import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-ev
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { TOPIC_STATS_VERSION } from '@kleinkram/backend-common/services/topic-stats-backfill';
 import { FileEventType, FileState } from '@kleinkram/shared';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 import { toStateComment } from '../helper/state-comment';
 import { ExtractedTopicInfo } from './file-handler.interface';
 import { RecordingTimes } from './time';
+import { TopicStatsByName, topicStatsColumns } from './topic-stats';
 
 export abstract class AbstractMetadataService {
     constructor(
@@ -19,10 +21,15 @@ export abstract class AbstractMetadataService {
     /**
      * Common logic to finalize metadata extraction.
      * Handles deduplication, saving entities, and logging the timed event.
+     *
+     * `topicStats` replaces the whole-recording frequency of every topic it
+     * knows, with null where the topic has no rate; it is keyed by topic
+     * name, so it already spans every channel of a topic.
      */
     protected async finishExtraction(
         targetEntity: FileEntity,
         rawTopics: ExtractedTopicInfo[],
+        topicStats: TopicStatsByName,
         fileSize: number,
         recordingTimes: RecordingTimes,
         method: string,
@@ -53,20 +60,27 @@ export abstract class AbstractMetadataService {
 
             // Save Topics
             if (uniqueTopics.length > 0) {
-                const topicEntities = uniqueTopics.map((t) =>
-                    this.topicRepo.create({
+                const topicEntities = uniqueTopics.map((t) => {
+                    const stats = topicStats.get(t.name);
+                    return this.topicRepo.create({
                         name: t.name,
                         type: t.type,
                         nrMessages: t.nrMessages,
-                        frequency: this.normalizeFrequency(t.frequency),
+                        // With stats, a topic without a rate stores null;
+                        // without, the whole-recording rate stays.
+                        frequency: stats
+                            ? (stats.frequency ?? null)
+                            : this.normalizeFrequency(t.frequency),
+                        ...topicStatsColumns(stats),
                         file: targetEntity,
-                    }),
-                );
+                    });
+                });
                 await this.topicRepo.save(topicEntities, { chunk: 100 });
             }
 
             // Update File Entity
             applyRecordingTimes(targetEntity, recordingTimes);
+            targetEntity.topicStatsVersion = TOPIC_STATS_VERSION;
             targetEntity.state = FileState.OK;
             targetEntity.stateComment = null;
             targetEntity.size = fileSize;

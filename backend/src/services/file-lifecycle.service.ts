@@ -546,6 +546,7 @@ export class FileLifecycleService implements OnModuleInit {
                         recordingEndDate: source.recordingEndDate ?? null,
                         recordingTimesCheckedAt:
                             source.recordingTimesCheckedAt ?? null,
+                        topicStatsVersion: source.topicStatsVersion,
                         size: source.size,
                         type: source.type,
                         // OK only once the data is copied, see below
@@ -567,6 +568,10 @@ export class FileLifecycleService implements OnModuleInit {
                                         : { nrMessages: topic.nrMessages }),
                                     messageEncoding: topic.messageEncoding,
                                     frequency: topic.frequency,
+                                    firstSeen: topic.firstSeen ?? null,
+                                    lastSeen: topic.lastSeen ?? null,
+                                    chunkCount: topic.chunkCount ?? null,
+                                    coverage: topic.coverage ?? null,
                                     file: saved,
                                 }),
                             ),

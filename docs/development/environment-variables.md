@@ -13,6 +13,12 @@ Compression runs in the API server itself, so every deployment gets it without p
 events (`text/event-stream`) are never compressed, and a client can opt out for a single request by sending the
 `x-no-compression` header.
 
+## Background Jobs
+
+| Variable               | Description                                                                                                                                                                                                                                 | Default |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------ |
+| `TOPIC_STATS_BACKFILL` | Set to `true` to let the queue consumer compute per-topic statistics (first and last seen, coverage, frequency) for files ingested before they were stored, 1,000 files per hour. See [Cron Jobs](./cron/CronJobs.md#topic-stats-backfill). | `false` |
+
 ## Service URLs
 
 These URLs are used for communication between services and for generating links.

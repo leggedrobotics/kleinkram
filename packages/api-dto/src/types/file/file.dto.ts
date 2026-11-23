@@ -181,6 +181,15 @@ export class FileDto {
             obj.parent?.uuid ?? obj.derivedFiles?.[0]?.uuid ?? value,
     )
     relatedFileUuid?: string | undefined;
+
+    @ApiProperty({
+        description:
+            'Version of the per-topic statistics (firstSeen, lastSeen, chunkCount, coverage, frequency) of the topics of this file; 0 while not computed yet',
+    })
+    @IsNumber()
+    @Expose()
+    @Transform(({ obj }) => obj.topicStatsVersion ?? 0)
+    topicStatsVersion!: number;
 }
 
 @Expose()
