@@ -248,26 +248,42 @@ const span = (
 });
 
 describe('topicFrequency', () => {
+    /** A file with enough chunks to tell one-shot topics from streams. */
+    const LONG_FILE = 100;
+
     test('divides by the span the topic publishes in', () => {
         // 600 messages over 60 s of a 600 s recording is 10 Hz, not 1 Hz.
-        expect(topicFrequency(600, span(60, 60))).toBe(10);
+        expect(topicFrequency(600, span(60, 60), LONG_FILE)).toBe(10);
     });
 
     test('a one-shot topic has no rate', () => {
-        expect(topicFrequency(7, span(4, 2))).toBeUndefined();
-        expect(topicFrequency(1, span(1, 1))).toBeUndefined();
-    });
-
-    test('a topic without a span has no rate', () => {
-        expect(topicFrequency(50, span(5, 0))).toBeUndefined();
+        expect(topicFrequency(7, span(4, 2), LONG_FILE)).toBeUndefined();
+        expect(topicFrequency(1, span(1, 1), LONG_FILE)).toBeUndefined();
     });
 
     test('a topic in exactly five chunks is a stream', () => {
-        expect(topicFrequency(50, span(5, 5))).toBe(10);
+        expect(topicFrequency(50, span(5, 5), LONG_FILE)).toBe(10);
+    });
+
+    test('a file with fewer than five chunks keeps the rate of its streams', () => {
+        // A short recording: 300 IMU messages in the 3 chunks of a 3 s file.
+        expect(topicFrequency(300, span(3, 3), 3)).toBe(100);
+        expect(topicFrequency(20, span(1, 2), 1)).toBe(10);
+    });
+
+    test('a single message has no rate, however short the file', () => {
+        expect(topicFrequency(1, span(1, 1), 3)).toBeUndefined();
+    });
+
+    test('a topic without a span has no rate', () => {
+        expect(topicFrequency(50, span(5, 0), LONG_FILE)).toBeUndefined();
+        expect(topicFrequency(50, span(1, 0), 1)).toBeUndefined();
     });
 
     test('is unknown without a message count', () => {
-        expect(topicFrequency(undefined, span(60, 60))).toBeUndefined();
+        expect(
+            topicFrequency(undefined, span(60, 60), LONG_FILE),
+        ).toBeUndefined();
     });
 });
 

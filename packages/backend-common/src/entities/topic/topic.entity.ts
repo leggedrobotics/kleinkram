@@ -26,8 +26,9 @@ export class TopicEntity extends BaseEntity {
 
     /**
      * Messages per second between {@link firstSeen} and {@link lastSeen}, not
-     * over the whole recording. Null when the topic has no rate: a one-shot
-     * topic (fewer than five chunks), a zero span, or no message counts.
+     * over the whole recording. Null when the topic has no rate: a single
+     * message, a zero span, no message counts, or a one-shot topic (fewer than
+     * five chunks, in a file of at least five).
      * Where the per-topic span is unknown (db3, MCAPs without message indexes,
      * files not yet backfilled) it is still the message count over the whole
      * recording.

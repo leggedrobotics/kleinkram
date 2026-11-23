@@ -311,17 +311,25 @@ export function computeRecordingCoverage(
  * chunk to its last.
  *
  * Dividing by the whole recording instead understates every topic that starts
- * late or stops early. Undefined, meaning the topic has no rate, for a
- * one-shot topic (seen in fewer than {@link MIN_CHUNKS_FOR_STREAM} chunks),
- * for a topic whose span is zero, and when the recorder wrote no message
- * counts.
+ * late or stops early. Undefined, meaning the topic has no rate:
+ *
+ * - for a one-shot topic: seen in fewer than {@link MIN_CHUNKS_FOR_STREAM}
+ *   chunks of a file that has at least that many. Writers cut chunks by size,
+ *   so in a file with fewer chunks the index cannot tell a stream from a
+ *   one-shot topic, and only a single message counts as having no rate;
+ * - for a topic whose span is zero;
+ * - when the recorder wrote no message counts.
  */
 export function topicFrequency(
     messageCount: number | undefined,
     coverage: Pick<TopicCoverage, 'chunkCount' | 'firstSeen' | 'lastSeen'>,
+    fileChunkCount: number,
 ): number | undefined {
-    if (messageCount === undefined) return undefined;
-    if (coverage.chunkCount < MIN_CHUNKS_FOR_STREAM) return undefined;
+    if (messageCount === undefined || messageCount < 2) return undefined;
+    const canTellOneShots = fileChunkCount >= MIN_CHUNKS_FOR_STREAM;
+    if (canTellOneShots && coverage.chunkCount < MIN_CHUNKS_FOR_STREAM) {
+        return undefined;
+    }
     const span = seconds(coverage.lastSeen, coverage.firstSeen);
     return span > 0 ? messageCount / span : undefined;
 }
@@ -376,7 +384,11 @@ export function computeTopicStats(
                 toMilliseconds(span.start),
                 toMilliseconds(span.end),
             ]),
-            frequency: topicFrequency(counts.get(topic), topicCoverage),
+            frequency: topicFrequency(
+                counts.get(topic),
+                topicCoverage,
+                chunks.length,
+            ),
         });
     }
     return stats;

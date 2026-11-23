@@ -29,7 +29,7 @@ are applied on application startup.
 ### Topic Stats Backfill
 
 Every topic stores where in its file it has data: `firstSeen`, `lastSeen`, `chunkCount`, `coverage` (spans in
-milliseconds since the recording start) and a `frequency` over its own span rather than the whole recording (null for a one-shot topic, seen in fewer than 5 chunks). Ingestion
+milliseconds since the recording start) and a `frequency` over its own span rather than the whole recording (null for a topic without a rate: a single message, a zero span, or, in a file of at least 5 chunks, a one-shot topic seen in fewer than 5). Ingestion
 writes these for new files. The backfill computes them for older files from the file's own index, without reading any
 message:
 
