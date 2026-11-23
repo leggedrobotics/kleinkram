@@ -25,6 +25,8 @@ export class Db3Strategy extends DecodingStrategy {
         const data = await httpReader.read(0n, BigInt(httpReader.sizeBytes));
 
         const SQL = await initSqlJs({
+            // sql.js default; required by @types/sql.js >= 1.16
+            useOldExtensionFunctions: true,
             locateFile: () =>
                 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.wasm',
         });

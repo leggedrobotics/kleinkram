@@ -1,6 +1,6 @@
 {
     "name": "@kleinkram/backend-common",
-    "version": "0.66.1",
+    "version": "0.66.2",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "license": "MIT",
@@ -27,9 +27,9 @@
         "typeorm": "^1.0.0"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.1169.0",
-        "@aws-sdk/client-sts": "3.1169.0",
-        "@aws-sdk/s3-request-presigner": "3.1169.0",
+        "@aws-sdk/client-s3": "3.1175.0",
+        "@aws-sdk/client-sts": "3.1175.0",
+        "@aws-sdk/s3-request-presigner": "3.1175.0",
         "@kleinkram/api-dto": "workspace:*",
         "@kleinkram/shared": "workspace:*",
         "@kleinkram/validation": "workspace:*",
@@ -46,12 +46,12 @@
         "qs": "^6.17.1",
         "reflect-metadata": "^0.2.2",
         "rxjs": "^7.8.2",
-        "typeorm-extension": "^4.3.0"
+        "typeorm-extension": "^4.6.0"
     },
     "devDependencies": {
         "@faker-js/faker": "^10.6.0",
-        "@nestjs/common": "^12.5.0",
-        "@nestjs/core": "^12.5.0",
+        "@nestjs/common": "^12.6.0",
+        "@nestjs/core": "^12.6.0",
         "@nestjs/typeorm": "^12.0.3",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "^24.19.2",
