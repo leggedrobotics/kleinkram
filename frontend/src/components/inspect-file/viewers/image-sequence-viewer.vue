@@ -780,11 +780,18 @@ const magicBytes = computed(() => {
 
 /*
  * Three equal outer columns keep the encoding centred while the timestamp and
- * the frame size change width from frame to frame.
+ * the frame size change width from frame to frame. `minmax(0, 1fr)` lets the
+ * outer columns shrink below their text on narrow screens, so the long
+ * timestamp wraps instead of widening its column and pushing the encoding
+ * off-centre.
  */
 .metadata-footer {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     gap: 16px;
+}
+
+.metadata-footer > * {
+    overflow-wrap: anywhere;
 }
 </style>
