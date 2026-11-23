@@ -7,20 +7,42 @@ test suite.
 
 Every Pull Request is validated by GitHub Actions. The following checks must pass:
 
-| Check               | Directory   | Command           |
-| ------------------- | ----------- | ----------------- |
-| Backend Tests       | `./backend` | `pnpm test`       |
-| CLI Tests (Python)  | `./cli`     | `pytest`          |
-| Linting             | `.` (root)  | `pnpm lint`       |
-| Formatting (JS/TS)  | `.` (root)  | `pnpm prettier`   |
-| Formatting (Python) | `./cli`     | `black --check .` |
+| Check                         | Workflow               | Directory         | Command                                                                |
+| ----------------------------- | ---------------------- | ----------------- | ---------------------------------------------------------------------- |
+| Pre-commit hooks              | `eslint.yml`           | `.` (root)        | `pre-commit run --all-files` (includes Black, flake8, isort)           |
+| Type check                    | `eslint.yml`           | `.` (root)        | `pnpm run type-check` (after `pnpm exec quasar prepare` in `frontend`) |
+| Linting                       | `eslint.yml`           | `.` (root)        | `pnpm run lint:check`                                                  |
+| Formatting (JS/TS/Markdown)   | `eslint.yml`           | `.` (root)        | `pnpm run prettier:check`                                              |
+| Queue consumer unit tests     | `api-tests.yml`        | `./queueConsumer` | `pnpm test --ci`                                                       |
+| API tests                     | `api-tests.yml`        | `./backend`       | `pnpm test --ci`                                                       |
+| CLI tests (Python, see below) | `cli-tests.yml`        | `./cli`           | `pytest tests/ -v --tb=short`                                          |
+| Migrations                    | `check-migrations.yml` | `./backend`       | `pnpm run migration:check`                                             |
+
+The CLI tests run on Python 3.14 for PRs to `dev`, and on every supported version (3.10 to 3.14) for PRs to `main`.
+
+`pnpm lint` and `pnpm prettier` (without `:check`) rewrite files instead of only checking them. The lint and formatting
+checks only run on PRs to `dev`.
 
 ## Running the Test Suite
 
-Currently, we are only testing the API, those test cases are located in the `backend/tests` directory.
-You can run the test suite by first starting the application stack in test mode and then running the tests.
+The API tests are located in `backend/tests`, the queue consumer unit tests in `queueConsumer/tests` and the CLI tests
+in `cli/tests`.
+
+The queue consumer unit tests need no running stack, only built workspace packages:
 
 ```bash
+pnpm install
+pnpm -r run build
+cd queueConsumer && pnpm test
+```
+
+The API tests run against the application stack in test mode. They also need the endpoint list, which the API server
+generates on startup in development; generate it once beforehand:
+
+```bash
+pnpm -r run build
+cd backend && mkdir -p .endpoints && npm run gen:docs -- .endpoints && cd ..
+
 # clear any previous test containers and volumes
 docker compose -f docker-compose.testing.yml down --volumes
 
@@ -32,14 +54,17 @@ docker compose -f docker-compose.testing.yml up --build [--watch]
 This command will start the application stack in test mode and optionally watches for changes in the codebase.
 :::
 
-You can then run the tests by executing the following command:
+You can then run the tests from the `backend` directory:
 
 ```bash
-pnpm run test[:verbose]
+cd backend
+pnpm run test
 ```
 
-::: info
-The `:verbose` flag is optional and will output more information about the test results.
+::: warning Run the tests one at a time
+`pnpm run test` runs the test files one after another (`--runInBand`), because they share one database.
+`pnpm run test:verbose` prints more output but runs them in parallel, which can make tests fail at random. Use
+`pnpm run test --silent=false` for verbose output instead.
 :::
 
 ### How do the Tests Work?
@@ -62,7 +87,7 @@ klein file list
 
 # Test with different user permissions
 klein login --oauth-provider fake-oauth --user 2
-klein project create "Test Project" --description "Created by user 2"
+klein project create test-project-2 --description "Created by user 2"
 ```
 
 This is particularly useful for:
@@ -92,9 +117,4 @@ This will create the necessary `.bag` files in `cli/tests/data` and `backend/tes
 
 ## End-to-End Testing
 
-End-to-end testing is currently not implemented. We are planning to implement end-to-end tests in the future.
-
-::: warning
-End-to-end tests are not implemented yet. We are planning to use [Cypress](https://www.cypress.io/) for end-to-end
-testing.
-:::
+There are no end-to-end tests of the web app yet.
