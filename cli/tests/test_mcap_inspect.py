@@ -342,6 +342,32 @@ def test_a_one_shot_topic_has_no_rate(coverage_info: McapInfo) -> None:
     assert "█" in row and "░" * 18 in row
 
 
+def test_in_a_file_of_few_chunks_every_topic_keeps_its_rate(tmp_path: Path) -> None:
+    """With fewer than five chunks a stream cannot be told from a one-shot topic."""
+    path = tmp_path / "short.mcap"
+    with path.open("wb") as handle:
+        writer = mcap_writer.Writer(handle, compression=mcap_writer.CompressionType.NONE)
+        writer.start(profile="ros2", library="test")
+        schema = writer.register_schema(name="test/Dummy", encoding="jsonschema", data=b"{}")
+        imu = writer.register_channel(topic="/imu", message_encoding="cdr", schema_id=schema)
+        once = writer.register_channel(topic="/once", message_encoding="cdr", schema_id=schema)
+        writer.add_message(channel_id=once, log_time=START_NS, data=b"o", publish_time=START_NS)
+        for index in range(21):
+            log_time = START_NS + index * SECOND // 10
+            writer.add_message(channel_id=imu, log_time=log_time, data=b"i", publish_time=log_time)
+        writer.finish()
+
+    with serve(path) as (url, _):
+        info = read_mcap_info_from_url(url)
+
+    assert info.chunk_count == 1
+    topics = {topic.name: topic for topic in info.topics}
+    # 21 messages over 2 s, all in the one chunk.
+    assert topics["/imu"].frequency == pytest.approx(10.5)
+    # A single message has no rate, whatever the file.
+    assert topics["/once"].frequency is None
+
+
 def test_with_some_chunks_unindexed_topic_coverage_is_unknown(tmp_path: Path) -> None:
     path = tmp_path / "half-indexed.mcap"
     _write_coverage_mcap(path, unindexed_after=10)

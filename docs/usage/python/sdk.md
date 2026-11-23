@@ -121,8 +121,9 @@ info.compression                    # chunk count per compression
 ```
 
 `frequency` is the message count over the topic's own span, not over the whole
-recording. It is `None` for a topic found in fewer than five chunks (a one-shot
-topic such as `/tf_static`). `first_seen`, `last_seen`, `chunk_count` and
+recording. It is `None` for a single message and, in a file of five or more
+chunks, for a topic found in fewer than five (a one-shot topic such as
+`/tf_static`). `first_seen`, `last_seen`, `chunk_count` and
 `coverage` come from the chunk index, at chunk resolution, and are all `None`
 when any chunk lacks a message index.
 

@@ -74,8 +74,9 @@ class McapTopic:
     # None when the recorder wrote no statistics record.
     message_count: Optional[int] = None
     # Mean rate in Hz: the message count over the topic's own span, from
-    # `first_seen` to `last_seen`. None for a topic seen in fewer than
-    # `MIN_CHUNKS_FOR_RATE` chunks, and whenever the count or the span is unknown.
+    # `first_seen` to `last_seen`. None for fewer than two messages, for a
+    # one-shot topic (in a file of at least `MIN_CHUNKS_FOR_RATE` chunks, seen in
+    # fewer than that), and whenever the count or the span is unknown.
     frequency: Optional[float] = None
     # Start of the first and end of the last chunk holding the topic, in
     # nanoseconds. Chunk resolution: where inside a chunk the messages sit is
@@ -359,7 +360,7 @@ def _topics(channels, schemas, statistics, chunk_indexes) -> List[McapTopic]:
         spans = sorted(chunks[key])
         first_seen = min((start for start, _ in spans), default=None)
         last_seen = max((end for _, end in spans), default=None)
-        frequency = _frequency(count, len(spans), first_seen, last_seen)
+        frequency = _frequency(count, len(spans), len(chunk_indexes), first_seen, last_seen)
         topics.append(
             McapTopic(
                 name,
@@ -376,13 +377,28 @@ def _topics(channels, schemas, statistics, chunk_indexes) -> List[McapTopic]:
     return topics
 
 
-def _frequency(count: Optional[int], chunk_count: int, first_seen: Optional[int], last_seen: Optional[int]) -> Optional[float]:
-    """The count over the topic's own span; the whole recording would understate
-    every topic that starts late, stops early or drops out."""
-    if count is None or chunk_count < MIN_CHUNKS_FOR_RATE or first_seen is None or last_seen is None:
+def _frequency(
+    count: Optional[int],
+    chunk_count: int,
+    file_chunk_count: int,
+    first_seen: Optional[int],
+    last_seen: Optional[int],
+) -> Optional[float]:
+    """The count over the topic's own span, from its first chunk to its last.
+
+    The whole recording would understate every topic that starts late, stops
+    early or drops out. The same rule as `topicFrequency` in
+    packages/shared/src/common-utils/recording-insights.ts, which the backend
+    stores.
+    """
+    if count is None or count < 2 or first_seen is None or last_seen is None:
+        return None
+    # Writers cut chunks by size, so in a file of few chunks a stream and a
+    # one-shot topic look alike; only with enough chunks is one told apart.
+    if file_chunk_count >= MIN_CHUNKS_FOR_RATE and chunk_count < MIN_CHUNKS_FOR_RATE:
         return None
     seconds = (last_seen - first_seen) / 1e9
-    if count < 2 or seconds <= 0:
+    if seconds <= 0:
         return None
     return count / seconds
 

@@ -31,7 +31,6 @@ from rich.text import Text
 
 import kleinkram
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.mcap_summary import MIN_CHUNKS_FOR_RATE
 from kleinkram.api.mcap_summary import McapInfo
 from kleinkram.api.mcap_summary import McapTopic
 from kleinkram.config import get_config
@@ -312,8 +311,8 @@ COVERAGE_CELLS = 20
 def _format_frequency(topic: McapTopic) -> str:
     if topic.frequency is not None:
         return f"{topic.frequency:.1f}" if topic.frequency >= 10 else f"{topic.frequency:.2f}"
-    # Seen in too few chunks for a rate to mean anything: a one-shot topic.
-    if topic.chunk_count is not None and 0 < topic.chunk_count < MIN_CHUNKS_FOR_RATE:
+    # Known to have no rate: a one-shot topic, or a single message.
+    if topic.message_count is not None and topic.chunk_count:
         return "—"
     return ""
 

@@ -52,8 +52,10 @@ klein file inspect <file>
 
 The mean rate (`mean Hz`) is a topic's message count over its own span, from
 the first to the last chunk that holds it, so a topic that starts late or stops
-early is not rated against the whole recording. A topic found in fewer than five
-chunks, such as `/tf_static`, is a one-shot topic and shows `—` instead of a
+early is not rated against the whole recording. In a file of five or more
+chunks, a topic found in fewer than five, such as `/tf_static`, is a one-shot
+topic and shows `—` instead of a rate, as does a topic with a single message.
+A file of fewer chunks cannot tell the two apart, so there every topic keeps its
 rate. The coverage column draws the recording in 20 cells, `█` where the topic
 has data and `░` where it has none:
 
