@@ -175,6 +175,7 @@
                                         from: bigint,
                                         until: bigint,
                                         playhead: bigint,
+                                        onFailed: () => void,
                                     ) =>
                                         emit(
                                             'load-window',
@@ -182,6 +183,7 @@
                                             from,
                                             until,
                                             playhead,
+                                            onFailed,
                                         )
                                 "
                                 @pause-preview="
@@ -472,10 +474,27 @@ const strideWithinFetchBudget = (row: TopicRow): number | undefined => {
 };
 
 const imageStrideForLevel = (row: TopicRow, level: number): number => {
-    const withinBudget = strideWithinFetchBudget(row);
-    if (withinBudget !== undefined) return withinBudget;
-
+    const fetchStride = strideWithinFetchBudget(row);
     const bytesPerFrame = bytesPerImageFrame(row);
+
+    if (fetchStride !== undefined) {
+        // What is downloaded and what is kept in memory are separate limits:
+        // raw frames in compressed chunks can take far more memory than
+        // they cost to fetch. A compressed image is about as large as it was
+        // to download, so it needs no guess before its size is known.
+        const isCompressed = row.type.includes('CompressedImage');
+        if (bytesPerFrame <= 0 && isCompressed) return fetchStride;
+        return Math.max(fetchStride, memoryStride(row, level, bytesPerFrame));
+    }
+    return memoryStride(row, level, bytesPerFrame);
+};
+
+/** Stride that keeps the loaded frames within the memory budget. */
+const memoryStride = (
+    row: TopicRow,
+    level: number,
+    bytesPerFrame: number,
+): number => {
     const framesWithinBudget =
         bytesPerFrame > 0
             ? Math.floor(IMAGE_BYTE_BUDGET / bytesPerFrame)

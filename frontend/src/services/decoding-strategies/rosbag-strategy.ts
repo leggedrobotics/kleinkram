@@ -48,6 +48,8 @@ export class RosbagStrategy extends DecodingStrategy {
     private bag: Bag | undefined = undefined;
     private httpReader: UniversalHttpReader | null = null;
 
+    override readonly supportsWindow = true;
+
     async init(httpReader: UniversalHttpReader): Promise<void> {
         this.httpReader = httpReader;
         this.bag = new Bag(

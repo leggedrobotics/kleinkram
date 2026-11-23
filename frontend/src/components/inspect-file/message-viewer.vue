@@ -202,8 +202,13 @@ const loadMore = (): void => {
     emit('load-more');
 };
 
-const loadWindow = (from: bigint, until: bigint, playhead: bigint): void => {
-    emit('load-window', from, until, playhead);
+const loadWindow = (
+    from: bigint,
+    until: bigint,
+    playhead: bigint,
+    onFailed: () => void,
+): void => {
+    emit('load-window', from, until, playhead, onFailed);
 };
 
 const emitPausePreview = (): void => {

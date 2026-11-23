@@ -128,6 +128,8 @@ export class McapStrategy extends DecodingStrategy {
     private decoders = new Map<number, any>();
     private httpReader: UniversalHttpReader | null = null;
 
+    override readonly supportsWindow = true;
+
     async init(httpReader: UniversalHttpReader): Promise<void> {
         this.httpReader = httpReader;
         this.reader = await McapIndexedReader.Initialize({

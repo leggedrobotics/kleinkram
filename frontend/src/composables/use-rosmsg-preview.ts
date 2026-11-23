@@ -197,6 +197,7 @@ export function useRosmsgPreview(): {
         from: bigint,
         until: bigint,
         playhead: bigint,
+        onFailed?: () => void,
     ) => Promise<void>;
     reset: () => void;
     dbSchema?: Ref<string | null>;
@@ -417,8 +418,10 @@ export function useRosmsgPreview(): {
         from: bigint,
         until: bigint,
         playhead: bigint,
+        onFailed?: () => void,
     ): Promise<void> {
-        if (!strategy.value) return;
+        // Formats without windowed reads would read the whole topic each time
+        if (!strategy.value?.supportsWindow) return;
         windowControllers.get(topicName)?.abort();
         const controller = new AbortController();
         windowControllers.set(topicName, controller);
@@ -466,6 +469,7 @@ export function useRosmsgPreview(): {
             // The sample stays usable, playback just shows fewer frames
             if (!controller.signal.aborted) {
                 console.warn(`Error reading ${topicName} ahead`, error);
+                onFailed?.();
             }
         } finally {
             if (controller.signal.aborted) {
