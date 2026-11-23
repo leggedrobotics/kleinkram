@@ -672,13 +672,13 @@ def update_file(
     *,
     new_name: Optional[str] = None,
     date: Optional[datetime] = None,
-    mission_id: Optional[IdLike] = None,
     client: Optional[AuthenticatedClient] = None,
 ) -> None:
     """\
-    rename a file, change its recording date or move it to another mission
+    rename a file or change its recording date
 
-    fields that are not passed keep their current value.
+    fields that are not passed keep their current value. To move files to
+    another mission, use `move_files`.
     """
     client = client or AuthenticatedClient()
     kleinkram.core.update_file(
@@ -686,7 +686,6 @@ def update_file(
         file_id=parse_uuid_like(file_id),
         new_name=new_name,
         date=date,
-        mission_id=parse_uuid_like(mission_id) if mission_id is not None else None,
     )
 
 

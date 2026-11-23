@@ -558,17 +558,16 @@ def update_file(
     file_id: UUID,
     new_name: Optional[str] = None,
     date: Optional[datetime] = None,
-    mission_id: Optional[UUID] = None,
 ) -> None:
     """\
-    rename a file, change its recording date or move it to another mission
+    rename a file or change its recording date
 
     fields that are not passed keep their current value. A new name has to keep
     the file's extension (e.g. a `.bag` stays a `.bag`); the API rejects it
-    otherwise. API keys (e.g. inside an action) cannot move files.
+    otherwise. To move files to another mission, use `move_files`.
     """
-    if new_name is None and date is None and mission_id is None:
-        raise ValueError("at least one of new_name, date or mission_id must be provided")
+    if new_name is None and date is None:
+        raise ValueError("at least one of new_name or date must be provided")
 
     # the endpoint expects the full name and date, fill in what the caller left out
     try:
@@ -582,7 +581,6 @@ def update_file(
         file_id,
         filename=new_name if new_name is not None else file.name,
         date=date if date is not None else file.date,
-        mission_id=mission_id,
     )
 
 

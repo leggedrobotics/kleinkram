@@ -13,7 +13,6 @@ import kleinkram.errors
 
 FILE_ID = UUID("11111111-1111-4111-8111-111111111111")
 MISSION_ID = UUID("22222222-2222-4222-8222-222222222222")
-OTHER_MISSION_ID = UUID("33333333-3333-4333-8333-333333333333")
 PROJECT_ID = UUID("44444444-4444-4444-8444-444444444444")
 
 # the file as `GET /files/:uuid` returns it
@@ -94,16 +93,6 @@ def test_naive_date_is_sent_as_utc():
 
     _, body = client.puts[0]
     assert body["date"] == "2025-06-01T08:30:00+00:00"
-
-
-def test_move_keeps_name_and_date():
-    client = _FakeClient()
-    kleinkram.core.update_file(client=client, file_id=FILE_ID, mission_id=OTHER_MISSION_ID)
-
-    _, body = client.puts[0]
-    assert body["missionUuid"] == str(OTHER_MISSION_ID)
-    assert body["filename"] == "recording.bag"
-    assert body["date"] == FILE_DATE.isoformat()
 
 
 def test_nothing_to_update_raises():

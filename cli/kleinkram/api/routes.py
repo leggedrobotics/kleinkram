@@ -651,10 +651,9 @@ def _update_file(
     *,
     filename: str,
     date: datetime,
-    mission_id: Optional[UUID] = None,
 ) -> None:
     """\
-    replaces the file's name and date and optionally moves it to `mission_id`
+    replaces the file's name and date
 
     the API requires both `filename` and `date` on every call, so callers have
     to pass the current values for the fields they do not want to change (see
@@ -669,8 +668,6 @@ def _update_file(
         "filename": filename,
         "date": date.isoformat(),
     }
-    if mission_id is not None:
-        body["missionUuid"] = str(mission_id)
 
     resp = client.put(FILE_BY_ID_ENDPOINT.format(file_id), json=body)
 
