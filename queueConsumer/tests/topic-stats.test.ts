@@ -288,7 +288,7 @@ describe('bag index topic stats', () => {
         });
     });
 
-    test('should store a latched topic with frequency 0', async () => {
+    test('should store a latched topic without a rate', async () => {
         server.put('latched.bag', typicalBag());
         const stats = await bagService.probeTopicStatsFromUrl(
             server.url('latched.bag'),
@@ -299,7 +299,7 @@ describe('bag index topic stats', () => {
             lastSeen: msDate(ORIGIN + SECOND),
             chunkCount: 1,
             coverage: [[0, 1000]],
-            frequency: 0,
+            frequency: undefined,
         });
     });
 
@@ -350,10 +350,8 @@ describe('MCAP summary topic stats', () => {
             chunkCount: 61,
             frequency: 61 / 60,
         });
-        expect(stats.get('/tf_static')).toMatchObject({
-            chunkCount: 1,
-            frequency: 0,
-        });
+        expect(stats.get('/tf_static')).toMatchObject({ chunkCount: 1 });
+        expect(stats.get('/tf_static')?.frequency).toBeUndefined();
     });
 
     test('should know nothing when the chunks have no message index', async () => {
@@ -381,7 +379,7 @@ describe('MCAP summary topic stats', () => {
 interface FakeTopic {
     uuid: string;
     name: string;
-    frequency: number;
+    frequency: number | null;
     firstSeen?: Date | null;
     lastSeen?: Date | null;
     chunkCount?: number | null;
@@ -500,8 +498,9 @@ describe('TopicStatsBackfillService', () => {
             chunkCount: 60,
             coverage: [[30_000, 90_000]],
         });
+        // A one-shot topic has no rate: null, not 0.
         expect(topics.find((t) => t.name === '/tf_static')).toMatchObject({
-            frequency: 0,
+            frequency: null,
             chunkCount: 1,
         });
         // A topic the index does not know keeps its frequency and gets no

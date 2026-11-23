@@ -39,12 +39,19 @@ export class TopicDto {
 
     @ApiProperty({
         description:
-            'Messages per second between firstSeen and lastSeen. 0 for a one-shot topic (seen in fewer than 5 chunks). Where firstSeen is null, the message count over the whole recording.',
+            'Messages per second between firstSeen and lastSeen. Null when the topic has no rate (seen in fewer than 5 chunks, or a zero span). Where firstSeen is null, the message count over the whole recording.',
+        type: Number,
+        nullable: true,
     })
     @IsNumber()
+    @IsOptional()
     @Expose()
-    @Transform(({ obj }) => (Number.isNaN(obj.frequency) ? 0 : obj.frequency))
-    frequency!: number;
+    @Transform(({ obj }) => {
+        // null: the topic has no rate (one-shot or zero span)
+        if (obj.frequency === null || obj.frequency === undefined) return null;
+        return Number.isNaN(obj.frequency) ? 0 : obj.frequency;
+    })
+    frequency!: number | null;
 
     @ApiProperty({
         description:

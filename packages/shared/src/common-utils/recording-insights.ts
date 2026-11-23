@@ -311,18 +311,19 @@ export function computeRecordingCoverage(
  * chunk to its last.
  *
  * Dividing by the whole recording instead understates every topic that starts
- * late or stops early. A one-shot topic (seen in fewer than
- * {@link MIN_CHUNKS_FOR_STREAM} chunks) has no rate to speak of and gets 0.
- * Undefined when the recorder wrote no message counts.
+ * late or stops early. Undefined, meaning the topic has no rate, for a
+ * one-shot topic (seen in fewer than {@link MIN_CHUNKS_FOR_STREAM} chunks),
+ * for a topic whose span is zero, and when the recorder wrote no message
+ * counts.
  */
 export function topicFrequency(
     messageCount: number | undefined,
     coverage: Pick<TopicCoverage, 'chunkCount' | 'firstSeen' | 'lastSeen'>,
 ): number | undefined {
     if (messageCount === undefined) return undefined;
-    if (coverage.chunkCount < MIN_CHUNKS_FOR_STREAM) return 0;
+    if (coverage.chunkCount < MIN_CHUNKS_FOR_STREAM) return undefined;
     const span = seconds(coverage.lastSeen, coverage.firstSeen);
-    return span > 0 ? messageCount / span : 0;
+    return span > 0 ? messageCount / span : undefined;
 }
 
 /** `[start, end]` in whole milliseconds since the recording's first message. */

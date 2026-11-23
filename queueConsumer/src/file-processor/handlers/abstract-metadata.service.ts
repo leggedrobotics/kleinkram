@@ -23,8 +23,8 @@ export abstract class AbstractMetadataService {
      * Handles deduplication, saving entities, and logging the timed event.
      *
      * `topicStats` replaces the whole-recording frequency of every topic it
-     * knows; it is keyed by topic name, so it already spans every channel of
-     * a topic.
+     * knows, with null where the topic has no rate; it is keyed by topic
+     * name, so it already spans every channel of a topic.
      */
     protected async finishExtraction(
         targetEntity: FileEntity,
@@ -66,9 +66,11 @@ export abstract class AbstractMetadataService {
                         name: t.name,
                         type: t.type,
                         nrMessages: t.nrMessages,
-                        frequency: this.normalizeFrequency(
-                            stats?.frequency ?? t.frequency,
-                        ),
+                        // With stats, a topic without a rate stores null;
+                        // without, the whole-recording rate stays.
+                        frequency: stats
+                            ? (stats.frequency ?? null)
+                            : this.normalizeFrequency(t.frequency),
                         ...topicStatsColumns(stats),
                         file: targetEntity,
                     });

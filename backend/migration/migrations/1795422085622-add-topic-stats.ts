@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddTopicStats1795174552552 implements MigrationInterface {
-    name = 'AddTopicStats1795174552552';
+export class AddTopicStats1795422085622 implements MigrationInterface {
+    name = 'AddTopicStats1795422085622';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(
@@ -15,9 +15,19 @@ export class AddTopicStats1795174552552 implements MigrationInterface {
         await queryRunner.query(
             `ALTER TABLE "file_entity" ADD "topicStatsVersion" integer NOT NULL DEFAULT '0'`,
         );
+        await queryRunner.query(
+            `ALTER TABLE "topic" ALTER COLUMN "frequency" DROP NOT NULL`,
+        );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
+        // Topics without a rate hold NULL; the old schema had 0 for those.
+        await queryRunner.query(
+            `UPDATE "topic" SET "frequency" = 0 WHERE "frequency" IS NULL`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "topic" ALTER COLUMN "frequency" SET NOT NULL`,
+        );
         await queryRunner.query(
             `ALTER TABLE "file_entity" DROP COLUMN "topicStatsVersion"`,
         );

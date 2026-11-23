@@ -254,8 +254,12 @@ describe('topicFrequency', () => {
     });
 
     test('a one-shot topic has no rate', () => {
-        expect(topicFrequency(7, span(4, 2))).toBe(0);
-        expect(topicFrequency(1, span(1, 1))).toBe(0);
+        expect(topicFrequency(7, span(4, 2))).toBeUndefined();
+        expect(topicFrequency(1, span(1, 1))).toBeUndefined();
+    });
+
+    test('a topic without a span has no rate', () => {
+        expect(topicFrequency(50, span(5, 0))).toBeUndefined();
     });
 
     test('a topic in exactly five chunks is a stream', () => {
@@ -290,7 +294,7 @@ describe('computeTopicStats', () => {
         expect(stats.get('/imu')?.frequency).toBe(400);
     });
 
-    test('a latched topic is stored with frequency 0', () => {
+    test('a latched topic is stored without a rate', () => {
         const stats = computeTopicStats(
             recording(100, (second) =>
                 second === 0 ? [IMU, TF_STATIC] : [IMU],
@@ -301,8 +305,8 @@ describe('computeTopicStats', () => {
         expect(stats.get('/tf_static')).toMatchObject({
             chunkCount: 1,
             coverage: [[0, 1000]],
-            frequency: 0,
         });
+        expect(stats.get('/tf_static')?.frequency).toBeUndefined();
     });
 
     test('rounds sub-millisecond chunk bounds', () => {

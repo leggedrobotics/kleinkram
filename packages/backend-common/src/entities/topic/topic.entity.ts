@@ -26,13 +26,14 @@ export class TopicEntity extends BaseEntity {
 
     /**
      * Messages per second between {@link firstSeen} and {@link lastSeen}, not
-     * over the whole recording. 0 for a one-shot topic (fewer than five
-     * chunks), which has no rate. Where the per-topic span is unknown (db3,
-     * MCAPs without message indexes, files not yet backfilled) it is still the
-     * message count over the whole recording.
+     * over the whole recording. Null when the topic has no rate: a one-shot
+     * topic (fewer than five chunks), a zero span, or no message counts.
+     * Where the per-topic span is unknown (db3, MCAPs without message indexes,
+     * files not yet backfilled) it is still the message count over the whole
+     * recording.
      */
-    @Column('float')
-    frequency!: number;
+    @Column({ type: 'float', nullable: true })
+    frequency!: number | null;
 
     /**
      * Start of the first chunk that holds the topic. Accurate to one chunk;

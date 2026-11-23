@@ -85,9 +85,11 @@ export class TopicStatsBackfillService {
                         { uuid: topic.uuid },
                         {
                             ...topicStatsColumns(topicStats),
-                            ...(topicStats?.frequency === undefined
-                                ? {}
-                                : { frequency: topicStats.frequency }),
+                            // A topic the index knows gets its span-based rate, or
+                            // null for none; any other topic keeps its frequency.
+                            ...(topicStats
+                                ? { frequency: topicStats.frequency ?? null }
+                                : {}),
                             ...KEEP_UPDATED_AT,
                         },
                     );
