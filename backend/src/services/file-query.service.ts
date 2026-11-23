@@ -960,7 +960,6 @@ export class FileQueryService {
                 `(metadataType.uuid = :${uuidParameter} AND metadata.${column} = :${valueParameter})`,
             );
             metadataParameters[uuidParameter] = uuid;
-
             metadataParameters[valueParameter] = processedValue;
 
             validMetadataCount++;

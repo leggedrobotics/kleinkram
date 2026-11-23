@@ -143,6 +143,14 @@ export default tseslint.config(
             // casts with type guards and re-enable it separately.
             '@typescript-eslint/no-unsafe-enum-assignment': 'off',
 
+            // `no-unsafe-class-instance-assignment` joined `strictTypeChecked`
+            // in typescript-eslint v8.73. It reports ~500 places that return
+            // an object literal where a DTO class is the declared type (e.g.
+            // `return { success: true }` for `SuccessResponseDto`), which is
+            // the normal NestJS pattern here. Off so this dependency bump
+            // stays behaviour neutral; adopt it in a separate change.
+            '@typescript-eslint/no-unsafe-class-instance-assignment': 'off',
+
             // --- Rules introduced by eslint-plugin-unicorn v74 ---
             // The v62 -> v74 jump added ~200 rules to `flat/recommended`. The
             // ones below report ~700 findings in pre-existing code; they are
