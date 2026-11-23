@@ -348,6 +348,30 @@ describe('computeTopicStats', () => {
         expect(computeTopicStats(chunks, channels).size).toBe(0);
     });
 
+    test('keeps the stats of a recording without duration', () => {
+        // A single message: one chunk that starts and ends at the same time.
+        const stats = computeTopicStats([chunk(5, 5, [IMU])], channels);
+        const at = new Date(Number((ORIGIN + 5n * SECOND) / 1_000_000n));
+
+        expect([...stats.keys()]).toEqual(['/imu']);
+        expect(stats.get('/imu')).toEqual({
+            firstSeen: at,
+            lastSeen: at,
+            chunkCount: 1,
+            coverage: [[0, 0]],
+            frequency: undefined,
+        });
+    });
+
+    test('knows nothing about an unindexed recording without duration', () => {
+        expect(
+            computeTopicStats(
+                [chunk(5, 5, [], { hasMessageIndex: false })],
+                channels,
+            ).size,
+        ).toBe(0);
+    });
+
     test('knows nothing without chunks', () => {
         expect(computeTopicStats([], channels).size).toBe(0);
     });

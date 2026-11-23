@@ -516,6 +516,44 @@ describe('TopicStatsBackfillService', () => {
         });
     });
 
+    test('should keep the stats of a single-message MCAP, without a rate', async () => {
+        server.put(
+            'single.mcap',
+            await writeMcap([{ topic: '/imu', second: 5 }]),
+        );
+        const file = {
+            ...bagFile(),
+            filename: 'single.mcap',
+            type: FileType.MCAP,
+        };
+        // As ingestion left it: no duration, so the old formula gave 0.
+        const topics: FakeTopic[] = [
+            { uuid: 't-imu', name: '/imu', frequency: 0 },
+        ];
+        const { fileRepo, topicRepo } = fakeDatabase(file, topics);
+        const service = new TopicStatsBackfillService(
+            fileRepo,
+            topicRepo,
+            storageServing('single.mcap').storage,
+            mcapService,
+            bagService,
+        );
+
+        expect(await service.backfillFile(file.uuid)).toBe('updated');
+
+        const at = msDate(ORIGIN + 5n * SECOND);
+        expect(topics[0]).toEqual({
+            uuid: 't-imu',
+            name: '/imu',
+            frequency: null,
+            firstSeen: at,
+            lastSeen: at,
+            chunkCount: 1,
+            coverage: [[0, 0]],
+        });
+        expect(file.topicStatsVersion).toBe(TOPIC_STATS_VERSION);
+    });
+
     test('should be safe to run twice on the same file', async () => {
         server.put('twice.bag', typicalBag());
         const file = bagFile();

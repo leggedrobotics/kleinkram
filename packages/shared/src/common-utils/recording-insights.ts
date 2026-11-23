@@ -360,18 +360,64 @@ const toMilliseconds = (secondsValue: number): number =>
 const toDate = (timeNs: bigint): Date => new Date(Number(timeNs / 1_000_000n));
 
 /**
+ * Coverage of an indexed recording without duration: a single message, or
+ * messages that all share one timestamp. {@link computeRecordingCoverage}
+ * has nothing to draw there, but the index still says which topics the file
+ * holds and in how many chunks. Every such topic covers the one instant, and
+ * has no rate since its span is zero.
+ *
+ * Undefined without chunks, with duration, or when a chunk lacks a message
+ * index, exactly when the regular computation decides instead.
+ */
+function instantCoverage(
+    chunks: RecordingChunk[],
+    channels: RecordingChannel[],
+): RecordingCoverage | undefined {
+    const instant = chunks.at(0)?.startTime;
+    if (instant === undefined) return undefined;
+    const isInstant = chunks.every(
+        (chunk) =>
+            chunk.hasMessageIndex &&
+            chunk.startTime === instant &&
+            chunk.endTime === instant,
+    );
+    if (!isInstant) return undefined;
+
+    const located: LocatedChunk[] = chunks.map((chunk) => ({
+        span: { start: 0, end: 0 },
+        startTime: instant,
+        endTime: instant,
+        channelIds: chunk.channelIds,
+    }));
+    const topics: Record<string, TopicCoverage> = {};
+    for (const [topic, topicChunks] of chunksPerTopic(located, channels)) {
+        topics[topic] = {
+            covered: [{ start: 0, end: 0 }],
+            gaps: [],
+            chunkCount: topicChunks.length,
+            firstSeen: instant,
+            lastSeen: instant,
+        };
+    }
+    return { startTime: instant, durationSeconds: 0, topics, pauses: [] };
+}
+
+/**
  * Per topic, what the backend stores about where it has data.
  *
  * Built on {@link computeRecordingCoverage}, so stored and live values agree.
- * Empty when coverage is unknown: no chunks, no duration, or a chunk without
- * a message index.
+ * A recording without duration (a single message) still gets its topics,
+ * covering one instant and without a rate. Empty when coverage is unknown: no
+ * chunks, or a chunk without a message index.
  */
 export function computeTopicStats(
     chunks: RecordingChunk[],
     channels: RecordingChannel[],
 ): Map<string, StoredTopicStats> {
     const stats = new Map<string, StoredTopicStats>();
-    const coverage = computeRecordingCoverage(chunks, channels);
+    const coverage =
+        computeRecordingCoverage(chunks, channels) ??
+        instantCoverage(chunks, channels);
     if (!coverage) return stats;
 
     const counts = countMessages(channels);
