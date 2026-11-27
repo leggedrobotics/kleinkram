@@ -34,6 +34,7 @@ from kleinkram.naming import FILENAME_MAX_LENGTH
 from kleinkram.naming import FILENAME_MIN_LENGTH
 from kleinkram.naming import UUID_REGEX
 from kleinkram.naming import get_file_name_validation_error
+from kleinkram.naming import split_file_name
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 
@@ -119,12 +120,22 @@ def check_file_paths(files: Sequence[Path], *, check_filename: bool = True) -> N
         check_file_path(file, check_filename=check_filename)
 
 
+def file_extension(path: Path) -> str:
+    """\
+    the lowercased extension of a file name, split like the server does
+
+    not `Path.suffix`: Python 3.14 changed how it splits names with leading
+    dots (`...bag` has no suffix there, `.bag` before)
+    """
+    return split_file_name(path.name)[1].lower()
+
+
 def check_file_path(file: Path, *, check_filename: bool = True) -> None:
     if file.is_dir():
         raise FileNotFoundError(f"{file} is a directory and not a file")
     if not file.exists():
         raise FileNotFoundError(f"{file} does not exist")
-    if file.suffix.lower() not in SUPPORT_FILE_TYPES:
+    if file_extension(file) not in SUPPORT_FILE_TYPES:
         raise FileTypeNotSupported(f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}")
     if check_filename:
         error = get_file_name_validation_error(file.name)
@@ -183,10 +194,11 @@ def get_filename(path: Path) -> str:
       appended: `a.bag` -> `a_<hash>.bag`
     the hashed characters are deterministic given the original file name
     """
-    stem = "".join(char if char in INTERNAL_ALLOWED_CHARS else "_" for char in path.stem)
+    raw_stem, raw_suffix = split_file_name(path.name)
+    stem = "".join(char if char in INTERNAL_ALLOWED_CHARS else "_" for char in raw_stem)
     if stem[:1] in (".", "-"):
         stem = f"_{stem[1:]}"
-    suffix = path.suffix.lower() if path.suffix.lower() in SUPPORT_FILE_TYPES else path.suffix
+    suffix = raw_suffix.lower() if raw_suffix.lower() in SUPPORT_FILE_TYPES else raw_suffix
 
     digest = md5(path.name.encode()).hexdigest()
     if len(stem) > FILENAME_MAX_LENGTH:

@@ -18,8 +18,9 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                # Oldest supported and newest tested version.
-                python-version: ['3.10', '3.13']
+                # Every supported version only on the release PR (dev -> main);
+                # PRs to dev test the newest supported version.
+                python-version: ${{ fromJSON(github.base_ref == 'main' && '["3.10", "3.11", "3.12", "3.13", "3.14"]' || '["3.14"]') }}
 
         steps:
             - uses: actions/checkout@v7

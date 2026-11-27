@@ -14,6 +14,7 @@ from kleinkram.errors import FileNameNotSupported
 from kleinkram.naming import get_file_name_validation_error
 from kleinkram.utils import EXPERIMENTAL_FILE_TYPES
 from kleinkram.utils import SUPPORT_FILE_TYPES
+from kleinkram.utils import file_extension
 
 
 def supported_suffixes(*, experimental_datatypes: bool) -> Sequence[str]:
@@ -76,7 +77,7 @@ class FileValidator:
         if file.is_dir():
             raise IsADirectoryError(f"{file} is a directory")
 
-        file_suffix = file.suffix.lower()
+        file_suffix = file_extension(file)
         is_experimental = file_suffix in EXPERIMENTAL_FILE_TYPES
         is_standard = file_suffix in SUPPORT_FILE_TYPES
 
