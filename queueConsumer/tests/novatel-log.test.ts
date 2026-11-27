@@ -173,6 +173,84 @@ describe('NovAtel log reader', () => {
     });
 });
 
+describe('NovAtel log reader robustness', () => {
+    it('should keep scanning past a stray sync claiming a length beyond the window', () => {
+        // AA 44 12 with header length 28 and a body length of 65535
+        const stray = Buffer.from([
+            0xaa, 0x44, 0x12, 28, 0, 0, 0, 0, 0xff, 0xff,
+        ]);
+        const window = Buffer.concat([
+            stray,
+            longFrame(42, bestpos(46.9, 7.1)),
+            longFrame(42, bestpos(46.9, 7.1)),
+        ]);
+        expect(scanNovatelFrames(window).frames).toHaveLength(2);
+        expect(isNovatelLog(window)).toBe(true);
+    });
+
+    it('should scan a run of # and < bytes in linear time', () => {
+        const noise = Buffer.alloc(2 * 1024 * 1024, 0x23);
+        noise.fill(0x3c, 1024 * 1024);
+        const window = Buffer.concat([
+            longFrame(42, bestpos(46.9, 7.1)),
+            longFrame(42, bestpos(46.9, 7.1)),
+            noise,
+            Buffer.from('#ABC,'),
+            noise,
+        ]);
+        const started = Date.now();
+        expect(scanNovatelFrames(window).frames).toHaveLength(2);
+        expect(Date.now() - started).toBeLessThan(2000);
+    });
+
+    it('should decode positions and receiver details from ASCII logs', () => {
+        const log = Buffer.concat([
+            asciiFrame(
+                'VERSIONA,COM1,0,55.0,FINESTEERING,2343,216743.000,02000000,3681,17439;1,GPSCARD,"FFNRNNCBES1","DMMU23100101J","OEM7720-1.01","OM7CR0902EN0001","OM7BR0200RB0000","2024/May/29","18:18:38"',
+            ),
+            asciiFrame(
+                'BESTPOSA,COM1,0,58.5,FINESTEERING,2343,216744.000,02000000,b1f6,17439;SOL_COMPUTED,NARROW_INT,46.94155791195,7.13903287149,435.2278,48.1000,WGS84,0.0300,0.0400,0.0500,"0",1.000,0.000,30,21,21,21,00,21,3f,37',
+            ),
+            asciiFrame(
+                'INSPVAXA,COM1,0,58.5,FINESTEERING,2343,216745.000,02000000,18bd,17439;INS_SOLUTION_GOOD,INS_PPP,46.94155689231,7.13903172092,435.0342,48.1000,0.0010,-0.0020,0.0030,0.5,1.2,90.0,0.0200,0.0300,0.0400,0.01,0.01,0.01,0.1,0.1,0.2,00000000,0',
+            ),
+        ]);
+        const { frames } = scanNovatelFrames(log);
+        expect(frames.map((frame) => frame.name)).toEqual([
+            'VERSION',
+            'BESTPOS',
+            'INSPVAX',
+        ]);
+        expect(
+            frames
+                .map((frame) => decodeNovatelVersion(log, frame))
+                .find(Boolean),
+        ).toEqual({
+            model: 'FFNRNNCBES1',
+            serial: 'DMMU23100101J',
+            hardware: 'OEM7720-1.01',
+            firmware: 'OM7CR0902EN0001',
+        });
+        const positions = frames
+            .map((frame) => decodeNovatelPosition(log, frame))
+            .filter(Boolean);
+        expect(positions).toMatchObject([
+            {
+                source: 'BESTPOS',
+                positionType: 'NARROW_INT',
+                lat: 46.94155791195,
+                satellites: 21,
+            },
+            {
+                source: 'INSPVAX',
+                insStatus: 'INS_SOLUTION_GOOD',
+                positionType: 'INS_PPP',
+            },
+        ]);
+        expect(positions[0]?.horizontalSigma).toBeCloseTo(0.05, 5);
+    });
+});
+
 describe('Log format detection', () => {
     it('should recognise a NovAtel log', () => {
         expect(isNovatelLog(sampleLog())).toBe(true);
@@ -253,6 +331,12 @@ describe('Text log levels', () => {
         expect(detectLineLevel(line)).toBe(expected);
     });
 
+    it('should take the first level marker on the line', () => {
+        expect(detectLineLevel('[error] failed to enable DEBUG logging')).toBe(
+            'ERROR',
+        );
+    });
+
     it('should not read a level from a word inside the message', () => {
         expect(detectLineLevel('request finished, Errors: 0')).toBeUndefined();
         expect(detectLineLevel('INFORMATION follows')).toBeUndefined();
@@ -268,5 +352,27 @@ describe('Text log levels', () => {
                 '  indented below an entry without level',
             ]),
         ).toEqual(['ERROR', 'ERROR', 'ERROR', undefined, undefined]);
+    });
+
+    it('should keep a chained traceback together across blank lines', () => {
+        expect(
+            detectLineLevels([
+                '2024-12-03 12:00:00 ERROR crash',
+                'Traceback (most recent call last):',
+                'KeyError: x',
+                '',
+                'During handling of the above exception, another exception occurred:',
+                'ValueError: y',
+                '2024-12-03 12:00:01 INFO next',
+            ]),
+        ).toEqual([
+            'ERROR',
+            'ERROR',
+            'ERROR',
+            'ERROR',
+            'ERROR',
+            'ERROR',
+            'INFO',
+        ]);
     });
 });

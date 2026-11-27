@@ -41,10 +41,18 @@ export const detectLineLevel = (line: string): LogLevel | undefined => {
     const glog = GLOG_PREFIX.exec(line);
     if (glog?.[1]) return GLOG_LEVELS[glog[1]];
 
+    // The first marker wins: in `[error] could not enable DEBUG` the level is
+    // the bracket, the uppercase word is part of the message.
     const head = line.slice(0, LEVEL_SEARCH_CHARACTERS);
-    const keyword =
-        UPPERCASE_LEVEL.exec(head)?.[1] ??
-        BRACKETED_LEVEL.exec(head)?.[1]?.toUpperCase();
+    const uppercase = UPPERCASE_LEVEL.exec(head);
+    const bracketed = BRACKETED_LEVEL.exec(head);
+    const first =
+        uppercase && bracketed
+            ? uppercase.index <= bracketed.index
+                ? uppercase
+                : bracketed
+            : (uppercase ?? bracketed);
+    const keyword = first?.[1]?.toUpperCase();
     return keyword === undefined ? undefined : LEVEL_ALIASES.get(keyword);
 };
 
@@ -55,18 +63,15 @@ const STARTS_WITH_TIMESTAMP = /^\[?\d{2,4}[-/.:]\d/;
  * Levels for a list of lines. A line without a level of its own that does not
  * start a new entry with a timestamp, such as a traceback, belongs to the
  * entry above and takes its level, so filtering for errors keeps the traceback
- * with the error.
+ * with the error. Blank lines do too: chained Python tracebacks separate their
+ * parts with one.
  */
 export const detectLineLevels = (lines: string[]): (LogLevel | undefined)[] => {
     const levels: (LogLevel | undefined)[] = [];
     let previous: LogLevel | undefined;
     for (const line of lines) {
         let level = detectLineLevel(line);
-        if (
-            level === undefined &&
-            line.trim() !== '' &&
-            !STARTS_WITH_TIMESTAMP.test(line)
-        )
+        if (level === undefined && !STARTS_WITH_TIMESTAMP.test(line))
             level = previous;
         levels.push(level);
         previous = level;

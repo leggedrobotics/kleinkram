@@ -189,6 +189,7 @@ watch(
             failed.value = loaded === undefined;
         } catch (error) {
             console.error(error);
+            if (url !== properties.url || requested !== part.value) return;
             failed.value = true;
         }
     },

@@ -175,6 +175,8 @@ interface WindowResult {
     positions: (NovatelPosition & { source: string })[];
     firstTime?: number;
     lastTime?: number;
+    /** Continues the bytes before it, so no positions were skipped between. */
+    contiguous?: boolean;
 }
 
 const frameTime = (
@@ -185,9 +187,9 @@ const frameTime = (
           gpsToUnixMs(frame.week!, frame.milliseconds!)
         : undefined;
 
-const scanWindow = (bytes: Uint8Array): WindowResult => {
+const scanWindow = (bytes: Uint8Array, contiguous: boolean): WindowResult => {
     const { frames } = scanNovatelFrames(bytes);
-    const result: WindowResult = { positions: [] };
+    const result: WindowResult = { positions: [], contiguous };
     for (const frame of frames) {
         const time = frameTime(frame);
         if (time !== undefined) {
@@ -245,8 +247,10 @@ const thin = (
 };
 
 /**
- * Small windows spread over the bytes after the head, the last one ending at
- * the end of the file. Each starts mid-message and resynchronises.
+ * The bytes after the head. Up to `NOVATEL_SAMPLE_WINDOWS + 1` windows' worth
+ * they are read whole; beyond that, windows are spread over them without
+ * overlapping, the last one ending at the end of the file. Each window starts
+ * mid-message and resynchronises.
  */
 async function sampleWindows(
     url: string,
@@ -254,18 +258,22 @@ async function sampleWindows(
     size: number,
 ): Promise<WindowResult[]> {
     const rest = size - from;
-    const offsets =
-        rest <= NOVATEL_SAMPLE_BYTES
-            ? [from]
-            : Array.from(
-                  { length: NOVATEL_SAMPLE_WINDOWS },
-                  (_, index) =>
-                      from +
-                      Math.floor(
-                          ((index + 1) * (rest - NOVATEL_SAMPLE_BYTES)) /
-                              NOVATEL_SAMPLE_WINDOWS,
-                      ),
-              );
+    if (rest <= 0) return [];
+    if (rest <= (NOVATEL_SAMPLE_WINDOWS + 1) * NOVATEL_SAMPLE_BYTES) {
+        const bytes = await fetchByteRange(url, from, rest);
+        return bytes ? [scanWindow(bytes, true)] : [];
+    }
+    // Consecutive offsets are (rest - W) / N > W apart, so windows never overlap
+    // each other or the head.
+    const offsets = Array.from(
+        { length: NOVATEL_SAMPLE_WINDOWS },
+        (_, index) =>
+            from +
+            Math.floor(
+                ((index + 1) * (rest - NOVATEL_SAMPLE_BYTES)) /
+                    NOVATEL_SAMPLE_WINDOWS,
+            ),
+    );
     const sampled = await inBatches(
         offsets.map(
             (offset) => async () =>
@@ -275,7 +283,7 @@ async function sampleWindows(
     );
     return sampled
         .filter((bytes): bytes is Uint8Array => bytes !== undefined)
-        .map((bytes) => scanWindow(bytes));
+        .map((bytes) => scanWindow(bytes, false));
 }
 
 /**
@@ -284,22 +292,19 @@ async function sampleWindows(
  * first is a separate window, so its first point follows a gap.
  */
 const buildTrack = (
-    lists: (NovatelPosition & { source: string })[][],
+    windows: WindowResult[],
 ): { trackSource: string | undefined; track: NovatelTrackPoint[] } => {
     const trackSource = POSITION_SOURCES.find((source) =>
-        lists.some((list) =>
-            list.some((position) => position.source === source),
+        windows.some((window) =>
+            window.positions.some((position) => position.source === source),
         ),
     );
     const track: NovatelTrackPoint[] = [];
-    for (const [index, list] of lists.entries()) {
-        let first = true;
-        for (const position of list) {
+    for (const window of windows) {
+        let first = !window.contiguous;
+        for (const position of window.positions) {
             if (position.source !== trackSource) continue;
-            track.push({
-                ...position,
-                gapBefore: index > 0 && first && track.length > 0,
-            });
+            track.push({ ...position, gapBefore: first && track.length > 0 });
             first = false;
         }
     }
@@ -320,7 +325,7 @@ export async function loadNovatelSummary(
     if (!head) return undefined;
     const truncated = head.length < size;
 
-    const { frames } = scanNovatelFrames(head);
+    const { frames, endOffset } = scanNovatelFrames(head);
     const stats = new Map<
         string,
         NovatelMessageStats & {
@@ -360,9 +365,21 @@ export async function loadNovatelSummary(
     }
 
     const windows = truncated
-        ? await sampleWindows(url, head.length, size)
+        ? // From the end of the last complete frame, so a frame cut by the
+          // head is read whole when the rest is read contiguously.
+          await sampleWindows(
+              url,
+              endOffset > 0 ? endOffset : head.length,
+              size,
+          )
         : [];
     for (const window of windows) {
+        // GPS time may only be acquired after the head.
+        if (window.firstTime !== undefined)
+            startTime = Math.min(
+                startTime ?? window.firstTime,
+                window.firstTime,
+            );
         if (window.lastTime !== undefined)
             endTime = Math.max(endTime ?? window.lastTime, window.lastTime);
     }
@@ -384,8 +401,8 @@ export async function loadNovatelSummary(
         .toSorted((a, b) => b.count - a.count);
 
     const { trackSource, track } = buildTrack([
-        headPositions,
-        ...windows.map((window) => window.positions),
+        { positions: headPositions, contiguous: true },
+        ...windows,
     ]);
 
     return {

@@ -73,6 +73,20 @@
                     yamlContent
                 }}</pre>
             </div>
+            <div
+                v-else-if="logFormat === 'failed'"
+                class="text-center q-pa-xl q-px-md bg-grey-1 rounded-borders border-dashed text-grey-7"
+            >
+                <q-icon name="sym_o_warning" size="4em" class="q-mb-md" />
+                <div class="text-h6 q-mb-sm">The log could not be loaded</div>
+                <q-btn
+                    label="Download"
+                    color="primary"
+                    icon="sym_o_download"
+                    unelevated
+                    @click="handleDownload"
+                />
+            </div>
             <div v-else class="row items-center q-gutter-sm text-grey-7">
                 <q-spinner-dots size="1.5em" /> <span>Loading content...</span>
             </div>
@@ -378,7 +392,8 @@ const textContent = ref<string | undefined>(undefined);
 const textTruncated = ref(false);
 const svo2Url = ref<string | undefined>(undefined);
 const logUrl = ref<string | undefined>(undefined);
-const logFormat = ref<LogFormat | undefined>(undefined);
+// `failed`: the first bytes could not be read, so the format is not known.
+const logFormat = ref<LogFormat | 'failed' | undefined>(undefined);
 // Tracks which file the loaded preview belongs to, so navigating to another
 // file clears it instead of showing the previous file's content.
 const loadedFileUuid = ref<string | undefined>(undefined);
@@ -436,10 +451,15 @@ async function loadLogPreview(
     size: number,
     isStale: () => boolean,
 ): Promise<void> {
-    const format = await detectRemoteLogFormat(url, size);
+    let format: LogFormat | undefined;
+    try {
+        format = await detectRemoteLogFormat(url, size);
+    } catch (error) {
+        console.error(error);
+    }
     if (isStale()) return;
     logUrl.value = url;
-    logFormat.value = format ?? 'unknown';
+    logFormat.value = format ?? 'failed';
 }
 
 // --- Init ---
@@ -500,6 +520,8 @@ watch(
             }
         } catch (error_) {
             console.error(error_);
+            // The download link itself failed: say so instead of spinning.
+            if (isLog.value && !isStale()) logFormat.value = 'failed';
         }
     },
     { immediate: true },

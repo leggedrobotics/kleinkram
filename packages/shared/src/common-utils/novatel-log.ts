@@ -220,22 +220,22 @@ const asciiText = (bytes: Uint8Array, start: number, end: number): string => {
 /** Result of trying to read one frame at an offset. */
 type FrameAttempt =
     | { frame: NovatelFrame; next: number }
-    /** Not a frame; resume scanning one byte further. */
-    | { frame: undefined; next: undefined }
-    /** Looks like a frame but the window ends inside it. */
-    | { frame: undefined; next: 'incomplete' };
+    /**
+     * Not a frame, or one the window ends inside of (its CRC cannot be
+     * checked); scanning resumes one byte further.
+     */
+    | { frame: undefined; next: undefined };
 
 const NOT_A_FRAME = { frame: undefined, next: undefined } as const;
-const INCOMPLETE = { frame: undefined, next: 'incomplete' } as const;
 
 const readBinary = (bytes: Uint8Array, at: number): FrameAttempt => {
-    if (at + LONG_HEADER_MIN_LENGTH > bytes.length) return INCOMPLETE;
+    if (at + LONG_HEADER_MIN_LENGTH > bytes.length) return NOT_A_FRAME;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const headerLength = bytes[at + 3]!;
     if (headerLength < LONG_HEADER_MIN_LENGTH) return NOT_A_FRAME;
     const bodyLength = readUint16(bytes, at + 8);
     const end = at + headerLength + bodyLength;
-    if (end + CRC_LENGTH > bytes.length) return INCOMPLETE;
+    if (end + CRC_LENGTH > bytes.length) return NOT_A_FRAME;
     if (novatelCrc32(bytes, at, end) !== readUint32(bytes, end))
         return NOT_A_FRAME;
     const id = readUint16(bytes, at + 4);
@@ -256,11 +256,11 @@ const readBinary = (bytes: Uint8Array, at: number): FrameAttempt => {
 };
 
 const readShortBinary = (bytes: Uint8Array, at: number): FrameAttempt => {
-    if (at + SHORT_HEADER_LENGTH > bytes.length) return INCOMPLETE;
+    if (at + SHORT_HEADER_LENGTH > bytes.length) return NOT_A_FRAME;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const bodyLength = bytes[at + 3]!;
     const end = at + SHORT_HEADER_LENGTH + bodyLength;
-    if (end + CRC_LENGTH > bytes.length) return INCOMPLETE;
+    if (end + CRC_LENGTH > bytes.length) return NOT_A_FRAME;
     if (novatelCrc32(bytes, at, end) !== readUint32(bytes, end))
         return NOT_A_FRAME;
     const id = readUint16(bytes, at + 4);
@@ -278,20 +278,86 @@ const readShortBinary = (bytes: Uint8Array, at: number): FrameAttempt => {
     };
 };
 
-/** `#NAMEA,port,seq,idle,timestatus,week,seconds,...;body*xxxxxxxx` */
-const readAscii = (bytes: Uint8Array, at: number): FrameAttempt => {
-    const limit = Math.min(bytes.length, at + ASCII_MAX_LENGTH);
-    let star = -1;
-    for (let index = at + 1; index < limit; index++) {
-        const byte = bytes[index];
-        if (byte === 0x2a) {
-            star = index;
-            break;
+/**
+ * Remembers the end of the last search so the many failed candidates in a
+ * window (every `#` or `<` byte inside binary data) do not each scan ahead
+ * again: a lookup from inside an already searched stretch reuses its result.
+ * Keeps a scan linear in the window size.
+ */
+interface SearchMemo {
+    from: number;
+    /** First match at or after `from`, -1 when there is none. */
+    found: number;
+}
+
+interface ScanContext {
+    bytes: Uint8Array;
+    /** End of an ASCII message: `*`, or any byte that cannot be part of one. */
+    asciiEnd: SearchMemo;
+    newline: SearchMemo;
+}
+
+const createContext = (bytes: Uint8Array): ScanContext => ({
+    bytes,
+    asciiEnd: { from: -1, found: -1 },
+    newline: { from: -1, found: -1 },
+});
+
+const memoSearch = (
+    memo: SearchMemo,
+    bytes: Uint8Array,
+    start: number,
+    matches: (byte: number) => boolean,
+): number => {
+    const covered =
+        memo.from !== -1 &&
+        start >= memo.from &&
+        (memo.found === -1 || start <= memo.found);
+    if (!covered) {
+        memo.from = start;
+        memo.found = -1;
+        for (let index = start; index < bytes.length; index++) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            if (matches(bytes[index]!)) {
+                memo.found = index;
+                break;
+            }
         }
-        if (byte === NEWLINE) return NOT_A_FRAME;
     }
-    if (star === -1) return limit === bytes.length ? INCOMPLETE : NOT_A_FRAME;
-    if (star + 9 > bytes.length) return INCOMPLETE;
+    return memo.found;
+};
+
+const ASTERISK = 0x2a;
+const isAsciiEnd = (byte: number): boolean =>
+    byte === ASTERISK || byte < 0x20 || byte > 0x7e;
+const isNewline = (byte: number): boolean => byte === NEWLINE;
+
+/** Message names are uppercase letters, digits and `_`, then a comma. */
+const MAX_NAME_LENGTH = 40;
+const hasAsciiName = (bytes: Uint8Array, at: number): boolean => {
+    const limit = Math.min(bytes.length, at + 1 + MAX_NAME_LENGTH + 1);
+    for (let index = at + 1; index < limit; index++) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const byte = bytes[index]!;
+        if (byte === 0x2c) return index > at + 1;
+        const valid =
+            (byte >= 0x41 && byte <= 0x5a) ||
+            (byte >= 0x30 && byte <= 0x39) ||
+            byte === 0x5f;
+        if (!valid) return false;
+    }
+    return false;
+};
+
+/** `#NAMEA,port,seq,idle,timestatus,week,seconds,...;body*xxxxxxxx` */
+const readAscii = (context: ScanContext, at: number): FrameAttempt => {
+    const { bytes } = context;
+    if (!hasAsciiName(bytes, at)) return NOT_A_FRAME;
+    const star = memoSearch(context.asciiEnd, bytes, at + 1, isAsciiEnd);
+    if (star === -1) return NOT_A_FRAME;
+    if (bytes[star] !== ASTERISK || star - at > ASCII_MAX_LENGTH)
+        return NOT_A_FRAME;
+    if (star + 9 > bytes.length) return NOT_A_FRAME;
     for (let index = star + 1; index < star + 9; index++) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         if (!isHexDigit(bytes[index]!)) return NOT_A_FRAME;
@@ -299,8 +365,8 @@ const readAscii = (bytes: Uint8Array, at: number): FrameAttempt => {
     const expected = Number.parseInt(asciiText(bytes, star + 1, star + 9), 16);
     if (novatelCrc32(bytes, at + 1, star) !== expected) return NOT_A_FRAME;
 
-    const semicolon = bytes.indexOf(0x3b, at);
-    const headerEnd = semicolon === -1 || semicolon > star ? star : semicolon;
+    const semicolon = bytes.subarray(at, star).indexOf(0x3b);
+    const headerEnd = semicolon === -1 ? star : at + semicolon;
     const fields = asciiText(bytes, at + 1, headerEnd).split(',');
     const name = (fields[0] ?? '').replace(/A$/, '');
     const week = Number(fields[5]);
@@ -344,10 +410,10 @@ const ASCII_TIME_STATUS: ReadonlyMap<string, number> = new Map([
  * `<` and spaces and belong to the message above, so only the header counts.
  * There is no checksum, so this framing is only trusted between other frames.
  */
-const readAbbreviated = (bytes: Uint8Array, at: number): FrameAttempt => {
-    const newline = bytes.indexOf(NEWLINE, at);
-    if (newline === -1)
-        return bytes.length - at > ASCII_MAX_LENGTH ? NOT_A_FRAME : INCOMPLETE;
+const readAbbreviated = (context: ScanContext, at: number): FrameAttempt => {
+    const { bytes } = context;
+    const newline = memoSearch(context.newline, bytes, at, isNewline);
+    if (newline === -1) return NOT_A_FRAME;
     if (newline - at > ASCII_MAX_LENGTH) return NOT_A_FRAME;
     const line = asciiText(bytes, at + 1, newline).replace(/\r$/, '');
     const match = /^([A-Z][A-Z0-9_]*)(?:\s|$)/.exec(line);
@@ -363,17 +429,18 @@ const readAbbreviated = (bytes: Uint8Array, at: number): FrameAttempt => {
     };
 };
 
-const readFrameAt = (bytes: Uint8Array, at: number): FrameAttempt => {
+const readFrameAt = (context: ScanContext, at: number): FrameAttempt => {
+    const { bytes } = context;
     const first = bytes[at];
     if (first === SYNC_0) {
-        if (at + 3 > bytes.length) return INCOMPLETE;
+        if (at + 3 > bytes.length) return NOT_A_FRAME;
         if (bytes[at + 1] !== SYNC_1) return NOT_A_FRAME;
         if (bytes[at + 2] === SYNC_LONG) return readBinary(bytes, at);
         if (bytes[at + 2] === SYNC_SHORT) return readShortBinary(bytes, at);
         return NOT_A_FRAME;
     }
-    if (first === ASCII_SYNC) return readAscii(bytes, at);
-    if (first === ABBREVIATED_SYNC) return readAbbreviated(bytes, at);
+    if (first === ASCII_SYNC) return readAscii(context, at);
+    if (first === ABBREVIATED_SYNC) return readAbbreviated(context, at);
     return NOT_A_FRAME;
 };
 
@@ -383,7 +450,7 @@ export interface NovatelScanResult {
     checkedFrames: number;
     /** Bytes that belonged to no frame. */
     skippedBytes: number;
-    /** Offset after the last complete frame; the rest was cut off. */
+    /** Offset after the last frame found; anything after it was cut off. */
     endOffset: number;
 }
 
@@ -393,6 +460,7 @@ export interface NovatelScanResult {
  * still yields everything after its first complete frame.
  */
 export const scanNovatelFrames = (bytes: Uint8Array): NovatelScanResult => {
+    const context = createContext(bytes);
     const frames: NovatelFrame[] = [];
     let checkedFrames = 0;
     let skippedBytes = 0;
@@ -407,8 +475,10 @@ export const scanNovatelFrames = (bytes: Uint8Array): NovatelScanResult => {
         const attempt =
             first === ABBREVIATED_SYNC && !anchored
                 ? NOT_A_FRAME
-                : readFrameAt(bytes, at);
-        if (attempt.next === 'incomplete') break;
+                : readFrameAt(context, at);
+        // An unverified candidate, including one whose claimed length runs
+        // past the window, is just a byte: sync patterns occur inside bodies,
+        // and valid frames may follow it.
         if (attempt.frame === undefined) {
             skippedBytes++;
             at++;
@@ -425,7 +495,6 @@ export const scanNovatelFrames = (bytes: Uint8Array): NovatelScanResult => {
         at = attempt.next;
         endOffset = at;
     }
-    if (endOffset === 0) endOffset = at;
     return { frames, checkedFrames, skippedBytes, endOffset };
 };
 
@@ -438,6 +507,7 @@ const MIN_CHECKED_FRAMES = 2;
  * text log and by the preview to pick a viewer.
  */
 export const isNovatelLog = (sample: Uint8Array): boolean => {
+    const context = createContext(sample);
     let checked = 0;
     let at = 0;
     while (at < sample.length) {
@@ -446,9 +516,8 @@ export const isNovatelLog = (sample: Uint8Array): boolean => {
             at++;
             continue;
         }
-        const attempt = readFrameAt(sample, at);
+        const attempt = readFrameAt(context, at);
         if (attempt.frame === undefined) {
-            if (attempt.next === 'incomplete') return false;
             at++;
             continue;
         }
@@ -515,23 +584,76 @@ const BESTPOS_LIKE = new Set([42, 47, 1429, 1538]); // BESTPOS, PSRPOS, BESTGNSS
 const INSPVAX_ID = 1465;
 const INSPVA_IDS = new Set([507, 508]); // INSPVA, INSPVAS
 
-/**
- * The position in a binary frame, for the message types that carry one, or
- * undefined. Frames without a fix (position type NONE or 0/0 coordinates) are
- * dropped so they do not pull the track to the equator.
- */
-export const decodeNovatelPosition = (
-    bytes: Uint8Array,
-    frame: NovatelFrame,
-): (NovatelPosition & { source: string }) | undefined => {
-    if (frame.framing !== 'binary' && frame.framing !== 'shortBinary') return;
-    if (frame.id === undefined) return;
-    const body = view(bytes);
-    const at = frame.bodyOffset;
-    const time = hasValidGpsTime(frame)
+const BESTPOS_LIKE_NAMES = new Set([
+    'BESTPOS',
+    'PSRPOS',
+    'BESTGNSSPOS',
+    'PPPPOS',
+]);
+
+const frameTime = (frame: NovatelFrame): number | undefined =>
+    hasValidGpsTime(frame)
         ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           gpsToUnixMs(frame.week!, frame.milliseconds!)
         : undefined;
+
+/** Comma separated fields of an ASCII message body, quotes removed. */
+const asciiFields = (bytes: Uint8Array, frame: NovatelFrame): string[] =>
+    asciiText(bytes, frame.bodyOffset, frame.bodyOffset + frame.bodyLength)
+        .split(',')
+        .map((field) => field.replaceAll('"', '').trim());
+
+const decodeAsciiPosition = (
+    bytes: Uint8Array,
+    frame: NovatelFrame,
+): NovatelPosition | undefined => {
+    const fields = asciiFields(bytes, frame);
+    const number = (index: number): number => Number(fields[index]);
+    const time = frameTime(frame);
+    if (BESTPOS_LIKE_NAMES.has(frame.name) && fields.length >= 15) {
+        if (fields[0] !== 'SOL_COMPUTED') return;
+        return {
+            time,
+            positionType: fields[1] ?? '',
+            lat: number(2),
+            lon: number(3),
+            height: number(4),
+            horizontalSigma: Math.hypot(number(7), number(8)),
+            satellites: number(14),
+        };
+    }
+    if (frame.name === 'INSPVAX' && fields.length >= 14) {
+        return {
+            time,
+            insStatus: fields[0],
+            positionType: fields[1] ?? '',
+            lat: number(2),
+            lon: number(3),
+            height: number(4),
+            horizontalSigma: Math.hypot(number(12), number(13)),
+        };
+    }
+    if (frame.name === 'INSPVA' && fields.length >= 12) {
+        return {
+            time,
+            insStatus: fields[11],
+            positionType: 'INS',
+            lat: number(2),
+            lon: number(3),
+            height: number(4),
+        };
+    }
+    return undefined;
+};
+
+const decodeBinaryPosition = (
+    bytes: Uint8Array,
+    frame: NovatelFrame,
+): NovatelPosition | undefined => {
+    if (frame.id === undefined) return;
+    const body = view(bytes);
+    const at = frame.bodyOffset;
+    const time = frameTime(frame);
 
     let position: NovatelPosition | undefined;
     if (BESTPOS_LIKE.has(frame.id) && frame.bodyLength >= 66) {
@@ -583,6 +705,22 @@ export const decodeNovatelPosition = (
             height: body.getFloat64(at + 28, true),
         };
     }
+    return position;
+};
+
+/**
+ * The position in a binary or ASCII frame, for the message types that carry
+ * one, or undefined. Frames without a fix (position type NONE or 0/0
+ * coordinates) are dropped so they do not pull the track to the equator.
+ */
+export const decodeNovatelPosition = (
+    bytes: Uint8Array,
+    frame: NovatelFrame,
+): (NovatelPosition & { source: string }) | undefined => {
+    let position: NovatelPosition | undefined;
+    if (frame.framing === 'ascii') position = decodeAsciiPosition(bytes, frame);
+    else if (frame.framing !== 'abbreviated')
+        position = decodeBinaryPosition(bytes, frame);
     if (!position || !hasFix(position)) return;
     return { ...position, source: frame.name };
 };
@@ -601,6 +739,17 @@ export const decodeNovatelVersion = (
     bytes: Uint8Array,
     frame: NovatelFrame,
 ): NovatelReceiver | undefined => {
+    if (frame.framing === 'ascii' && frame.name === 'VERSION') {
+        // #comp,type,"model","psn","hw version","sw version",...
+        const fields = asciiFields(bytes, frame);
+        if (fields.length < 6) return;
+        return {
+            model: fields[2] ?? '',
+            serial: fields[3] ?? '',
+            hardware: fields[4] ?? '',
+            firmware: fields[5] ?? '',
+        };
+    }
     if (frame.id !== 37 || frame.framing !== 'binary') return;
     // #comp (4), then per component: type (4), model (16), psn (16),
     // hw version (16), sw version (16), boot version (16), date (12), time (12)
