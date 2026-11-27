@@ -77,8 +77,7 @@
                         class="q-ml-xs cursor-help"
                     >
                         <q-tooltip max-width="320px">
-                            Messages ÷ time from first to last seen. — for
-                            one-shot topics.
+                            {{ meanHzHint }}
                         </q-tooltip>
                     </q-icon>
                 </q-th>
@@ -241,6 +240,8 @@ export interface TopicRow {
     nrMessages: number;
     size?: number;
     protocol?: string;
+    /** Messages ÷ recording duration, stored with the topic. */
+    frequency?: number | null;
     expand?: boolean;
 }
 
@@ -283,8 +284,22 @@ const filteredTopics = computed(() => {
 
 const stats = computed(() => properties.stats);
 
-const meanHzOf = (row: TopicRow): number | undefined =>
-    stats.value?.topics[row.name]?.meanHz;
+// Topics without per-topic statistics (db3 files, and bags until they are
+// indexed) fall back to the rate stored with the topic. A single message has
+// no rate.
+const meanHzOf = (row: TopicRow): number | undefined => {
+    const topicStats = stats.value?.topics[row.name];
+    if (topicStats) return topicStats.meanHz;
+    if (row.nrMessages <= 1 || !row.frequency) return undefined;
+    return row.frequency;
+};
+
+// Files without per-topic statistics only have the whole-recording rate.
+const meanHzHint = computed(() =>
+    stats.value
+        ? 'Messages ÷ time from first to last seen. — for one-shot topics.'
+        : 'Messages ÷ duration of the whole recording. — for single messages.',
+);
 
 const formatHz = (hz: number | undefined): string => {
     if (hz === undefined) return '—';
