@@ -86,7 +86,8 @@ export const addAccessConstraintsToProjectQuery = (
     const projectUUIDQuery = projectAccessUUIDQuery(query, userUUID);
     const userIsAdminSubQuery = getUserIsAdminSubQuery(query, userUUID);
 
-    query.where(
+    // andWhere, so filters the caller added before are kept
+    query.andWhere(
         new Brackets((qb) => {
             qb.where(`EXISTS (${userIsAdminSubQuery.getQuery()})`);
             qb.orWhere(`project.uuid IN (${projectUUIDQuery.getQuery()})`);
