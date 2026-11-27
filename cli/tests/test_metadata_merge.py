@@ -325,3 +325,33 @@ def test_get_metadata_type_id_by_name_rejects_case_insensitive_fallback_when_tru
 
     with pytest.raises(InvalidMissionMetadata, match="too many"):
         _get_metadata_type_id_by_name(client, "CPU")
+
+
+@pytest.fixture
+def create_mission_calls(monkeypatch):
+    """stubs the server calls of `create_mission` and records the create request"""
+    calls = []
+    monkeypatch.setattr(kleinkram.core, "_validate_mission_name", lambda *_: None)
+    monkeypatch.setattr(kleinkram.core, "_validate_mission_created", lambda *_: None)
+    monkeypatch.setattr(kleinkram.core, "_get_metadata_map", lambda *_: {})
+
+    def _create_mission(client, project_id, mission_name, **kwargs):
+        calls.append(kwargs)
+        return MISSION_ID
+
+    monkeypatch.setattr(kleinkram.api.routes, "_create_mission", _create_mission)
+    return calls
+
+
+def test_create_mission_refuses_missing_required_metadata(create_mission_calls):
+    with pytest.raises(InvalidMissionMetadata):
+        kleinkram.core.create_mission(object(), PROJECT_ID, "run-1", required_metadata_types=["robot"])
+    assert create_mission_calls == []
+
+
+def test_create_mission_can_ignore_missing_required_metadata(create_mission_calls):
+    mission_id = kleinkram.core.create_mission(
+        object(), PROJECT_ID, "run-1", required_metadata_types=["robot"], ignore_missing_metadata=True
+    )
+    assert mission_id == MISSION_ID
+    assert create_mission_calls == [{"metadata": {}, "ignore_missing_metadata": True}]
