@@ -77,3 +77,37 @@ export const decodeTextSample = (
 ): string =>
     decodeUtf8Sample(bytes, truncated) ??
     new TextDecoder('windows-1252').decode(bytes);
+
+/**
+ * C0 control bytes that legitimately occur in text files. ESC starts the ANSI
+ * colour codes that terminal loggers write into `.log` files.
+ */
+const ALLOWED_CONTROL_BYTES = new Set([0x09, 0x0a, 0x0c, 0x0d, 0x1b]);
+
+/**
+ * True when the sample looks like human-readable text rather than a binary
+ * payload that was given a text extension.
+ *
+ * Text files are expected to be UTF-8, but legacy exports in a single-byte
+ * encoding such as latin-1 are still accepted: those decode as invalid UTF-8
+ * yet stay far below the share of high bytes that binary data produces.
+ */
+export const isPlainTextSample = (
+    sample: Uint8Array,
+    sampleIsCompleteFile: boolean,
+): boolean => {
+    if (sample.length === 0) return false;
+    if (sample.includes(0)) return false;
+
+    let controlBytes = 0;
+    let highBytes = 0;
+    for (const byte of sample) {
+        if (byte < 0x20 && !ALLOWED_CONTROL_BYTES.has(byte)) controlBytes++;
+        else if (byte >= 0x80) highBytes++;
+    }
+    if (controlBytes > sample.length * 0.01) return false;
+
+    if (decodeUtf8Sample(sample, !sampleIsCompleteFile) !== undefined)
+        return true;
+    return highBytes <= sample.length * 0.1;
+};

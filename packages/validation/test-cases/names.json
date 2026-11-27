@@ -156,7 +156,7 @@
             },
             {
                 "value": ".bag",
-                "error": "File name must end with one of .bag, .mcap, .yaml, .svo2, .tum, .db3, .md, .csv, .yml"
+                "error": "File name must end with one of .bag, .mcap, .yaml, .svo2, .tum, .db3, .md, .csv, .log, .yml"
             },
             {
                 "value": ".hidden.bag",
@@ -176,11 +176,11 @@
             },
             {
                 "value": "notes.txt",
-                "error": "File name must end with one of .bag, .mcap, .yaml, .svo2, .tum, .db3, .md, .csv, .yml"
+                "error": "File name must end with one of .bag, .mcap, .yaml, .svo2, .tum, .db3, .md, .csv, .log, .yml"
             },
             {
                 "value": "noext",
-                "error": "File name must end with one of .bag, .mcap, .yaml, .svo2, .tum, .db3, .md, .csv, .yml"
+                "error": "File name must end with one of .bag, .mcap, .yaml, .svo2, .tum, .db3, .md, .csv, .log, .yml"
             },
             {
                 "value": "",

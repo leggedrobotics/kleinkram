@@ -175,6 +175,7 @@ export enum FileType {
     DB3 = 'DB3',
     MD = 'MD',
     CSV = 'CSV',
+    LOG = 'LOG',
     ALL = 'ALL',
 }
 

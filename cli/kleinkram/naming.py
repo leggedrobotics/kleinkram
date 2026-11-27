@@ -83,7 +83,7 @@ def get_name_validation_error(name: str, label: str = "Name") -> Optional[str]:
 FILENAME_MIN_LENGTH = 3
 FILENAME_MAX_LENGTH = 50
 # the order of `FileType` in packages/shared, then `.yml`; it appears in messages
-FILE_EXTENSIONS = (".bag", ".mcap", ".yaml", ".svo2", ".tum", ".db3", ".md", ".csv", ".yml")
+FILE_EXTENSIONS = (".bag", ".mcap", ".yaml", ".svo2", ".tum", ".db3", ".md", ".csv", ".log", ".yml")
 _FILE_NAME_REGEX = re.compile(
     rf"^(?![.-])[{NAME_ALLOWED_CHARACTERS}]{{{FILENAME_MIN_LENGTH},{FILENAME_MAX_LENGTH}}}"
     rf"\.({'|'.join(extension[1:] for extension in FILE_EXTENSIONS)})$"
