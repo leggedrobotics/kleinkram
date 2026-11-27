@@ -1,11 +1,12 @@
-import { FileType } from '@kleinkram/shared';
+import {
+    FileType,
+    LOG_SAMPLE_BYTES,
+    detectLogFormat,
+    isPlainTextSample,
+} from '@kleinkram/shared';
 import * as fs from 'node:fs/promises';
 import logger from '../../logger';
-import {
-    TEXT_SAMPLE_BYTES,
-    isPlainTextSample,
-    looksLikeCsv,
-} from './text-format.validator';
+import { TEXT_SAMPLE_BYTES, looksLikeCsv } from './text-format.validator';
 
 const MAGIC_NUMBERS: Partial<Record<FileType, Buffer>> = {
     [FileType.MCAP]: Buffer.from([
@@ -56,6 +57,29 @@ const validateTextFormat = async (
     };
 };
 
+/**
+ * `.log` is a catch-all extension (text logs, NovAtel receiver logs, other
+ * vendors' binary formats), so no content is rejected: only an empty file is.
+ * The format is detected anyway, which validates NovAtel frames by their CRC
+ * and leaves a trace in the worker log of what was ingested.
+ */
+const validateLog = async (
+    handle: fs.FileHandle,
+    filePath: string,
+): Promise<FileValidationResult> => {
+    const buffer = Buffer.alloc(LOG_SAMPLE_BYTES);
+    const { bytesRead } = await handle.read(buffer, 0, LOG_SAMPLE_BYTES, 0);
+    if (bytesRead === 0) return { valid: false, error: 'File is empty' };
+
+    const { size } = await handle.stat();
+    const format = detectLogFormat(
+        buffer.subarray(0, bytesRead),
+        size <= bytesRead,
+    );
+    logger.debug(`Detected ${format} log format for ${filePath}`);
+    return { valid: true };
+};
+
 export const MagicNumberValidator = {
     async validate(
         filePath: string,
@@ -94,6 +118,9 @@ export const MagicNumberValidator = {
 
                 if (fileType === FileType.MD || fileType === FileType.CSV)
                     return await validateTextFormat(handle, fileType);
+
+                if (fileType === FileType.LOG)
+                    return await validateLog(handle, filePath);
 
                 if (fileType === FileType.TUM) {
                     // TUM format: timestamp tx ty tz qx qy qz qw

@@ -2,16 +2,17 @@
 
 Kleinkram supports a variety of robotics data formats. All other files should be stored in a different Cloud Storage Solution like Google Drive.
 
-| Extension        | Description                                                     |
-| :--------------- | :-------------------------------------------------------------- |
-| `.mcap`          | Standard container format for multimodal data (ROS2, Foxglove). |
-| `.bag`           | Legacy ROS1 bag file. Optionally converted to MCAP on upload.   |
-| `.db3`           | ROS2 bag file (SQLite3).                                        |
-| `.svo2`          | ZED camera recording (v2)                                       |
-| `.tum`           | TUM dataset format                                              |
-| `.yaml` / `.yml` | YAML configuration files                                        |
-| `.md`            | Markdown notes, rendered in the file preview                    |
-| `.csv`           | Comma/semicolon/tab separated tables, shown as a table preview  |
+| Extension        | Description                                                      |
+| :--------------- | :--------------------------------------------------------------- |
+| `.mcap`          | Standard container format for multimodal data (ROS2, Foxglove).  |
+| `.bag`           | Legacy ROS1 bag file. Optionally converted to MCAP on upload.    |
+| `.db3`           | ROS2 bag file (SQLite3).                                         |
+| `.svo2`          | ZED camera recording (v2)                                        |
+| `.tum`           | TUM dataset format                                               |
+| `.yaml` / `.yml` | YAML configuration files                                         |
+| `.md`            | Markdown notes, rendered in the file preview                     |
+| `.csv`           | Comma/semicolon/tab separated tables, shown as a table preview   |
+| `.log`           | Text logs and NovAtel receiver logs, see [Log files](#log-files) |
 
 ::: tip Requesting New File Types
 If you need support for additional file types, please [open a new issue](https://github.com/leggedrobotics/kleinkram/issues/new) on GitHub.
@@ -27,6 +28,24 @@ Native translation of `.bag` files to `.mcap` (using `ros1msg` encoding) is supp
 Compress `.mcap` files inside the file (chunk compression), not as a whole: a `.mcap.zst` or `.mcap.gz` is not
 accepted. See [MCAP Chunking and Compression](./compression.md).
 :::
+
+## Log Files
+
+`.log` is used by many tools for unrelated formats, so Kleinkram looks at the content of a `.log` file to pick its
+preview:
+
+| Content                                     | Preview                                                                                                                                                |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| NovAtel OEM7 receiver log (binary or ASCII) | Receiver, recording time, position solution, a map of the track and a table of the logged messages with their count and rate.                          |
+| Text                                        | The lines, with the level (`ERROR`, `WARN`, `INFO`, `DEBUG`) detected per line. Filter by level or search. Large logs show the first or the last 2 MB. |
+| Anything else (another vendor's binary log) | None. The file is kept and can be downloaded.                                                                                                          |
+
+A NovAtel log is recognised by its message frames and their CRC-32 checksums; it needs no special name. The preview
+reads only parts of the file: the message table covers the first 4 MB, and the track is sampled across the whole file.
+Only an empty `.log` file is marked as corrupted.
+
+NovAtel receivers name their logs with an uppercase extension (`.LOG`). File names must end in a lowercase extension,
+so rename them to `.log` before the upload; the upload dialog and `klein upload` suggest the name.
 
 ## File States
 

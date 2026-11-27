@@ -363,6 +363,9 @@ const fileIcon = (extension: string): string => {
         case '.md': {
             return 'sym_o_article';
         }
+        case '.log': {
+            return 'sym_o_receipt_long';
+        }
         default: {
             return 'sym_o_draft';
         }

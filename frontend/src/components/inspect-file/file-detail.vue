@@ -131,6 +131,41 @@
             </div>
         </div>
 
+        <!-- Log Preview: the content decides the viewer, see detectLogFormat -->
+        <div v-else-if="isLog" class="q-mb-lg">
+            <template v-if="logFormat === 'novatel'">
+                <h2 class="text-h5 text-md-h4 q-mb-md">Receiver Log</h2>
+                <NovatelLogViewer
+                    v-if="logUrl"
+                    :url="logUrl"
+                    :size="file.size"
+                />
+            </template>
+            <template v-else-if="logFormat === 'text'">
+                <h2 class="text-h5 text-md-h4 q-mb-md">Log Preview</h2>
+                <TextLogViewer v-if="logUrl" :url="logUrl" :size="file.size" />
+            </template>
+            <div
+                v-else-if="logFormat === 'unknown'"
+                class="text-center q-pa-xl q-px-md bg-grey-1 rounded-borders border-dashed text-grey-7"
+            >
+                <q-icon name="sym_o_description" size="4em" class="q-mb-md" />
+                <div class="text-h6 q-mb-sm">
+                    No preview for this log format
+                </div>
+                <q-btn
+                    label="Download"
+                    color="primary"
+                    icon="sym_o_download"
+                    unelevated
+                    @click="handleDownload"
+                />
+            </div>
+            <div v-else class="row items-center q-gutter-sm text-grey-7">
+                <q-spinner-dots size="1.5em" /> <span>Loading content...</span>
+            </div>
+        </div>
+
         <!-- SVO2 Preview -->
         <div v-else-if="isSvo2" class="q-mb-lg">
             <Svo2Viewer :url="svo2Url" @download="handleDownload" />
@@ -233,7 +268,7 @@
 </template>
 
 <script setup lang="ts">
-import type { FileTopicStats } from '@kleinkram/shared';
+import type { FileTopicStats, LogFormat } from '@kleinkram/shared';
 import {
     FileState,
     FileType,
@@ -249,6 +284,7 @@ import {
 } from 'src/hooks/query-hooks';
 import { useFileUUID } from 'src/hooks/router-hooks';
 import { _downloadFile } from 'src/services/generic';
+import { detectRemoteLogFormat } from 'src/services/log-preview';
 import { downloadFile, getFoxgloveLink } from 'src/services/queries/file';
 import { fetchTextPreview } from 'src/services/text-preview';
 import { computed, onUnmounted, ref, watch } from 'vue';
@@ -261,7 +297,9 @@ import FileTopicTable from './file-topic-table.vue';
 import RecordingFacts from './recording-facts.vue';
 import CsvViewer from './viewers/csv-viewer.vue';
 import MarkdownViewer from './viewers/markdown-viewer.vue';
+import NovatelLogViewer from './viewers/novatel-log-viewer.vue';
 import Svo2Viewer from './viewers/svo2-viewer.vue';
+import TextLogViewer from './viewers/text-log-viewer.vue';
 import TumViewer from './viewers/tum-viewer.vue';
 
 const fileUuid = useFileUUID();
@@ -339,6 +377,8 @@ const tumContent = ref<string | undefined>(undefined);
 const textContent = ref<string | undefined>(undefined);
 const textTruncated = ref(false);
 const svo2Url = ref<string | undefined>(undefined);
+const logUrl = ref<string | undefined>(undefined);
+const logFormat = ref<LogFormat | undefined>(undefined);
 // Tracks which file the loaded preview belongs to, so navigating to another
 // file clears it instead of showing the previous file's content.
 const loadedFileUuid = ref<string | undefined>(undefined);
@@ -367,6 +407,11 @@ const isCsv = computed(
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         file.value?.type === FileType.CSV && file.value?.state === FileState.OK,
 );
+const isLog = computed(
+    () =>
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        file.value?.type === FileType.LOG && file.value?.state === FileState.OK,
+);
 const isSvo2 = computed(
     () =>
         file.value?.type === FileType.SVO2 &&
@@ -385,6 +430,18 @@ const displayTopics = computed(
     () => file.value?.state === FileState.OK && isSupportedBinary.value,
 );
 
+/** The viewer a `.log` file gets depends on what its first bytes hold. */
+async function loadLogPreview(
+    url: string,
+    size: number,
+    isStale: () => boolean,
+): Promise<void> {
+    const format = await detectRemoteLogFormat(url, size);
+    if (isStale()) return;
+    logUrl.value = url;
+    logFormat.value = format ?? 'unknown';
+}
+
 // --- Init ---
 watch(
     () => file.value,
@@ -396,6 +453,8 @@ watch(
             textContent.value = undefined;
             textTruncated.value = false;
             svo2Url.value = undefined;
+            logUrl.value = undefined;
+            logFormat.value = undefined;
             tab.value = 'content';
             preview.reset();
         }
@@ -425,6 +484,8 @@ watch(
                 if (isStale()) return;
                 textContent.value = loaded?.text ?? 'Error loading content';
                 textTruncated.value = loaded?.truncated ?? false;
+            } else if (isLog.value) {
+                await loadLogPreview(url, currentFile.size, isStale);
             } else if (isSvo2.value) {
                 // For SVO2, we just need the URL to be available for the viewer
                 // The viewer will handle the range requests

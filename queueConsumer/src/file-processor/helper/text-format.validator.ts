@@ -6,44 +6,13 @@
  * and (for CSV) text without a consistent delimited structure.
  */
 
-import { decodeTextSample, decodeUtf8Sample } from '@kleinkram/shared';
+import { decodeTextSample } from '@kleinkram/shared';
 
 /** Number of leading bytes inspected; enough to judge a file without reading it all. */
 export const TEXT_SAMPLE_BYTES = 8192;
 
 /** Delimiters we recognise, in the order they are preferred on a tie. */
 const CSV_DELIMITERS = [',', ';', '\t'] as const;
-
-/** C0 control bytes that legitimately occur in text files. */
-const ALLOWED_CONTROL_BYTES = new Set([0x09, 0x0a, 0x0c, 0x0d]);
-
-/**
- * True when the sample looks like human-readable text rather than a binary
- * payload that was given a text extension.
- *
- * Text files are expected to be UTF-8, but legacy exports in a single-byte
- * encoding such as latin-1 are still accepted: those decode as invalid UTF-8
- * yet stay far below the share of high bytes that binary data produces.
- */
-export const isPlainTextSample = (
-    sample: Buffer,
-    sampleIsCompleteFile: boolean,
-): boolean => {
-    if (sample.length === 0) return false;
-    if (sample.includes(0)) return false;
-
-    let controlBytes = 0;
-    let highBytes = 0;
-    for (const byte of sample) {
-        if (byte < 0x20 && !ALLOWED_CONTROL_BYTES.has(byte)) controlBytes++;
-        else if (byte >= 0x80) highBytes++;
-    }
-    if (controlBytes > sample.length * 0.01) return false;
-
-    if (decodeUtf8Sample(sample, !sampleIsCompleteFile) !== undefined)
-        return true;
-    return highBytes <= sample.length * 0.1;
-};
 
 /**
  * Splits CSV text into the field counts of each record, honouring quoted fields
