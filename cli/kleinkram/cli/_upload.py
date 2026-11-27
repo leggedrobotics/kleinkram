@@ -20,12 +20,12 @@ from kleinkram.cli._exit_codes import print_errors_only
 from kleinkram.cli._file_expansion import expand_file_args
 from kleinkram.cli._file_validator import FileValidator
 from kleinkram.cli._file_validator import _report_skipped_files
-from kleinkram.cli._file_validator import supported_suffixes
 from kleinkram.cli._progress import run_interruptible
 from kleinkram.cli._progress import transfer_progress
 from kleinkram.config import get_shared_state
 from kleinkram.errors import MissionNotFound
 from kleinkram.printing import print_upload_plan
+from kleinkram.utils import SUPPORT_FILE_TYPES
 from kleinkram.utils import format_bytes
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
@@ -132,7 +132,6 @@ def upload(
         "-r",
         help="include all supported files in the given directories and their subdirectories",
     ),
-    experimental_datatypes: bool = typer.Option(False, help="allow experimental datatypes (yaml, svo2, db3, tum)"),
     ignore_missing_metadata: bool = typer.Option(False, help="ignore missing required metadata"),
     dry_run: bool = typer.Option(
         False,
@@ -147,14 +146,11 @@ def upload(
         )
         ignore_missing_metadata = ignore_missing_tags
 
-    original_file_paths = expand_file_args(
-        files, recursive=recursive, suffixes=supported_suffixes(experimental_datatypes=experimental_datatypes)
-    )
+    original_file_paths = expand_file_args(files, recursive=recursive, suffixes=SUPPORT_FILE_TYPES)
     mission_query = _build_mission_query(mission, project)
 
     validator = FileValidator(
         skip=skip,
-        experimental_datatypes=experimental_datatypes,
         fix_filenames=fix_filenames,
     )
 
