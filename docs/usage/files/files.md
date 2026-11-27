@@ -44,8 +44,8 @@ A NovAtel log is recognised by its message frames and their CRC-32 checksums; it
 reads only parts of the file: the message table covers the first 4 MB, and the track is sampled across the whole file.
 Only an empty `.log` file is marked as corrupted.
 
-NovAtel receivers name their logs with an uppercase extension (`.LOG`). File names must end in a lowercase extension,
-so rename them to `.log` before the upload; the upload dialog and `klein upload` suggest the name.
+NovAtel receivers name their logs with an uppercase extension (`.LOG`). File names are stored with a lowercase
+extension: the upload dialog renames such a file to `.log` for you, and `klein upload` does so with `--fix-filenames`.
 
 ## File States
 
