@@ -77,8 +77,7 @@
                         class="q-ml-xs cursor-help"
                     >
                         <q-tooltip max-width="320px">
-                            Messages ÷ time from first to last seen. — for
-                            one-shot topics.
+                            {{ meanHzHint }}
                         </q-tooltip>
                     </q-icon>
                 </q-th>
@@ -294,6 +293,13 @@ const meanHzOf = (row: TopicRow): number | undefined => {
     if (row.nrMessages <= 1 || !row.frequency) return undefined;
     return row.frequency;
 };
+
+// Files without per-topic statistics only have the whole-recording rate.
+const meanHzHint = computed(() =>
+    stats.value
+        ? 'Messages ÷ time from first to last seen. — for one-shot topics.'
+        : 'Messages ÷ duration of the whole recording. — for single messages.',
+);
 
 const formatHz = (hz: number | undefined): string => {
     if (hz === undefined) return '—';
