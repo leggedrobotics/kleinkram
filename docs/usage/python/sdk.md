@@ -228,7 +228,9 @@ not_verified = [path for path, s in status.items() if s != FileVerificationStatu
 These are the same checks that decide the [exit code](./cli.md#exit-codes) of the CLI.
 
 `verify` returns a status per local file: `uploaded`, `uploading`, `computing hash`, `missing`, `hash mismatch`,
-`size mismatch` or `unknown`. On Ctrl+C, `upload` and `download` raise `KeyboardInterrupt`;
+`size mismatch` or `unknown`. It compares the MD5 hash of each file (`check_file_hash=True`, the default); pass
+`check_file_size=True` to also compare the size, which is checked first, or `check_file_hash=False` to skip reading the
+local files. `skip_hash=True` still works but is deprecated. On Ctrl+C, `upload` and `download` raise `KeyboardInterrupt`;
 `kleinkram.errors.get_transfer_result(exc)` returns what finished before.
 
 ### Updating Resources
@@ -236,8 +238,9 @@ These are the same checks that decide the [exit code](./cli.md#exit-codes) of th
 Modify the metadata and descriptions of existing resources.
 
 ```python
-# Update a project's description
+# Update a project's description, or rename it
 kleinkram.update_project(project_id="...", description="Updated Description")
+kleinkram.update_project(project_id="...", new_name="renamed-project")
 
 # Update a mission's metadata
 kleinkram.update_mission(mission_id="...", metadata={"status": "completed"})
