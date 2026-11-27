@@ -2,8 +2,9 @@
 
 Kleinkram can also be used via a command line interface (CLI) or a python package.
 This offers an easy way to interact with the platform in a programmatic way.
-In particular this can be used to upload and download files, createThe development of the CLI and Python package is done in the `cli` directory.
-For instructions on how to set up the python environment, see the [User Guide](../../usage/python/setup.md). guide.
+In particular this can be used to upload and download files, create projects and missions, and run actions.
+The development of the CLI and Python package is done in the `cli` directory.
+For instructions on how to set up the python environment, see the [User Guide](../../usage/python/setup.md).
 
 ## Usage
 
@@ -50,6 +51,23 @@ python -m kleinkram
 klein # same as above
 ```
 
+## Server Discovery
+
+`klein login <url>` needs only the address of the web app. `kleinkram/discovery.py` finds the rest:
+
+1. It normalizes the address: a missing scheme means https (http for `localhost`), and any path is dropped, so a link
+   to any page of the web app works.
+2. It reads `<web app>/.well-known/kleinkram.json`, which names the API (`apiUrl`). The web app's build writes this
+   file from `BACKEND_URL` (see the `kleinkram-well-known` plugin in `frontend/quasar.config.ts`).
+3. It reads `GET <api>/cli/config` (`backend/src/endpoints/cli/cli.controller.ts`), which returns the web app, API and
+   S3 addresses, the server and minimum CLI version and the login options. If step 2 found nothing, the given address
+   is tried as the API address.
+4. It saves the server in `~/.kleinkram.json` and makes it the active one.
+
+Every address it uses must be https, including the ones the server announces and redirects to; plain http is only
+accepted for `localhost`. Servers older than 0.67 have no `/cli/config`; add them with
+`klein endpoint <name> <api-url> <s3-url>`.
+
 ## Project Structure
 
 The `/cli` folder is structured as a python package using the [flat layout](https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/).
@@ -70,14 +88,14 @@ cli/
 ├── tests/
 │   ├── __init__.py
 │   └── ...
-└── testing/
-    ├── __init__.py
+└── scripts/
     └── ...
 ```
 
 - The `kleinkram` module contains the actual implementation of the CLI.
-- The `tests` module contains the tests for the CLI, we use the `pytest` framework for this.
-- The `testing` module contains utilities used in tests such as fixtures (but no tests themselves).
+- The `tests` module contains the tests for the CLI, we use the `pytest` framework for this. Fixtures live in
+  `tests/conftest.py`.
+- The `scripts` folder contains scripts for manual testing; they are not part of the package.
 
 ### Packaging
 
@@ -104,6 +122,11 @@ This contains the `main` function that is called by `__main__.py`. If you wish t
 
 Contains all the highlevel functions that interact with the backend.
 
+#### `wrappers.py`
+
+The public Python API. These functions accept names or ids, paths and patterns and convert them to the internal
+representation before calling `core.py`. `__init__.py` re-exports them.
+
 #### `models.py`
 
 Contains python representations for objects that also exist on the backend.
@@ -121,6 +144,9 @@ In this folder we have all the bindings for the kleinkram API. This includes:
 - `deser.py` deserialization of the API responses (serialization should also go here).
 - `routes.py` all the api routes and low level functions that interact with those endpoints
 - `query.py` abstractions for specificying resources on the backend (e.g. querying projects, missions and files)
+- `retry.py` which HTTP errors are retried and how long to wait between attempts.
+- `mcap_index.py`, `mcap_filter.py` and `range_reader.py` reading the index of an MCAP file over HTTP range requests,
+  used to download part of an MCAP.
 - `file_transfer.py` implementation of the uploading and downloading. For the uploads we use [`boto3`](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) to interact with the S3 compatible storage.
 
 #### `cli/`
